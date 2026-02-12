@@ -1,0 +1,43 @@
+name: dev-blackbox
+
+services:
+  postgres17:
+    image: pgvector/pgvector:pg17
+    container_name: dev-blackbox-postgres
+    ports:
+      - "7400:5432"
+    environment:
+      POSTGRES_DB: dev_blackbox
+      POSTGRES_USER: blackbox
+      POSTGRES_PASSWORD: passw0rd
+    volumes:
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./postgres/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+      - ./postgres/data:/var/lib/postgresql/data
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    healthcheck:
+      test: [ "CMD", "pg_isready -U postgres" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  redis:
+    image: redis:8-alpine
+    container_name: dev-blackbox-redis
+    ports:
+      - "7410:6379"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
