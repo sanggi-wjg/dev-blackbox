@@ -1,16 +1,29 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from starlette import status
+from starlette.middleware.gzip import GZipMiddleware
 
 from dev_blackbox.controller.exception_handler import register_exception_handlers
 from dev_blackbox.controller.github_collect_controller import router as github_collect_router
+from dev_blackbox.controller.github_event_controller import router as github_event_router
 from dev_blackbox.controller.github_user_secret_controller import router as github_secret_router
 from dev_blackbox.controller.user_controller import router as user_router
 
 app = FastAPI()
+app.add_middleware(GZipMiddleware)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=['*'],
+    allow_credentials=True,
+    allow_methods=['*'],
+    allow_headers=['*'],
+)
 register_exception_handlers(app)
+
 app.include_router(user_router)
 app.include_router(github_secret_router)
 app.include_router(github_collect_router)
+app.include_router(github_event_router)
 
 
 @app.get("/", status_code=status.HTTP_200_OK, tags=["Root"])

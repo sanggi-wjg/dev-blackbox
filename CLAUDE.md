@@ -55,7 +55,11 @@ dev_blackbox/
 └── core/                        # 설정, DB, 예외, Enum
 ```
 
-상세 아키텍처 문서: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+상세 문서:
+- [아키텍처](docs/ARCHITECTURE.md) — 시스템 구조, 레이어, 파이프라인
+- [API](docs/API.md) — 엔드포인트, DTO, 예외 처리
+- [데이터베이스](docs/DATABASE.md) — Entity, Repository, 세션 관리
+- [인프라](docs/INFRASTRUCTURE.md) — Docker, PostgreSQL, Ollama, 환경 설정
 
 ## Key Conventions
 
