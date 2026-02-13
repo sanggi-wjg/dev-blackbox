@@ -19,9 +19,7 @@ async def create_user(
 ):
     service = UserService(db)
     user = service.create_user(request)
-    response = UserResponseDto.model_validate(user)
-    db.commit()
-    return response
+    return user
 
 
 @router.get(
@@ -34,9 +32,7 @@ async def get_user(
 ):
     service = UserService(db)
     user = service.get_user(user_id)
-    response = UserResponseDto.model_validate(user)
-    db.commit()
-    return response
+    return user
 
 
 @router.get(
@@ -48,6 +44,4 @@ async def get_users(
 ):
     service = UserService(db)
     users = service.get_users()
-    response = [UserResponseDto.model_validate(user) for user in users]
-    db.commit()
-    return response
+    return users

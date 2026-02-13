@@ -21,10 +21,8 @@ async def create_github_secret(
     db: Session = Depends(get_db),
 ):
     service = GitHubUserSecretService(db)
-    secret = service.create_secret(request)
-    response = GitHubSecretResponseDto.model_validate(secret)
-    db.commit()
-    return response
+    user_secret = service.create_secret(request)
+    return user_secret
 
 
 @router.get(
@@ -36,7 +34,5 @@ async def get_github_secret_by_user_id(
     db: Session = Depends(get_db),
 ):
     service = GitHubUserSecretService(db)
-    secret = service.get_secret_by_user_id(user_id)
-    response = GitHubSecretResponseDto.model_validate(secret)
-    db.commit()
-    return response
+    user_secret = service.get_secret_by_user_id(user_id)
+    return user_secret

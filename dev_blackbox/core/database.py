@@ -33,20 +33,28 @@ session_factory = sessionmaker(
 def get_db() -> Generator[Session, None, None]:
     """
     FastAPI 의존성 주입 목적
-    ⚠️ endpoint 로직에서 트랜잭션의 commit, rollback 처리 필요
+    ⚠️ 자동으로 트랜잭션의 commit, rollback 처리
     """
     db = session_factory()
     try:
         yield db
+        db.commit()
+    except Exception:
+        db.rollback()
+        logger.exception("Exception occurred during database transaction.")
+        raise
     finally:
         db.close()
 
 
 @contextmanager
-def get_db_session():
+def get_db_session() -> Generator[Session, None, None]:
     """
-    일반 서비스 로직 사용 목적
+    서비스 구현 로직 사용 목적
     ⚠️ 자동으로 트랜잭션의 commit, rollback 처리
+
+    with get_db_session() as db:
+        ...
     """
     db = session_factory()
     try:

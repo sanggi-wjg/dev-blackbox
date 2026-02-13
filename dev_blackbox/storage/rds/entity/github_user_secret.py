@@ -1,10 +1,13 @@
 from datetime import datetime, UTC
+from typing import TYPE_CHECKING
 
 from sqlalchemy import BigInteger, DateTime, String, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from dev_blackbox.storage.rds.entity import User
 from dev_blackbox.storage.rds.entity.base import Base, SoftDeleteMixin
+
+if TYPE_CHECKING:
+    from dev_blackbox.storage.rds.entity.user import User
 
 
 class GitHubUserSecret(SoftDeleteMixin, Base):

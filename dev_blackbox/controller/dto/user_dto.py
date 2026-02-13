@@ -1,7 +1,7 @@
 from datetime import datetime
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from pydantic import BaseModel, EmailStr, field_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 from dev_blackbox.core.types import NotBlankStr
 
@@ -9,7 +9,7 @@ from dev_blackbox.core.types import NotBlankStr
 class CreateUserRequestDto(BaseModel):
     name: NotBlankStr
     email: EmailStr
-    timezone: str
+    timezone: str = Field(default="Asia/Seoul")
 
     @field_validator("timezone")
     @classmethod

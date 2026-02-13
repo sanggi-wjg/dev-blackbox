@@ -13,8 +13,8 @@ from dev_blackbox.storage.rds.repository import GitHubUserSecretRepository, User
 class GitHubUserSecretService:
 
     def __init__(self, session: Session):
-        self.github_user_secret_repository = GitHubUserSecretRepository(session)
         self.user_repository = UserRepository(session)
+        self.github_user_secret_repository = GitHubUserSecretRepository(session)
         self.encrypt_service = get_encrypt_service()
 
     def create_secret(self, request: CreateGitHubSecretRequestDto) -> GitHubUserSecret:
@@ -37,7 +37,8 @@ class GitHubUserSecretService:
             raise GitHubSecretByUserIdNotFoundException(user_id)
         return secret
 
-    def get_decrypted_token(self, user_id: int) -> tuple[str, str]:
-        secret = self.get_secret_by_user_id(user_id)
-        decrypted_token = self.encrypt_service.decrypt(secret.personal_access_token)
-        return secret.username, decrypted_token
+    def get_decrypted_token_by_secret(self, secret: GitHubUserSecret) -> str:
+        """
+        decrypted_token
+        """
+        return self.encrypt_service.decrypt(secret.personal_access_token)

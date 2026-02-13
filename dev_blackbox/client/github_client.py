@@ -1,10 +1,10 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import date
 from zoneinfo import ZoneInfo
 
 import httpx
 
-from dev_blackbox.client.model.github_model import GithubEventList, GithubCommit
+from dev_blackbox.client.model.github_model import GithubEventModelList, GithubCommitModel
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +22,9 @@ class GithubClient:
     def create(cls, token: str):
         return cls(token=token)
 
-    def fetch_events(self, username: str, page: int = 1, per_page: int = 30) -> GithubEventList:
+    def fetch_events(
+        self, username: str, page: int = 1, per_page: int = 30
+    ) -> GithubEventModelList:
         """
         https://docs.github.com/ko/rest/activity/events?apiVersion=2022-11-28#list-events-for-the-authenticated-user
 
@@ -35,17 +37,17 @@ class GithubClient:
             with httpx.Client() as client:
                 response = client.get(endpoint, headers=self._headers, params=params)
                 response.raise_for_status()
-                response_json = response.json()
-                return GithubEventList.model_validate({"events": response_json})
+                return GithubEventModelList.model_validate({"events": response.json()})
         except httpx.HTTPError:
             logger.warning(f"Failed to fetch events for {username}.")
             raise
 
     def fetch_events_by_date(
-        self, username: str, tz_info: ZoneInfo, timedelta_days: int = 0
-    ) -> GithubEventList:
-        target_date = datetime.now(tz_info).date() - timedelta(days=timedelta_days)
-
+        self,
+        username: str,
+        target_date: date,
+        tz_info: ZoneInfo,
+    ) -> GithubEventModelList:
         result = []
         page = 1
 
@@ -60,7 +62,7 @@ class GithubClient:
                 if event_date == target_date:
                     result.append(event)
                 elif event_date < target_date:
-                    return GithubEventList(events=result)
+                    return GithubEventModelList(events=result)
 
             page += 1
             if page > 10:
@@ -69,9 +71,9 @@ class GithubClient:
                 )
                 break
 
-        return GithubEventList(events=result)
+        return GithubEventModelList(events=result)
 
-    def fetch_commit(self, repository_url: str, sha: str) -> GithubCommit:
+    def fetch_commit(self, repository_url: str, sha: str) -> GithubCommitModel:
         """
         https://docs.github.com/ko/rest/commits/commits?apiVersion=2022-11-28#get-a-commit
 
@@ -83,8 +85,7 @@ class GithubClient:
             with httpx.Client() as client:
                 response = client.get(endpoint, headers=self._headers)
                 response.raise_for_status()
-                response_json = response.json()
-                return GithubCommit.model_validate(response_json)
+                return GithubCommitModel.model_validate(response.json())
         except httpx.HTTPError:
             logger.warning(f"Failed to fetch commit {sha} in {repository_url}.")
             raise

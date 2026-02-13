@@ -2,9 +2,9 @@ from fastapi import FastAPI
 from starlette import status
 
 from dev_blackbox.controller.exception_handler import register_exception_handlers
+from dev_blackbox.controller.github_collect_controller import router as github_collect_router
 from dev_blackbox.controller.github_user_secret_controller import router as github_secret_router
 from dev_blackbox.controller.user_controller import router as user_router
-from dev_blackbox.controller.github_collect_controller import router as github_collect_router
 
 app = FastAPI()
 register_exception_handlers(app)

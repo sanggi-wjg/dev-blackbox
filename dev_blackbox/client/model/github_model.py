@@ -7,11 +7,11 @@ from pydantic import BaseModel
 from dev_blackbox.datetime_util import get_date_from_iso_format
 
 
-class GithubEvent(BaseModel):
+class GithubEventModel(BaseModel):
     id: str
     type: Literal["PushEvent", "PullRequestEvent"] | str
     actor: dict
-    repo: GithubRepository
+    repo: GithubRepositoryModel
     payload: dict  # 자동으로 변환까지는 필요 없을 듯
     public: bool
     created_at: str
@@ -26,11 +26,11 @@ class GithubEvent(BaseModel):
     def is_type_pull_request_event(self) -> bool:
         return self.type == "PullRequestEvent"
 
-    def get_push_event_payload(self) -> GithubPushEventPayload:
+    def get_push_event_payload(self) -> GithubPushEventPayloadModel:
         if not self.is_type_push_event():
             raise ValueError("This event is not PushEvent.")
 
-        return GithubPushEventPayload.model_validate(self.payload)
+        return GithubPushEventPayloadModel.model_validate(self.payload)
 
     def get_pull_request_event_payload(self) -> GithubPullRequestEventPayload:
         if not self.is_type_pull_request_event():
@@ -39,11 +39,11 @@ class GithubEvent(BaseModel):
         return GithubPullRequestEventPayload.model_validate(self.payload)
 
 
-class GithubEventList(BaseModel):
-    events: list[GithubEvent]
+class GithubEventModelList(BaseModel):
+    events: list[GithubEventModel]
 
 
-class GithubPushEventPayload(BaseModel):
+class GithubPushEventPayloadModel(BaseModel):
     repository_id: int
     push_id: int
     ref: str
@@ -51,46 +51,46 @@ class GithubPushEventPayload(BaseModel):
     before: str
 
 
-class GithubRepository(BaseModel):
+class GithubRepositoryModel(BaseModel):
     id: int
     name: str
     url: str
 
 
-class GithubPullRequestInfo(BaseModel):
+class GithubPullRequestInfoModel(BaseModel):
     ref: str
     sha: str
-    repo: GithubRepository
+    repo: GithubRepositoryModel
 
 
-class GithubPullRequest(BaseModel):
+class GithubPullRequestModel(BaseModel):
     id: int
     url: str
     number: int
-    head: GithubPullRequestInfo
-    base: GithubPullRequestInfo
+    head: GithubPullRequestInfoModel
+    base: GithubPullRequestInfoModel
 
 
 class GithubPullRequestEventPayload(BaseModel):
     action: str
     number: int
-    pull_request: GithubPullRequest
+    pull_request: GithubPullRequestModel
 
 
-class GithubCommitCommit(BaseModel):
+class GithubCommitInfoModel(BaseModel):
     author: dict
     committer: dict
     message: str
     url: str
 
 
-class GithubCommitStats(BaseModel):
+class GithubCommitStatsModel(BaseModel):
     total: int
     additions: int
     deletions: int
 
 
-class GithubCommitFile(BaseModel):
+class GithubCommitFileModel(BaseModel):
     sha: str
     status: str
     filename: str
@@ -102,15 +102,15 @@ class GithubCommitFile(BaseModel):
     patch: str | None = None
 
 
-class GithubCommit(BaseModel):
+class GithubCommitModel(BaseModel):
     sha: str
     node_id: str
-    commit: GithubCommitCommit
+    commit: GithubCommitInfoModel
     url: str
     html_url: str
     comments_url: str
-    stats: GithubCommitStats
-    files: list[GithubCommitFile]
+    stats: GithubCommitStatsModel
+    files: list[GithubCommitFileModel]
 
     @property
     def summary_text(self) -> str:

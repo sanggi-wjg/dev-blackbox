@@ -7,13 +7,13 @@ from dev_blackbox.service.github_collect_service import GitHubCollectService
 
 
 def collect_by_platform_task(platform: PlatformEnum, user_id: int):
-    if not platform:
-        raise ValueError("platform must be provided.")
-
-    if platform == PlatformEnum.GITHUB:
-        with get_db_session() as session:
-            github_collect_service = GitHubCollectService(session)
-            results = github_collect_service.collect_yesterday_commit_info(user_id)
-
-        llm_agent = LLMAgent.create_with_ollama(SummaryOllamaConfig())
-        summary = llm_agent.query(GITHUB_COMMIT_SUMMARY_PROMPT, commit_message="\n".join(results))
+    pass
+    # if not platform:
+    #     raise ValueError("platform must be provided.")
+    # if platform == PlatformEnum.GITHUB:
+    #     with get_db_session() as session:
+    #         github_collect_service = GitHubCollectService(session)
+    #         results = github_collect_service.collect_github_commit(user_id)
+    #
+    #     llm_agent = LLMAgent.create_with_ollama(SummaryOllamaConfig())
+    #     summary = llm_agent.query(GITHUB_COMMIT_SUMMARY_PROMPT, commit_message="\n".join(results))
