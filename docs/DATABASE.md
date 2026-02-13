@@ -102,13 +102,14 @@ Repository는 `Session`을 주입받아 데이터 접근을 캡슐화.
 
 ### GitHubEventRepository
 
-| 메서드                                            | 반환 타입             | 설명             |
-|------------------------------------------------|-------------------|----------------|
-| save(event)                                    | GitHubEvent       | 이벤트 저장         |
-| save_all(events)                               | list[GitHubEvent] | 벌크 저장          |
-| delete_all(events)                             | None              | 벌크 삭제          |
-| find_all_by_user_id_and_target_date(uid, date) | list[GitHubEvent] | 사용자+날짜별 이벤트 조회 |
-| exists_by_event_id(event_id)                   | bool              | 이벤트 ID 존재 여부   |
+| 메서드                                            | 반환 타입             | 설명                            |
+|------------------------------------------------|-------------------|-------------------------------|
+| save(event)                                    | GitHubEvent       | 이벤트 저장                        |
+| save_all(events)                               | list[GitHubEvent] | 벌크 저장                         |
+| delete_all(events)                             | None              | 벌크 삭제                         |
+| find_all_by_user_id(uid)                       | list[GitHubEvent] | 사용자별 이벤트 조회 (target_date ASC) |
+| find_all_by_user_id_and_target_date(uid, date) | list[GitHubEvent] | 사용자+날짜별 이벤트 조회                |
+| exists_by_event_id(event_id)                   | bool              | 이벤트 ID 존재 여부                  |
 
 ## DB 세션 관리
 

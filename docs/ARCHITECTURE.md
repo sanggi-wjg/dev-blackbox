@@ -12,14 +12,14 @@ LLM을 통해 일일 업무 일지를 자동 생성하는 시스템이다.
 │                  Controller Layer                    │
 │  REST API 엔드포인트, DTO 변환, 예외 핸들러 등록       │
 │  UserController, GitHubSecretController,             │
-│  GitHubCollectController                             │
+│  GitHubCollectController, GitHubEventController      │
 └──────────────────────┬──────────────────────────────┘
                        │
 ┌──────────────────────▼──────────────────────────────┐
 │                   Service Layer                      │
 │  비즈니스 로직, 트랜잭션 조율                          │
 │  UserService, GitHubUserSecretService,               │
-│  GitHubCollectService                                │
+│  GitHubCollectService, GitHubEventService            │
 └──────────────────────┬──────────────────────────────┘
                        │
 ┌──────────────────────▼──────────────────────────────┐
@@ -59,6 +59,7 @@ LLM을 통해 일일 업무 일지를 자동 생성하는 시스템이다.
 - `UserService` — 사용자 CRUD
 - `GitHubUserSecretService` — GitHub 인증 정보 관리 (암호화/복호화 포함)
 - `GitHubCollectService` — GitHub 이벤트/커밋 수집 및 DB 저장
+- `GitHubEventService` — GitHub 이벤트 조회
 
 ### `storage/rds/`
 
@@ -132,4 +133,19 @@ POST /collect/github/users/{user_id}
        │
        ▼
   일일 업무 일지 생성
+```
+
+## 이벤트 조회 플로우
+
+```
+GET /github-events/users/{user_id}
+       │
+       ▼
+  GitHubEventService.get_events_by_user_id()
+       │
+       ▼
+  GitHubEventRepository.find_all_by_user_id()
+       │
+       ▼
+  list[GitHubEventResponseDto]               ← 응답
 ```

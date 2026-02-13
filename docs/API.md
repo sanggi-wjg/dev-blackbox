@@ -16,6 +16,7 @@ REST API 엔드포인트 명세.
 | POST   | `/github-secrets`                 | GitHub 시크릿 등록      | 201   |
 | GET    | `/github-secrets/users/{user_id}` | 사용자별 GitHub 시크릿 조회 | 200   |
 | POST   | `/collect/github/users/{user_id}` | GitHub 데이터 수집      | 201   |
+| GET    | `/github-events/users/{user_id}`  | 사용자별 GitHub 이벤트 조회 | 200   |
 
 ## DTO 상세
 
@@ -67,6 +68,26 @@ REST API 엔드포인트 명세.
 |-------------|-------------|:--:|------------------------|
 | user_id     | int         | O  | 사용자 ID                 |
 | target_date | date / null | X  | 수집 대상 날짜 (null: 어제 날짜) |
+
+### GitHub Event
+
+**`GitHubEventResponseDto`** (Response)
+
+| 필드          | 타입          | 설명            |
+|-------------|-------------|---------------|
+| id          | int         | 이벤트 ID        |
+| event_id    | str         | GitHub 이벤트 ID |
+| target_date | date        | 수집 대상 날짜      |
+| event       | dict        | 이벤트 원본 데이터    |
+| commit      | dict / null | 커밋 상세 데이터     |
+
+**`MinimumGitHubEventResponseDto`** (Response — 수집 API 응답용)
+
+| 필드          | 타입   | 설명            |
+|-------------|------|---------------|
+| id          | int  | 이벤트 ID        |
+| event_id    | str  | GitHub 이벤트 ID |
+| target_date | date | 수집 대상 날짜      |
 
 ## 커스텀 타입
 

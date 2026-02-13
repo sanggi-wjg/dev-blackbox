@@ -23,12 +23,6 @@ class GitHubCollectService:
         self.github_event_repository = GitHubEventRepository(session)
         self.secret_service = GitHubUserSecretService(session)
 
-    def remove_github_events(self, user_id: int, target_date: date):
-        github_events = self.github_event_repository.find_all_by_user_id_and_target_date(
-            user_id, target_date
-        )
-        self.github_event_repository.delete_all(github_events)
-
     def collect_github_events(
         self, user_id: int, target_date: date | None = None
     ) -> list[GitHubEvent]:
@@ -68,6 +62,12 @@ class GitHubCollectService:
             )
 
         return self.github_event_repository.save_all(events)
+
+    def remove_github_events(self, user_id: int, target_date: date):
+        github_events = self.github_event_repository.find_all_by_user_id_and_target_date(
+            user_id, target_date
+        )
+        self.github_event_repository.delete_all(github_events)
 
     def get_github_events(
         self,

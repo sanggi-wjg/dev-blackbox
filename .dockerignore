@@ -1,0 +1,16 @@
+/docs
+/docker
+
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.env
+.env.template
+.git/
+.gitignore
+.venv/
+.claude/
+.github/
+
+*.md
