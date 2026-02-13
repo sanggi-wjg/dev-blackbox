@@ -41,7 +41,9 @@ class GithubClient:
             logging.warning(f"Failed to fetch events for {username}.")
             raise
 
-    def fetch_events_by_date(self, username: str, tz_info: ZoneInfo, timedelta_days: int = 0) -> GithubEventList:
+    def fetch_events_by_date(
+        self, username: str, tz_info: ZoneInfo, timedelta_days: int = 0
+    ) -> GithubEventList:
         target_date = datetime.now(tz_info).date() - timedelta(days=timedelta_days)
 
         result = []
@@ -62,7 +64,9 @@ class GithubClient:
 
             page += 1
             if page > 10:
-                logging.warning(f"Reached maximum page {page} for date {target_date} in github events.")
+                logging.warning(
+                    f"Reached maximum page {page} for date {target_date} in github events."
+                )
                 break
 
         return GithubEventList(events=result)

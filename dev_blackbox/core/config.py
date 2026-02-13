@@ -9,6 +9,25 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 _PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
+class PostgresDatabaseSecrets(BaseModel):
+    debug: bool = True
+    host: str
+    port: str
+    database: str
+    user: str
+    password: str
+    pool_size: int = 5
+    max_overflow: int = 10
+    pool_timeout: int = 60
+    pool_recycle: int = 1800
+    pool_pre_ping: bool = True
+    isolation_level: str = "REPEATABLE READ"
+
+    @property
+    def dsn(self) -> str:
+        return f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}"
+
+
 class GithubSecrets(BaseModel):
     enabled: bool = False
     personal_access_token: str | None = None
@@ -22,7 +41,9 @@ class GithubSecrets(BaseModel):
             return self
 
         if not self.personal_access_token:
-            raise ValueError("⚙️ When GITHUB__ENABLED=True, `GITHUB__PERSONAL_ACCESS_TOKEN` must be set.")
+            raise ValueError(
+                "⚙️ When GITHUB__ENABLED=True, `GITHUB__PERSONAL_ACCESS_TOKEN` must be set."
+            )
         if not self.username:
             raise ValueError("⚙️ When GITHUB__ENABLED=True, `GITHUB__USERNAME` must be set.")
         return self
@@ -37,6 +58,7 @@ class Settings(BaseSettings):
     )
 
     timezone: str = "Asia/Seoul"
+    database: PostgresDatabaseSecrets
     github: GithubSecrets = Field(default_factory=GithubSecrets)
 
     @property
@@ -49,10 +71,12 @@ class Settings(BaseSettings):
         try:
             ZoneInfo(v)
         except (ZoneInfoNotFoundError, KeyError) as _:
-            raise ValueError(f"🌍 '{v}' is not a valid timezone. (e.g., UTC, Asia/Seoul, US/Eastern)")
+            raise ValueError(
+                f"🌍 '{v}' is not a valid timezone. (e.g., UTC, Asia/Seoul, US/Eastern)"
+            )
         return v
 
 
 @lru_cache
 def get_settings() -> Settings:
-    return Settings()
+    return Settings()  # type: ignore[call-arg]
