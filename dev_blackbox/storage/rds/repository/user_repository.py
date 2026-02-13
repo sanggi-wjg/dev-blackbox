@@ -20,3 +20,7 @@ class UserRepository:
     def find_all(self) -> list[User]:
         stmt = select(User).where(User.is_deleted == False).order_by(User.id)
         return list(self.session.scalars(stmt).all())
+
+    def is_exist(self, user_id: int) -> bool:
+        stmt = select(User.id).where(User.id == user_id, User.is_deleted == False)
+        return self.session.scalar(stmt) is not None

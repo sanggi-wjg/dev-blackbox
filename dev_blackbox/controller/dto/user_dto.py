@@ -2,9 +2,11 @@ from datetime import datetime
 
 from pydantic import BaseModel, EmailStr
 
+from dev_blackbox.core.types import NotBlankStr
+
 
 class CreateUserRequestDto(BaseModel):
-    name: str
+    name: NotBlankStr
     email: EmailStr
 
 

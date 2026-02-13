@@ -1,9 +1,9 @@
 import os
 from functools import lru_cache
-from typing import Self
+from typing import Literal
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from pydantic import BaseModel, Field, model_validator, field_validator
+from pydantic import BaseModel, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -21,32 +21,16 @@ class PostgresDatabaseSecrets(BaseModel):
     pool_timeout: int = 60
     pool_recycle: int = 1800
     pool_pre_ping: bool = True
-    isolation_level: str = "REPEATABLE READ"
+    isolation_level: Literal["REPEATABLE READ"] = "REPEATABLE READ"
 
     @property
     def dsn(self) -> str:
         return f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}"
 
 
-class GithubSecrets(BaseModel):
-    enabled: bool = False
-    personal_access_token: str | None = None
-    username: str | None = None
-
-    @model_validator(mode='after')
-    def validate_model(self) -> Self:
-        if not self.enabled:
-            self.personal_access_token = None
-            self.username = None
-            return self
-
-        if not self.personal_access_token:
-            raise ValueError(
-                "⚙️ When GITHUB__ENABLED=True, `GITHUB__PERSONAL_ACCESS_TOKEN` must be set."
-            )
-        if not self.username:
-            raise ValueError("⚙️ When GITHUB__ENABLED=True, `GITHUB__USERNAME` must be set.")
-        return self
+class EncryptionSecrets(BaseModel):
+    key: str
+    pepper: str
 
 
 class Settings(BaseSettings):
@@ -57,13 +41,8 @@ class Settings(BaseSettings):
         nested_model_default_partial_update=False,
     )
 
-    timezone: str = "Asia/Seoul"
     database: PostgresDatabaseSecrets
-    github: GithubSecrets = Field(default_factory=GithubSecrets)
-
-    @property
-    def tz_info(self) -> ZoneInfo:
-        return ZoneInfo(self.timezone)
+    encryption: EncryptionSecrets
 
     @field_validator("timezone")
     @classmethod

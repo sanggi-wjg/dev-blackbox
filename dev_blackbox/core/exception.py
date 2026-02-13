@@ -23,3 +23,9 @@ class UserByNameNotFoundException(EntityNotFoundException):
 
     def __init__(self, username: str):
         super().__init__(entity_name="User", identifier=username)
+
+
+class GitHubSecretByUserIdNotFoundException(EntityNotFoundException):
+
+    def __init__(self, user_id: int):
+        super().__init__(entity_name="GitHubUserSecret", identifier=user_id)
