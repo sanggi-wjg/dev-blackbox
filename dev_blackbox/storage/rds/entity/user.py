@@ -3,6 +3,7 @@ from zoneinfo import ZoneInfo
 from sqlalchemy import BigInteger, String
 from sqlalchemy.orm import Mapped, mapped_column
 
+from dev_blackbox.storage.rds.entity import GitHubUserSecret
 from dev_blackbox.storage.rds.entity.base import SoftDeleteMixin, Base
 
 
@@ -13,6 +14,12 @@ class User(SoftDeleteMixin, Base):
     name: Mapped[str] = mapped_column(String(100), nullable=False, comment="사용자 이름")
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, comment="이메일")
     timezone: Mapped[str] = mapped_column(String(50), nullable=False, default="Asia/Seoul")
+
+    github_user_secrets: Mapped[list["GitHubUserSecret"]] = mapped_column(
+        "GithubUserSecret",
+        back_populates="user",
+        order_by="GitHubUserSecret.id",
+    )
 
     def __repr__(self) -> str:
         return f"<User(name={self.name}, email={self.email})>"

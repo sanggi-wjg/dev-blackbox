@@ -1,6 +1,6 @@
 from datetime import datetime, UTC
 
-from sqlalchemy import BigInteger, DateTime, String
+from sqlalchemy import BigInteger, DateTime, String, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from dev_blackbox.storage.rds.entity import User
@@ -16,7 +16,11 @@ class GitHubUserSecret(SoftDeleteMixin, Base):
     is_active: Mapped[bool] = mapped_column(default=True)
     deactivate_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
-    user_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    user_id: Mapped[int] = mapped_column(
+        BigInteger,
+        ForeignKey("users.id", ondelete="RESTRICT"),
+        nullable=False,
+    )
     user: Mapped["User"] = relationship("User", back_populates="github_user_secrets")
 
     def __repr__(self) -> str:

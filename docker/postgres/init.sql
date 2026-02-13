@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS users
     created_at TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     is_deleted BOOLEAN      NOT NULL DEFAULT FALSE,
-    deleted_at TIMESTAMPTZ           DEFAULT '9999-12-31 14:59:59+00',
+    deleted_at TIMESTAMPTZ  NOT NULL DEFAULT '9999-12-31 14:59:59+00',
 
     CONSTRAINT uq_users_email UNIQUE (email)
 );
@@ -50,7 +50,7 @@ CREATE TABLE IF NOT EXISTS github_user_secret
     created_at            TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     updated_at            TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     is_deleted            BOOLEAN      NOT NULL DEFAULT FALSE,
-    deleted_at            TIMESTAMPTZ           DEFAULT '9999-12-31 14:59:59+00',
+    deleted_at            TIMESTAMPTZ  NOT NULL DEFAULT '9999-12-31 14:59:59+00',
 
     CONSTRAINT fk_github_user_secret_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE RESTRICT
 );

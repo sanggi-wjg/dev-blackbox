@@ -6,7 +6,7 @@ import httpx
 
 from dev_blackbox.client.model.github_model import GithubEventList, GithubCommit
 
-logging = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class GithubClient:
@@ -38,7 +38,7 @@ class GithubClient:
                 response_json = response.json()
                 return GithubEventList.model_validate({"events": response_json})
         except httpx.HTTPError:
-            logging.warning(f"Failed to fetch events for {username}.")
+            logger.warning(f"Failed to fetch events for {username}.")
             raise
 
     def fetch_events_by_date(
@@ -51,7 +51,7 @@ class GithubClient:
 
         while True:
             github_events = self.fetch_events(username, page=page, per_page=100)
-            if not github_events:
+            if not github_events.events:
                 break
 
             for event in github_events.events:
@@ -64,7 +64,7 @@ class GithubClient:
 
             page += 1
             if page > 10:
-                logging.warning(
+                logger.warning(
                     f"Reached maximum page {page} for date {target_date} in github events."
                 )
                 break
@@ -86,5 +86,5 @@ class GithubClient:
                 response_json = response.json()
                 return GithubCommit.model_validate(response_json)
         except httpx.HTTPError:
-            logging.warning(f"Failed to fetch commit {sha} in {repository_url}.")
+            logger.warning(f"Failed to fetch commit {sha} in {repository_url}.")
             raise

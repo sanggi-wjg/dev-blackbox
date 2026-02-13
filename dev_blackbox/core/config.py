@@ -1,9 +1,8 @@
 import os
 from functools import lru_cache
 from typing import Literal
-from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -43,17 +42,6 @@ class Settings(BaseSettings):
 
     database: PostgresDatabaseSecrets
     encryption: EncryptionSecrets
-
-    @field_validator("timezone")
-    @classmethod
-    def _validate_timezone(cls, v: str) -> str:
-        try:
-            ZoneInfo(v)
-        except (ZoneInfoNotFoundError, KeyError) as _:
-            raise ValueError(
-                f"🌍 '{v}' is not a valid timezone. (e.g., UTC, Asia/Seoul, US/Eastern)"
-            )
-        return v
 
 
 @lru_cache

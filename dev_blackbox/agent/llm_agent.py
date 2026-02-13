@@ -14,11 +14,13 @@ class LLMAgent:
         cls,
         config: OllamaConfig = OllamaConfig(),
     ) -> LLMAgent:
+        # todo rds에 설정 값 저장하여 사용 하도록
         return LLMAgent(
             llm=config.create_llm(),
         )
 
     def query(self, prompt: PromptTemplate, **kwargs) -> str:
+        # todo rds에 프롬프트 저장하여 커스텀하게 사용 하도록
         formatted = prompt.format(**kwargs)
         response = self._llm.complete(formatted)
         return response.text.strip()

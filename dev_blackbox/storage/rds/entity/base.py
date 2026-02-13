@@ -25,7 +25,7 @@ class SoftDeleteMixin:
         DateTime(timezone=True),
         server_default=text("'9999-12-31 14:59:59+00'"),
         default=NOT_DELETED,
-        nullable=True,
+        nullable=False,
     )
     is_deleted: Mapped[bool] = mapped_column(default=False)
 

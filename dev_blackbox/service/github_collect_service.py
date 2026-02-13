@@ -32,24 +32,19 @@ class GitHubCollectService:
             tz_info=user.tz_info,
             timedelta_days=1,
         )
-        # fixme 테스트 중이라 3개 제한 해놓음
-        events = [event for event in events.events if event.type in self.COLLECT_TYPES][:3]
+
+        events = [event for event in events.events if event.type in self.COLLECT_TYPES]
         if not events:
             logger.warning(f"No events found for {username}.")
             return []
 
         for event in events:
-            # todo: event_type 별로 따로 parse 로직 구현 하면 좋을 듯?
+            # 이후 event_type 추기사 별도 parse 로직 구현 필요
+            # 현재는 우선 PushEvent만 진행
             if event.is_type_push_event():
                 payload = event.get_push_event_payload()
-                commit = github_client.fetch_commit(
-                    repository_url=event.repo.url, sha=payload.head
-                )
+                commit = github_client.fetch_commit(repository_url=event.repo.url, sha=payload.head)
                 commit_info.append(commit.detail_text)
-            # 우선 PushEvent만 진행해보고 이후 판단
-            # if event.is_type_pull_request_event():
-            #     payload = event.get_pull_request_event_payload()
-            #     print(payload)
 
         if not commit_info:
             logger.warning(f"No commit details found for {username}.")

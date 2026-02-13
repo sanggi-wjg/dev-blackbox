@@ -51,10 +51,16 @@ class GithubPushEventPayload(BaseModel):
     before: str
 
 
-class GithubPullRequestEventPayload(BaseModel):
-    action: str
-    number: int
-    pull_request: GithubPullRequest
+class GithubRepository(BaseModel):
+    id: int
+    name: str
+    url: str
+
+
+class GithubPullRequestInfo(BaseModel):
+    ref: str
+    sha: str
+    repo: GithubRepository
 
 
 class GithubPullRequest(BaseModel):
@@ -65,16 +71,35 @@ class GithubPullRequest(BaseModel):
     base: GithubPullRequestInfo
 
 
-class GithubPullRequestInfo(BaseModel):
-    ref: str
-    sha: str
-    repo: GithubRepository
+class GithubPullRequestEventPayload(BaseModel):
+    action: str
+    number: int
+    pull_request: GithubPullRequest
 
 
-class GithubRepository(BaseModel):
-    id: int
-    name: str
+class GithubCommitCommit(BaseModel):
+    author: dict
+    committer: dict
+    message: str
     url: str
+
+
+class GithubCommitStats(BaseModel):
+    total: int
+    additions: int
+    deletions: int
+
+
+class GithubCommitFile(BaseModel):
+    sha: str
+    status: str
+    filename: str
+    additions: int
+    deletions: int
+    changes: int
+    blob_url: str
+    raw_url: str
+    patch: str | None = None
 
 
 class GithubCommit(BaseModel):
@@ -106,28 +131,3 @@ class GithubCommit(BaseModel):
             detail += "\n\n"
 
         return f"{self.summary_text}\n\n{detail}"
-
-
-class GithubCommitCommit(BaseModel):
-    author: dict
-    committer: dict
-    message: str
-    url: str
-
-
-class GithubCommitStats(BaseModel):
-    total: int
-    additions: int
-    deletions: int
-
-
-class GithubCommitFile(BaseModel):
-    sha: str
-    status: str
-    filename: str
-    additions: int
-    deletions: int
-    changes: int
-    blob_url: str
-    raw_url: str
-    patch: str | None = None
