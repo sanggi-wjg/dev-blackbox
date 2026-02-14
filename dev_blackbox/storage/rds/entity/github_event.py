@@ -1,4 +1,5 @@
 from datetime import date
+from functools import cached_property
 
 from sqlalchemy import BigInteger, Date, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import JSONB
@@ -49,8 +50,12 @@ class GitHubEvent(Base):
             commit=commit.model_dump(mode="json") if commit else None,
         )
 
-    def get_event(self) -> GithubEventModel:
+    @cached_property
+    def event_model(self) -> GithubEventModel:
         return GithubEventModel.model_validate(self.event)
 
-    def get_commit(self) -> GithubCommitModel:
+    @cached_property
+    def commit_model(self) -> GithubCommitModel | None:
+        if self.commit is None:
+            return None
         return GithubCommitModel.model_validate(self.commit)

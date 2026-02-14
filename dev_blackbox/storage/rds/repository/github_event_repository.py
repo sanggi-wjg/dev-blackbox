@@ -1,6 +1,6 @@
 from datetime import date
 
-from sqlalchemy import select
+from sqlalchemy import select, delete
 from sqlalchemy.orm import Session
 
 from dev_blackbox.storage.rds.entity.github_event import GitHubEvent
@@ -46,6 +46,14 @@ class GitHubEventRepository:
             .order_by(GitHubEvent.id.asc())
         )
         return list(self.session.scalars(stmt).all())
+
+    def delete_by_user_id_and_target_date(self, user_id: int, target_date: date) -> None:
+        stmt = delete(GitHubEvent).where(
+            GitHubEvent.user_id == user_id,
+            GitHubEvent.target_date == target_date,
+        )
+        self.session.execute(stmt)
+        self.session.flush()
 
     def exists_by_event_id(self, event_id: str) -> bool:
         stmt = select(GitHubEvent.id).where(GitHubEvent.event_id == event_id)

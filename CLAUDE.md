@@ -63,6 +63,7 @@ dev_blackbox/
 - @docs/API.md — 엔드포인트, DTO, 예외 처리
 - @docs/DATABASE.md — Entity, Repository, 세션 관리
 - @docs/INFRASTRUCTURE.md — Docker, PostgreSQL, Ollama, 환경 설정
+- @docs/TEST.md — 테스트 구성, 작성 가이드, 컨벤션
 
 ## Key Conventions
 

@@ -1,8 +1,8 @@
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from dev_blackbox.storage.rds.condition import UserSearchCondition
 from dev_blackbox.storage.rds.entity.user import User
-from dev_blackbox.storage.rds.model.user_search_condition import UserSearchCondition
 
 
 class UserRepository:

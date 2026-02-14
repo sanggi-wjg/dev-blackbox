@@ -1,10 +1,11 @@
 from datetime import date
+from functools import cached_property
 from typing import Literal
 from zoneinfo import ZoneInfo
 
 from pydantic import BaseModel
 
-from dev_blackbox.datetime_util import get_date_from_iso_format
+from dev_blackbox.util.datetime_util import get_date_from_iso_format
 
 
 class GithubEventModel(BaseModel):
@@ -112,15 +113,15 @@ class GithubCommitModel(BaseModel):
     stats: GithubCommitStatsModel
     files: list[GithubCommitFileModel]
 
-    @property
-    def summary_text(self) -> str:
+    @cached_property
+    def commit_summary_text(self) -> str:
         return (
             f"commit message: {self.commit.message}\n"
             f"stats: +{self.stats.additions}/-{self.stats.deletions} ({self.stats.total} changes)"
         )
 
-    @property
-    def detail_text(self) -> str:
+    @cached_property
+    def commit_detail_text(self) -> str:
         detail = ""
 
         for f in self.files:
@@ -130,4 +131,4 @@ class GithubCommitModel(BaseModel):
 
             detail += "\n\n"
 
-        return f"{self.summary_text}\n\n{detail}"
+        return f"{self.commit_summary_text}\n\n{detail}"

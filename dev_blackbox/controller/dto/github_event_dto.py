@@ -10,8 +10,12 @@ class GitHubEventResponseDto(BaseModel):
     event: dict
     commit: dict | None
 
+    model_config = {"from_attributes": True}
+
 
 class MinimumGitHubEventResponseDto(BaseModel):
     id: int
     event_id: str
     target_date: date
+
+    model_config = {"from_attributes": True}

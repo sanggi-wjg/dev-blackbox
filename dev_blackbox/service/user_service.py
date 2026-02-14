@@ -2,8 +2,8 @@ from sqlalchemy.orm import Session
 
 from dev_blackbox.controller.dto.user_dto import CreateUserRequestDto
 from dev_blackbox.core.exception import UserByIdNotFoundException
+from dev_blackbox.storage.rds.condition import UserSearchCondition
 from dev_blackbox.storage.rds.entity.user import User
-from dev_blackbox.storage.rds.model.user_search_condition import UserSearchCondition
 from dev_blackbox.storage.rds.repository import UserRepository
 
 
