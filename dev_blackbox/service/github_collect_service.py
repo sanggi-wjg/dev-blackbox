@@ -23,13 +23,9 @@ class GitHubCollectService:
         self.github_event_repository = GitHubEventRepository(session)
         self.secret_service = GitHubUserSecretService(session)
 
-    def remove_github_events(self, user_id: int, target_date: date):
-        github_events = self.github_event_repository.find_all_by_user_id_and_target_date(
-            user_id, target_date
-        )
-        self.github_event_repository.delete_all(github_events)
-
-    def collect_github_events(self, user_id: int, target_date: date | None = None):
+    def collect_github_events(
+        self, user_id: int, target_date: date | None = None
+    ) -> list[GitHubEvent]:
         user = self.user_repository.find_by_id(user_id)
         if user is None:
             raise UserByIdNotFoundException(user_id)
@@ -65,7 +61,13 @@ class GitHubCollectService:
                 ),
             )
 
-        self.github_event_repository.save_all(events)
+        return self.github_event_repository.save_all(events)
+
+    def remove_github_events(self, user_id: int, target_date: date):
+        github_events = self.github_event_repository.find_all_by_user_id_and_target_date(
+            user_id, target_date
+        )
+        self.github_event_repository.delete_all(github_events)
 
     def get_github_events(
         self,
@@ -91,7 +93,9 @@ class GitHubCollectService:
         if not github_events:
             logger.warning(f"No events found for {github_username}. (user_id: {user.id})")
 
-        logger.info(f"Collected {len(github_events)} events for {github_username}. (user_id: {user.id})")
+        logger.info(
+            f"Collected {len(github_events)} events for {github_username}. (user_id: {user.id})"
+        )
         return github_events
 
     def get_github_commit_by_event(

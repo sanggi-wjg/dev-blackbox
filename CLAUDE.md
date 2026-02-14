@@ -23,6 +23,9 @@ python main.py
 # DB 실행
 docker compose -f docker/docker-compose.yaml up -d
 
+# 테스트
+poetry run pytest
+
 # 포맷팅
 poetry run black .
 
@@ -55,7 +58,11 @@ dev_blackbox/
 └── core/                        # 설정, DB, 예외, Enum
 ```
 
-상세 아키텍처 문서: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+상세 문서:
+- @docs/ARCHITECTURE.md — 시스템 구조, 레이어, 파이프라인
+- @docs/API.md — 엔드포인트, DTO, 예외 처리
+- @docs/DATABASE.md — Entity, Repository, 세션 관리
+- @docs/INFRASTRUCTURE.md — Docker, PostgreSQL, Ollama, 환경 설정
 
 ## Key Conventions
 
@@ -90,3 +97,11 @@ dev_blackbox/
 
 - `.env` 파일 (Pydantic Settings, 구분자: `__`)
 - 민감 정보는 `.env`에만 보관, `.env.template` 참고
+
+## Gotchas
+
+- **PAT 암호화 필수**: GitHub Personal Access Token은 반드시 `EncryptService`로 암호화 후 DB 저장. 평문 저장 금지
+- **타임존 검증**: 사용자 timezone 값은 `ZoneInfo`로 검증 필수 — 잘못된 값 입력 시 런타임 에러 발생
+- **REPEATABLE READ**: DB 격리 수준이 `REPEATABLE READ`이므로 동일 트랜잭션 내에서 다른 트랜잭션의 커밋을 볼 수 없음
+- **SoftDelete 주의**: `find_by_id()` 등 Repository 조회 메서드는 `is_deleted=False` 조건을 포함해야 함
+- **날짜 기본값**: `target_date`가 null이면 유저 타임존 기준 어제 날짜로 자동 설정

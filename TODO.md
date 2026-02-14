@@ -5,8 +5,9 @@
 ### GitHub
 - [x] Event 수집 (PushEvent, PullRequestEvent)
 - [x] Commit 상세 조회
+- [x] 수집 데이터 DB 저장 (GitHubEvent 엔티티 + JSONB)
+- [x] 사용자별 GitHub PAT 암호화 저장 (GitHubUserSecret + AES-256-GCM)
 - [ ] PullRequestEvent 처리 로직 구현
-- [ ] 수집 데이터 DB 저장
 
 ### Jira
 - [ ] Jira Client 구현
@@ -21,8 +22,9 @@
 - [ ] 코딩 활동 로그 수집
 
 ## 2. LLM 요약
-- [ ] LLM 연동 (프롬프트 설계 + API 호출)
-- [ ] 수집 데이터 → 요약 파이프라인
+- [x] LLM 연동 (LLMAgent + OllamaConfig + LlamaIndex)
+- [x] 프롬프트 설계 (GITHUB_COMMIT_SUMMARY_PROMPT)
+- [ ] 수집 데이터 → 요약 파이프라인 연결 (collect_task 통합)
 
 ## 3. 일일 업무 일지 생성
 - [ ] 일지 포맷 정의

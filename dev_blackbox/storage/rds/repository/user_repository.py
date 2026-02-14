@@ -2,6 +2,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from dev_blackbox.storage.rds.entity.user import User
+from dev_blackbox.storage.rds.model.user_search_condition import UserSearchCondition
 
 
 class UserRepository:
@@ -20,6 +21,10 @@ class UserRepository:
 
     def find_all(self) -> list[User]:
         stmt = select(User).where(User.is_deleted == False).order_by(User.id)
+        return list(self.session.scalars(stmt).all())
+
+    def find_all_by_condition(self, condition: UserSearchCondition) -> list[User]:
+        stmt = select(User).where(**condition.model_dump()).order_by(User.id)
         return list(self.session.scalars(stmt).all())
 
     def is_exist(self, user_id: int) -> bool:
