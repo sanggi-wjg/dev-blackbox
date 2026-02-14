@@ -13,12 +13,12 @@ from dev_blackbox.controller.github_collect_controller import router as github_c
 from dev_blackbox.controller.github_event_controller import router as github_event_router
 from dev_blackbox.controller.github_user_secret_controller import router as github_secret_router
 from dev_blackbox.controller.health_controller import router as health_router
-from dev_blackbox.controller.home_contoller import router as home_router
+from dev_blackbox.controller.home_controller import router as home_router
 from dev_blackbox.controller.user_controller import router as user_router
 from dev_blackbox.core.config import get_settings
 from dev_blackbox.core.database import engine
 from dev_blackbox.core.middleware import RequestIdMiddleware
-from dev_blackbox.task.background_scheduler import scheduler
+from dev_blackbox.core.background_scheduler import scheduler
 
 
 @asynccontextmanager

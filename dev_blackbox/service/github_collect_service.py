@@ -5,9 +5,10 @@ from sqlalchemy.orm import Session
 
 from dev_blackbox.client.github_client import GithubClient
 from dev_blackbox.client.model.github_model import GithubCommitModel, GithubEventModel
+from dev_blackbox.core.encrypt import get_encrypt_service
 from dev_blackbox.core.exception import UserByIdNotFoundException
-from dev_blackbox.service.github_user_secret_service import GitHubUserSecretService
 from dev_blackbox.storage.rds.entity import User, GitHubEvent
+from dev_blackbox.storage.rds.repository import GitHubUserSecretRepository
 from dev_blackbox.storage.rds.repository.github_event_repository import GitHubEventRepository
 from dev_blackbox.storage.rds.repository.user_repository import UserRepository
 
@@ -21,9 +22,10 @@ class GitHubCollectService:
         self.session = session
         self.user_repository = UserRepository(session)
         self.github_event_repository = GitHubEventRepository(session)
-        self.secret_service = GitHubUserSecretService(session)
+        self.github_user_secret_repository = GitHubUserSecretRepository(session)
+        self.encrypt_service = get_encrypt_service()
 
-    def collect_github_events(
+    def save_github_events(
         self, user_id: int, target_date: date | None = None
     ) -> list[GitHubEvent]:
         user = self.user_repository.find_by_id(user_id)
@@ -34,15 +36,18 @@ class GitHubCollectService:
         if target_date is None:
             target_date = datetime.now(user.tz_info).date() - timedelta(days=1)
 
-        # 기존 데이터 삭제 후 갱신하도록 (우선은?)
-        self.remove_github_events(user_id=user.id, target_date=target_date)
+        # 기존 데이터 삭제 후 갱신하도록
+        self.github_event_repository.delete_by_user_id_and_target_date(user_id, target_date)
 
-        github_user_secret = self.secret_service.get_secret_by_user_id(user_id=user.id)
-        decrypted_token = self.secret_service.get_decrypted_token_by_secret(github_user_secret)
+        github_user_secret = self.github_user_secret_repository.find_by_user_id(user_id=user.id)
+        if github_user_secret is None:
+            logger.warning(f"GitHub User Secret not found. (user_id: {user.id})")
+            return []
+
+        decrypted_token = self.encrypt_service.decrypt(github_user_secret.personal_access_token)
         github_client = GithubClient.create(token=decrypted_token)
 
         events = []
-
         github_events = self.get_github_events(
             github_client=github_client,
             user=user,
@@ -62,12 +67,6 @@ class GitHubCollectService:
             )
 
         return self.github_event_repository.save_all(events)
-
-    def remove_github_events(self, user_id: int, target_date: date):
-        github_events = self.github_event_repository.find_all_by_user_id_and_target_date(
-            user_id, target_date
-        )
-        self.github_event_repository.delete_all(github_events)
 
     def get_github_events(
         self,

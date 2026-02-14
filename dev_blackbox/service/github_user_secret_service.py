@@ -38,7 +38,4 @@ class GitHubUserSecretService:
         return secret
 
     def get_decrypted_token_by_secret(self, secret: GitHubUserSecret) -> str:
-        """
-        decrypted_token
-        """
         return self.encrypt_service.decrypt(secret.personal_access_token)

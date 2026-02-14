@@ -7,3 +7,5 @@ gen
 
 # Docker
 docker/postgres/data/
+playground*
+

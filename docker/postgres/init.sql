@@ -36,6 +36,12 @@ EXECUTE FUNCTION update_updated_at_column();
 CREATE INDEX idx_users_001 ON users (email);
 CREATE INDEX idx_users_002 ON users (created_at DESC);
 
+COMMENT ON TABLE users IS '사용자 테이블';
+COMMENT ON COLUMN users.id IS '사용자 ID';
+COMMENT ON COLUMN users.name IS '사용자 이름';
+COMMENT ON COLUMN users.email IS '이메일 (UNIQUE)';
+COMMENT ON COLUMN users.timezone IS '타임존 (ZoneInfo 검증)';
+
 
 -- github_user_secret 테이블
 CREATE TABLE IF NOT EXISTS github_user_secret
@@ -64,20 +70,27 @@ EXECUTE FUNCTION update_updated_at_column();
 CREATE INDEX idx_github_user_secret_001 ON github_user_secret (user_id);
 CREATE INDEX idx_github_user_secret_002 ON github_user_secret (created_at DESC);
 
+COMMENT ON TABLE github_user_secret IS 'GitHub 인증 정보 테이블';
+COMMENT ON COLUMN github_user_secret.user_id IS '사용자 FK';
+COMMENT ON COLUMN github_user_secret.username IS 'GitHub 사용자명';
+COMMENT ON COLUMN github_user_secret.personal_access_token IS 'GitHub PAT (AES-256-GCM 암호화 저장)';
+COMMENT ON COLUMN github_user_secret.is_active IS '활성 상태';
+COMMENT ON COLUMN github_user_secret.deactivate_at IS '비활성화 시각';
+
 
 -- github_event 테이블 (GitHub 이벤트 + 커밋 수집 데이터)
 CREATE TABLE IF NOT EXISTS github_event
 (
     id                    BIGSERIAL PRIMARY KEY,
-    user_id               BIGINT      NOT NULL,
-    github_user_secret_id INT         NOT NULL,
+    user_id               BIGINT       NOT NULL,
+    github_user_secret_id INT          NOT NULL,
     event_id              VARCHAR(100) NOT NULL,
-    target_date           DATE        NOT NULL,
-    event                 JSONB       NOT NULL,
-    commit                JSONB       NULL,
+    target_date           DATE         NOT NULL,
+    event                 JSONB        NOT NULL,
+    commit                JSONB        NULL,
 
-    created_at            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_at            TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at            TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
 
     CONSTRAINT fk_github_event_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE RESTRICT,
     CONSTRAINT fk_github_event_secret FOREIGN KEY (github_user_secret_id) REFERENCES github_user_secret (id) ON DELETE RESTRICT,
@@ -94,3 +107,89 @@ EXECUTE FUNCTION update_updated_at_column();
 CREATE INDEX idx_github_event_001 ON github_event (user_id, target_date);
 CREATE INDEX idx_github_event_002 ON github_event (target_date);
 CREATE INDEX idx_github_event_003 ON github_event (created_at DESC);
+
+COMMENT ON TABLE github_event IS 'GitHub 이벤트 + 커밋 수집 데이터';
+COMMENT ON COLUMN github_event.user_id IS '사용자 FK';
+COMMENT ON COLUMN github_event.github_user_secret_id IS 'GitHub 인증 정보 FK';
+COMMENT ON COLUMN github_event.event_id IS 'GitHub 이벤트 ID (UNIQUE)';
+COMMENT ON COLUMN github_event.target_date IS '수집 대상 날짜';
+COMMENT ON COLUMN github_event.event IS '이벤트 원본 데이터 (JSONB)';
+COMMENT ON COLUMN github_event.commit IS '커밋 상세 데이터 (JSONB)';
+
+
+-- platform_summary 테이블 (플랫폼별 LLM 요약)
+CREATE TABLE IF NOT EXISTS platform_summary
+(
+    id          BIGSERIAL PRIMARY KEY,
+    user_id     BIGINT       NOT NULL,
+    target_date DATE         NOT NULL,
+    platform    VARCHAR(20)  NOT NULL,
+    summary     TEXT         NOT NULL DEFAULT '',
+    embedding   vector(1024) NULL,
+    model_name  VARCHAR(100) NOT NULL,
+    prompt      TEXT         NOT NULL,
+
+    created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT fk_platform_summary_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE RESTRICT,
+
+    CONSTRAINT uq_platform_summary_user_date_platform UNIQUE (user_id, target_date, platform)
+);
+
+CREATE TRIGGER tr_platform_summary_updated_at
+    BEFORE UPDATE
+    ON platform_summary
+    FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+CREATE INDEX idx_platform_summary_001 ON platform_summary (user_id, target_date);
+CREATE INDEX idx_platform_summary_002 ON platform_summary (target_date);
+CREATE INDEX idx_platform_summary_003 ON platform_summary (created_at DESC);
+
+COMMENT ON TABLE platform_summary IS '플랫폼별 LLM 요약';
+COMMENT ON COLUMN platform_summary.user_id IS '사용자 FK';
+COMMENT ON COLUMN platform_summary.target_date IS '요약 대상 날짜';
+COMMENT ON COLUMN platform_summary.platform IS '플랫폼 구분 (GITHUB, JIRA, SLACK 등)';
+COMMENT ON COLUMN platform_summary.summary IS 'LLM 생성 요약 텍스트';
+COMMENT ON COLUMN platform_summary.embedding IS '요약 임베딩 벡터 (1024차원)';
+COMMENT ON COLUMN platform_summary.model_name IS '사용 LLM 모델명';
+COMMENT ON COLUMN platform_summary.prompt IS '요약 생성에 사용된 프롬프트';
+
+
+-- daily_summary 테이블 (통합 일일 요약)
+CREATE TABLE IF NOT EXISTS daily_summary
+(
+    id          BIGSERIAL PRIMARY KEY,
+    user_id     BIGINT       NOT NULL,
+    target_date DATE         NOT NULL,
+    summary     TEXT         NOT NULL,
+    embedding   vector(1024) NULL,
+    model_name  VARCHAR(100) NOT NULL,
+    prompt      TEXT         NOT NULL,
+
+    created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT fk_daily_summary_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE RESTRICT,
+
+    CONSTRAINT uq_daily_summary_user_date UNIQUE (user_id, target_date)
+);
+
+CREATE TRIGGER tr_daily_summary_updated_at
+    BEFORE UPDATE
+    ON daily_summary
+    FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+CREATE INDEX idx_daily_summary_001 ON daily_summary (user_id, target_date);
+CREATE INDEX idx_daily_summary_002 ON daily_summary (target_date);
+CREATE INDEX idx_daily_summary_004 ON daily_summary (created_at DESC);
+
+COMMENT ON TABLE daily_summary IS '통합 일일 업무 요약';
+COMMENT ON COLUMN daily_summary.user_id IS '사용자 FK';
+COMMENT ON COLUMN daily_summary.target_date IS '요약 대상 날짜';
+COMMENT ON COLUMN daily_summary.summary IS '통합 요약 텍스트';
+COMMENT ON COLUMN daily_summary.embedding IS '요약 임베딩 벡터 (1024차원)';
+COMMENT ON COLUMN daily_summary.model_name IS '사용 LLM 모델명';
+COMMENT ON COLUMN daily_summary.prompt IS '요약 생성에 사용된 프롬프트';

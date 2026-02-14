@@ -20,5 +20,5 @@ async def collect_github_data(
     db: Session = Depends(get_db),
 ):
     service = GitHubCollectService(db)
-    events = service.collect_github_events(request.user_id, request.target_date)
+    events = service.save_github_events(request.user_id, request.target_date)
     return events

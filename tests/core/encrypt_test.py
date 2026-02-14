@@ -1,7 +1,7 @@
 from dev_blackbox.core.encrypt import EncryptService
 
 
-def test_encrypt_decrypt():
+def test_encrypt_service():
     key = "test_key"
     pepper = "test_pepper"
     encrypt_service = EncryptService(key, pepper)
