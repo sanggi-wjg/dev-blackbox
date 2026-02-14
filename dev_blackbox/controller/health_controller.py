@@ -1,6 +1,10 @@
+import logging
+
 from fastapi import APIRouter, status
 
 router = APIRouter(tags=["Health"])
+
+logger = logging.getLogger(__name__)
 
 
 @router.get(
@@ -9,4 +13,7 @@ router = APIRouter(tags=["Health"])
     response_model=dict[str, str],
 )
 def health_check():
+    # todo add health check (db, cache, etc...)
+    # add  liveness probe, readiness probe
+    logger.info("Health check passed")
     return {"status": "healthy"}

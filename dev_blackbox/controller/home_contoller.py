@@ -4,7 +4,7 @@ router = APIRouter(tags=["Home"])
 
 
 @router.get(
-    "",
+    "/",
     status_code=status.HTTP_200_OK,
     response_model=dict[str, str],
 )

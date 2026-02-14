@@ -11,6 +11,9 @@ from dev_blackbox.controller.github_user_secret_controller import router as gith
 from dev_blackbox.controller.health_controller import router as health_router
 from dev_blackbox.controller.home_contoller import router as home_router
 from dev_blackbox.controller.user_controller import router as user_router
+from dev_blackbox.core.config import get_settings
+from dev_blackbox.core.database import engine
+from dev_blackbox.core.middleware import RequestIdMiddleware
 from dev_blackbox.task.background_scheduler import scheduler
 
 
@@ -18,21 +21,28 @@ from dev_blackbox.task.background_scheduler import scheduler
 async def lifespan(_app: FastAPI):
     scheduler.start()
     yield
-    scheduler.shutdown()
+    scheduler.shutdown(wait=True)
+    engine.dispose()
 
+
+settings = get_settings()
 
 app = FastAPI(
     lifespan=lifespan,
     title="Dev Blackbox API",
     version="0.1.0",
+    docs_url=None if settings.is_prod else "/docs",
+    redoc_url=None if settings.is_prod else "/redoc",
+    openapi_url=None if settings.is_prod else "/openapi.json",
 )
 app.add_middleware(GZipMiddleware)
+app.add_middleware(RequestIdMiddleware)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=['*'],
+    allow_origins=settings.get_cors_allow_origins(),
     allow_credentials=True,
-    allow_methods=['*'],
-    allow_headers=['*'],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
+    allow_headers=["*"],
 )
 register_exception_handlers(app)
 
@@ -51,8 +61,7 @@ if __name__ == "__main__":
         "main:app",
         host="0.0.0.0",
         port=8000,
-        reload=True,
-        reload_delay=5.0,
+        reload=False,
         access_log=True,
         use_colors=True,
     )

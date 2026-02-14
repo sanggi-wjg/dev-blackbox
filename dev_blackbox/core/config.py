@@ -40,8 +40,17 @@ class Settings(BaseSettings):
         nested_model_default_partial_update=False,
     )
 
+    env: Literal["local", "dev", "stage", "prod"]
     database: PostgresDatabaseSecrets
     encryption: EncryptionSecrets
+
+    def is_prod(self) -> bool:
+        return self.env == "prod"
+
+    def get_cors_allow_origins(self) -> list[str]:
+        if self.env == "local":
+            return ["*"]
+        return ["*"]
 
 
 @lru_cache
