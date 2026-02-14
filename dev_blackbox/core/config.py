@@ -32,6 +32,18 @@ class EncryptionSecrets(BaseModel):
     pepper: str
 
 
+class LoggingConfig(BaseModel):
+    level: str = "INFO"  # 루트 로거 레벨
+    uvicorn_level: str = "INFO"
+    apscheduler_level: str = "WARNING"
+    sqlalchemy_level: str = "WARNING"
+    format: str = (
+        "%(asctime)s.%(msecs)03d [%(levelname)-8s] %(name)s | "
+        "%(funcName)s:%(lineno)d — %(message)s"
+    )
+    date_format: str = "%Y-%m-%d %H:%M:%S"
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=os.path.join(_PROJECT_ROOT, ".env"),
@@ -43,11 +55,14 @@ class Settings(BaseSettings):
     env: Literal["local", "dev", "stage", "prod"]
     database: PostgresDatabaseSecrets
     encryption: EncryptionSecrets
+    logging: LoggingConfig = LoggingConfig()
 
+    @property
     def is_prod(self) -> bool:
         return self.env == "prod"
 
-    def get_cors_allow_origins(self) -> list[str]:
+    @property
+    def cors_allow_origins(self) -> list[str]:
         if self.env == "local":
             return ["*"]
         return ["*"]

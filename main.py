@@ -1,3 +1,7 @@
+from dev_blackbox.core.logging import setup_logging
+
+setup_logging()
+
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -39,7 +43,7 @@ app.add_middleware(GZipMiddleware)
 app.add_middleware(RequestIdMiddleware)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.get_cors_allow_origins(),
+    allow_origins=settings.cors_allow_origins,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
     allow_headers=["*"],
@@ -64,4 +68,5 @@ if __name__ == "__main__":
         reload=False,
         access_log=True,
         use_colors=True,
+        log_config=None,  # setup_logging()에서 설정한 중앙 로깅 사용
     )
