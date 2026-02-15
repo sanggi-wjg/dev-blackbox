@@ -36,19 +36,14 @@ def distributed_lock(
         bool: 락 획득 성공 여부
 
     Example:
-        with distributed_lock(LockName.TRACK_SHIPPING_TASK, timeout=300) as acquired:
+        with distributed_lock(DistributedLockName.COLLECT_PLATFORM_TASK, timeout=300) as acquired:
             if not acquired:
-                log.warning("Task is already running, skipping...")
+                logger.warning("Task is already running, skipping...")
                 return
             # 락 획득 성공, 작업 수행
             do_work()
     """
     redis_client = get_redis_client(database=9)
-    if redis_client is None:
-        logger.warning(f"Redis not available, proceeding without lock: {lock_name.value}")
-        yield True
-        return
-
     lock_key = _get_lock_key(lock_name)
     lock = redis_client.lock(
         lock_key,
@@ -56,19 +51,22 @@ def distributed_lock(
         blocking_timeout=blocking_timeout,
     )
 
+    # 락 획득 시도 — acquire만 try로 감싸서 태스크 본문 예외와 분리
     acquired = False
     try:
         acquired = lock.acquire(blocking=blocking_timeout > 0)
-        if acquired:
-            logger.debug(f"Lock acquired: {lock_key}")
-        else:
-            logger.info(f"Failed to acquire lock (already held): {lock_key}")
-        yield acquired
-
     except Exception as e:
-        logger.error(f"Error acquiring lock {lock_key}: {e}")
+        logger.exception(f"Error acquiring lock {lock_key}: {e}")
         yield False
+        return
 
+    if acquired:
+        logger.debug(f"Lock acquired: {lock_key}")
+    else:
+        logger.info(f"Failed to acquire lock (already held): {lock_key}")
+
+    try:
+        yield acquired
     finally:
         if acquired:
             try:

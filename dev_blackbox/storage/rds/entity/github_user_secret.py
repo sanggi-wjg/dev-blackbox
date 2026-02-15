@@ -1,7 +1,7 @@
 from datetime import datetime, UTC
 from typing import TYPE_CHECKING
 
-from sqlalchemy import BigInteger, DateTime, String, ForeignKey
+from sqlalchemy import BigInteger, DateTime, Index, String, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from dev_blackbox.storage.rds.entity.base import Base, SoftDeleteMixin
@@ -12,6 +12,14 @@ if TYPE_CHECKING:
 
 class GitHubUserSecret(SoftDeleteMixin, Base):
     __tablename__ = "github_user_secret"
+    __table_args__ = (
+        Index(
+            'uq_github_user_secret_user_id_active',
+            'user_id',
+            unique=True,
+            postgresql_where='is_deleted = FALSE',
+        ),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True, autoincrement=True)
     username: Mapped[str] = mapped_column(String(50), nullable=False)

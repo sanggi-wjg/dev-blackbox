@@ -41,9 +41,21 @@ class JiraUserByIdNotFoundException(EntityNotFoundException):
 
 
 ###############################
+class GitHubUserSecretAlreadyExistException(ServiceException):
+
+    def __init__(self, user_id: int):
+        super().__init__(f"GitHubUserSecret already exists. (UserId: {user_id})")
+
+
 class GitHubUserSecretNotSetException(ServiceException):
 
     def __init__(self, user_id: int):
         super().__init__(
             f"Set GitHub personal access token before executing events. (UserId: {user_id})"
         )
+
+
+class JiraUserNotAssignedException(ServiceException):
+
+    def __init__(self, user_id: int):
+        super().__init__(f"JiraUser not assigned to User. (UserId: {user_id})")

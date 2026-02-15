@@ -5,6 +5,7 @@ from dev_blackbox.core.encrypt import get_encrypt_service
 from dev_blackbox.core.exception import (
     GitHubUserSecretByUserIdNotFoundException,
     UserByIdNotFoundException,
+    GitHubUserSecretAlreadyExistException,
 )
 from dev_blackbox.storage.rds.entity.github_user_secret import GitHubUserSecret
 from dev_blackbox.storage.rds.repository import GitHubUserSecretRepository, UserRepository
@@ -22,6 +23,10 @@ class GitHubUserSecretService:
         user = self.user_repository.find_by_id(request.user_id)
         if not user:
             raise UserByIdNotFoundException(request.user_id)
+
+        github_user_secret = self.github_user_secret_repository.find_by_user_id(user_id=user.id)
+        if github_user_secret:
+            raise GitHubUserSecretAlreadyExistException(user_id=user.id)
 
         encrypted_token = self.encrypt_service.encrypt(request.personal_access_token)
         secret = GitHubUserSecret.create(

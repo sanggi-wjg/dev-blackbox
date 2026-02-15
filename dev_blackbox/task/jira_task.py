@@ -14,6 +14,10 @@ def sync_jira_users_task():
             logger.warning("sync_jira_users_task is already running, skipping...")
             return
 
+        logger.info("sync_jira_users_task started...")
+
         with get_db_session() as session:
             service = JiraUserService(session)
             service.sync_jira_users()
+
+        logger.info("sync_jira_users_task completed.")

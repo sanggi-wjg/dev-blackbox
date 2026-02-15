@@ -1,15 +1,16 @@
 from sqlalchemy.orm import Session
 
 from dev_blackbox.client.jira_client import get_jira_client
-from dev_blackbox.core.exception import JiraUserByIdNotFoundException
+from dev_blackbox.core.exception import JiraUserByIdNotFoundException, UserByIdNotFoundException
 from dev_blackbox.storage.rds.entity.jira_user import JiraUser
-from dev_blackbox.storage.rds.repository import JiraUserRepository
+from dev_blackbox.storage.rds.repository import JiraUserRepository, UserRepository
 
 
 class JiraUserService:
 
     def __init__(self, session: Session):
         self.session = session
+        self.user_repository = UserRepository(session)
         self.jira_user_repository = JiraUserRepository(session)
 
     def sync_jira_users(self) -> list[JiraUser]:
@@ -36,6 +37,10 @@ class JiraUserService:
         return self.jira_user_repository.save_all(new_users)
 
     def assign_user(self, user_id: int, jira_user_id: int, project: str) -> JiraUser:
+        user = self.user_repository.find_by_id(user_id)
+        if user is None:
+            raise UserByIdNotFoundException(user_id)
+
         jira_user = self.jira_user_repository.find_by_id(jira_user_id)
         if jira_user is None:
             raise JiraUserByIdNotFoundException(jira_user_id)

@@ -25,3 +25,30 @@ GITHUB_COMMIT_SUMMARY_PROMPT = PromptTemplate(
 """,
     prompt_type=PromptType.SUMMARY,
 )
+
+JIRA_ISSUE_SUMMARY_PROMPT = PromptTemplate(
+    """\
+당신은 Jira 이슈 데이터를 기반으로 업무 일지를 작성하는 개발자입니다.
+이슈 상태 변경과 코멘트를 분석하여 간결한 업무 일지를 작성하세요.
+
+## 규칙
+- 같은 이슈 타입(Bug, Story, Task 등)끼리 묶어서 정리하세요.
+- 각 이슈에 대해 무엇이 진행되었는지를 1-2문장으로 요약하세요.
+- 상태 변경 흐름(예: In Progress → Done)을 명시하세요.
+- 코멘트가 있으면 핵심 내용만 간략히 포함하세요.
+- 한국어로 작성하세요.
+- 서두, 인사말, 맺음말, 부가 설명 없이 오직 업무 일지 내용만 출력하세요.
+
+## 출력 형식
+### [이슈 타입]
+- [이슈 키] [이슈 제목]
+  - 상태 변경: [변경 흐름]
+  - 주요 내용: [요약]
+
+## Jira 이슈 상세 정보
+{issue_details}
+
+## 업무 일지
+""",
+    prompt_type=PromptType.SUMMARY,
+)

@@ -5,6 +5,7 @@ from dev_blackbox.storage.rds.repository.github_event_repository import GitHubEv
 from dev_blackbox.storage.rds.repository.github_user_secret_repository import (
     GitHubUserSecretRepository,
 )
+from dev_blackbox.storage.rds.repository.jira_event_repository import JiraEventRepository
 from dev_blackbox.storage.rds.repository.jira_user_repository import JiraUserRepository
 from dev_blackbox.storage.rds.repository.platform_summary_repository import (
     PlatformSummaryRepository,
@@ -15,6 +16,7 @@ __all__ = [
     "DailySummaryRepository",
     "GitHubUserSecretRepository",
     "GitHubEventRepository",
+    "JiraEventRepository",
     "JiraUserRepository",
     "PlatformSummaryRepository",
     "UserRepository",

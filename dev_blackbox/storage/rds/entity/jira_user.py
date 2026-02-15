@@ -18,12 +18,13 @@ class JiraUser(Base):
     display_name: Mapped[str] = mapped_column(String(255), nullable=False)
     email_address: Mapped[str] = mapped_column(String(255), nullable=False)
     url: Mapped[str] = mapped_column(String(512), nullable=False)
-    project: Mapped[str] = mapped_column(String(100), nullable=True)
+    project: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
     user_id: Mapped[int | None] = mapped_column(
         BigInteger,
         ForeignKey("users.id", ondelete="RESTRICT"),
         nullable=True,
+        unique=True,
     )
     user: Mapped["User | None"] = relationship("User", back_populates="jira_user")
 
