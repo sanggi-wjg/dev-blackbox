@@ -24,7 +24,7 @@ class GitHubUserSecret(SoftDeleteMixin, Base):
         ForeignKey("users.id", ondelete="RESTRICT"),
         nullable=False,
     )
-    user: Mapped["User"] = relationship("User", back_populates="github_user_secrets")
+    user: Mapped["User"] = relationship("User", back_populates="github_user_secret")
 
     def __repr__(self) -> str:
         return f"<GitHubUserSecret(username={self.username}, user_id={self.user_id})>"

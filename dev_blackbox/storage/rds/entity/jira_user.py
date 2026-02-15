@@ -24,7 +24,7 @@ class JiraUser(Base):
         ForeignKey("users.id", ondelete="RESTRICT"),
         nullable=True,
     )
-    user: Mapped["User"] = relationship("User")
+    user: Mapped["User"] = relationship("User", back_populates="jira_user")
 
     def __repr__(self) -> str:
         return f"<JiraUser(account_id={self.account_id}, display_name={self.display_name})>"
@@ -47,3 +47,7 @@ class JiraUser(Base):
             url=url,
             user_id=user_id,
         )
+
+    def assign_user(self, user_id: int) -> "JiraUser":
+        self.user_id = user_id
+        return self

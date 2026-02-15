@@ -7,6 +7,7 @@ from dev_blackbox.agent.model.prompt import GITHUB_COMMIT_SUMMARY_PROMPT
 from dev_blackbox.core.database import get_db_session
 from dev_blackbox.core.enum import PlatformEnum
 from dev_blackbox.service.github_event_service import GitHubEventService
+from dev_blackbox.service.model.user_model import UserWithRelated
 from dev_blackbox.service.summary_service import SummaryService
 from dev_blackbox.service.user_service import UserService
 from dev_blackbox.util.distributed_lock import DistributedLockName, distributed_lock
@@ -22,55 +23,57 @@ def collect_platform_task():
             logger.warning("collect_platform_task is already running, skipping...")
             return
 
-        user_id = 1
-
         with get_db_session() as session:
             user_service = UserService(session)
-            user = user_service.get_user(user_id)
+            users = user_service.get_users()
+            users_with_related = [UserWithRelated.from_entity(user) for user in users]
+
+        for user in users_with_related:
             target_date = datetime.now(user.tz_info).date() - timedelta(days=1)
+            _collect_and_summary(user, target_date)
+            logger.info(f"요약 완료: user_id={user}, target_date={target_date}")
 
-        # 데이터셋 수집
-        commit_message = _collect_github_dataset(user_id, target_date)
+            # 통합 일일 요약 저장 (현재 단일 플랫폼이므로 주석 처리)
+            # with get_db_session() as session:
+            #     summary_service = SummaryService(session)
+            #     summary_service.save_daily_summary(
+            #         user_id=user_id,
+            #         target_date=target_date,
+            #         summary=summary_text,
+            #         model_name=config.model,
+            #         prompt=prompt_text,
+            #     )
 
-        if not commit_message:
-            logger.warning(f"커밋 데이터 없음: user_id={user_id}, target_date={target_date}")
-            return
 
-        # LLM 요약
-        llm_config = SummaryOllamaConfig()
-        prompt = GITHUB_COMMIT_SUMMARY_PROMPT
+def _collect_and_summary(user: UserWithRelated, target_date: date):
+    # 데이터셋 수집
+    commit_message = _collect_github_dataset(user.id, target_date)
+    if not commit_message:
+        logger.warning(f"커밋 데이터 없음: user_id={user.id}, target_date={target_date}")
+        return
 
-        try:
-            llm_agent = LLMAgent.create_with_ollama(llm_config)
-            summary_text = llm_agent.query(prompt, commit_message=commit_message)
-        except Exception:
-            logger.exception(f"LLM 요약 실패: user_id={user_id}, target_date={target_date}")
-            raise
+    # LLM 요약
+    llm_config = SummaryOllamaConfig()
+    prompt = GITHUB_COMMIT_SUMMARY_PROMPT
 
-        # 플랫폼 요약 저장
-        with get_db_session() as session:
-            summary_service = SummaryService(session)
-            summary_service.save_platform_summary(
-                user_id=user_id,
-                target_date=target_date,
-                platform=PlatformEnum.GITHUB,
-                summary=summary_text,
-                model_name=llm_config.model,
-                prompt=prompt.template,  # format 하면 너무 커져서 템플릿만
-            )
+    try:
+        llm_agent = LLMAgent.create_with_ollama(llm_config)
+        summary_text = llm_agent.query(prompt, commit_message=commit_message)
+    except Exception:
+        logger.exception(f"LLM 요약 실패: user_id={user.id}, target_date={target_date}")
+        raise
 
-        # 통합 일일 요약 저장 (현재 단일 플랫폼이므로 주석 처리)
-        # with get_db_session() as session:
-        #     summary_service = SummaryService(session)
-        #     summary_service.save_daily_summary(
-        #         user_id=user_id,
-        #         target_date=target_date,
-        #         summary=summary_text,
-        #         model_name=config.model,
-        #         prompt=prompt_text,
-        #     )
-
-        logger.info(f"요약 완료: user_id={user_id}, target_date={target_date}")
+    # 플랫폼 요약 저장
+    with get_db_session() as session:
+        summary_service = SummaryService(session)
+        summary_service.save_platform_summary(
+            user_id=user.id,
+            target_date=target_date,
+            platform=PlatformEnum.GITHUB,
+            summary=summary_text,
+            model_name=llm_config.model,
+            prompt=prompt.template,  # format 하면 너무 커져서 템플릿만
+        )
 
 
 def _collect_github_dataset(user_id: int, target_date: date) -> str:

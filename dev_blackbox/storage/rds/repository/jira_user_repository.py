@@ -19,6 +19,10 @@ class JiraUserRepository:
         self.session.flush()
         return jira_users
 
+    def find_by_id(self, jira_user_id: int) -> JiraUser | None:
+        stmt = select(JiraUser).where(JiraUser.id == jira_user_id)
+        return self.session.scalar(stmt)
+
     def find_by_user_id(self, user_id: int) -> list[JiraUser]:
         stmt = select(JiraUser).where(JiraUser.user_id == user_id)
         return list(self.session.scalars(stmt).all())

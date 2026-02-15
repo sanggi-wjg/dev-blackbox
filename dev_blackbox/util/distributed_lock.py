@@ -1,31 +1,16 @@
 import logging
 from contextlib import contextmanager
 from enum import Enum
-from typing import Generator, Optional
+from typing import Generator
 
-import redis
-from redis import Redis
-
-from dev_blackbox.core.config import get_settings
+from dev_blackbox.core.cache import get_redis_client
 
 logger = logging.getLogger(__name__)
-_redis_secret = get_settings().redis
 
 
 class DistributedLockName(str, Enum):
     SYNC_JIRA_USERS_TASK = "sync_jira_users_task"
     COLLECT_PLATFORM_TASK = "collect_platform_task"
-
-
-def _get_redis_client() -> Optional[Redis]:
-    try:
-        return redis.Redis(
-            host=_redis_secret.host,
-            port=_redis_secret.port,
-            db=9,
-        )
-    except Exception:
-        return None
 
 
 def _get_lock_key(lock_name: DistributedLockName) -> str:
@@ -58,7 +43,7 @@ def distributed_lock(
             # 락 획득 성공, 작업 수행
             do_work()
     """
-    redis_client = _get_redis_client()
+    redis_client = get_redis_client(database=9)
     if redis_client is None:
         logger.warning(f"Redis not available, proceeding without lock: {lock_name.value}")
         yield True
