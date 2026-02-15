@@ -18,13 +18,14 @@ class JiraUser(Base):
     display_name: Mapped[str] = mapped_column(String(255), nullable=False)
     email_address: Mapped[str] = mapped_column(String(255), nullable=False)
     url: Mapped[str] = mapped_column(String(512), nullable=False)
+    project: Mapped[str] = mapped_column(String(100), nullable=True)
 
-    user_id: Mapped[int] = mapped_column(
+    user_id: Mapped[int | None] = mapped_column(
         BigInteger,
         ForeignKey("users.id", ondelete="RESTRICT"),
         nullable=True,
     )
-    user: Mapped["User"] = relationship("User", back_populates="jira_user")
+    user: Mapped["User | None"] = relationship("User", back_populates="jira_user")
 
     def __repr__(self) -> str:
         return f"<JiraUser(account_id={self.account_id}, display_name={self.display_name})>"
@@ -37,6 +38,7 @@ class JiraUser(Base):
         display_name: str,
         email_address: str,
         url: str,
+        project: str | None = None,
         user_id: int | None = None,
     ) -> "JiraUser":
         return cls(
@@ -45,9 +47,11 @@ class JiraUser(Base):
             display_name=display_name,
             email_address=email_address,
             url=url,
+            project=project,
             user_id=user_id,
         )
 
-    def assign_user(self, user_id: int) -> "JiraUser":
+    def assign_user_and_project(self, user_id: int, project: str) -> "JiraUser":
+        self.project = project
         self.user_id = user_id
         return self

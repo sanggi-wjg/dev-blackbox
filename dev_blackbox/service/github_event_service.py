@@ -6,7 +6,10 @@ from sqlalchemy.orm import Session
 from dev_blackbox.client.github_client import GitHubClient
 from dev_blackbox.client.model.github_model import GithubEventModel, GithubCommitModel
 from dev_blackbox.core.encrypt import get_encrypt_service
-from dev_blackbox.core.exception import UserByIdNotFoundException
+from dev_blackbox.core.exception import (
+    UserByIdNotFoundException,
+    GitHubUserSecretNotSetException,
+)
 from dev_blackbox.storage.rds.entity import User
 from dev_blackbox.storage.rds.entity.github_event import GitHubEvent
 from dev_blackbox.storage.rds.repository import (
@@ -50,14 +53,16 @@ class GitHubEventService:
         # 기존 데이터 삭제 후 갱신하도록
         self.github_event_repository.delete_by_user_id_and_target_date(user_id, target_date)
 
+        # 없으면 에러
         github_user_secret = self.github_user_secret_repository.find_by_user_id(user_id=user.id)
         if github_user_secret is None:
-            logger.warning(f"GitHub User Secret not found. (user_id: {user.id})")
-            return []
+            raise GitHubUserSecretNotSetException(user_id)
 
+        # 복호화 하고
         decrypted_token = self.encrypt_service.decrypt(github_user_secret.personal_access_token)
         github_client = GitHubClient.create(token=decrypted_token)
 
+        # 조회 하고
         events = []
         github_events = self.fetch_github_events(
             github_client=github_client,
@@ -65,6 +70,7 @@ class GitHubEventService:
             github_username=github_user_secret.username,
             target_date=target_date,
         )
+        # 저장 ㄱ
         for github_event in github_events:
             github_commit = self.fetch_github_commit_by_event(github_client, github_event)
             events.append(
@@ -76,7 +82,6 @@ class GitHubEventService:
                     commit=github_commit,
                 ),
             )
-
         return self.github_event_repository.save_all(events)
 
     def fetch_github_events(

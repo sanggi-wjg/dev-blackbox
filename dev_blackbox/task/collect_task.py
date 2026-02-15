@@ -30,8 +30,11 @@ def collect_platform_task():
 
         for user in users_with_related:
             target_date = datetime.now(user.tz_info).date() - timedelta(days=1)
-            _collect_and_summary(user, target_date)
-            logger.info(f"요약 완료: user_id={user}, target_date={target_date}")
+            try:
+                _collect_and_summary(user, target_date)
+                logger.info(f"요약 완료: user_id={user}, target_date={target_date}")
+            except Exception:
+                logger.exception(f"요약 실패: user_id={user}, target_date={target_date}")
 
             # 통합 일일 요약 저장 (현재 단일 플랫폼이므로 주석 처리)
             # with get_db_session() as session:

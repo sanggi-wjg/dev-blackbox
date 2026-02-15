@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from dev_blackbox.controller.dto.github_user_secret_dto import CreateGitHubSecretRequestDto
 from dev_blackbox.core.encrypt import get_encrypt_service
 from dev_blackbox.core.exception import (
-    GitHubSecretByUserIdNotFoundException,
+    GitHubUserSecretByUserIdNotFoundException,
     UserByIdNotFoundException,
 )
 from dev_blackbox.storage.rds.entity.github_user_secret import GitHubUserSecret
@@ -34,7 +34,7 @@ class GitHubUserSecretService:
     def get_secret_by_user_id(self, user_id: int) -> GitHubUserSecret:
         secret = self.github_user_secret_repository.find_by_user_id(user_id)
         if secret is None:
-            raise GitHubSecretByUserIdNotFoundException(user_id)
+            raise GitHubUserSecretByUserIdNotFoundException(user_id)
         return secret
 
     def get_decrypted_token_by_secret(self, secret: GitHubUserSecret) -> str:

@@ -7,8 +7,11 @@
 - **언어/런타임**: Python 3.14, Poetry
 - **프레임워크**: FastAPI + Uvicorn (3 workers)
 - **DB**: PostgreSQL 17 + pgvector (port 7400)
+- **Cache**: Redis (port 7410)
 - **ORM**: SQLAlchemy (psycopg2-binary)
 - **LLM**: Ollama + LlamaIndex
+- **스케줄러**: APScheduler (Redis JobStore)
+- **외부 API**: GitHub (httpx), Jira (jira 라이브러리)
 - **타임존**: Asia/Seoul (ZoneInfo)
 
 ## Commands
@@ -52,17 +55,18 @@ dev_blackbox/
 ├── controller/                  # REST API 엔드포인트 + DTO
 ├── service/                     # 비즈니스 로직
 ├── storage/rds/                 # Repository + Entity (SQLAlchemy)
-├── client/                      # 외부 API 클라이언트 (GitHub 등) + Model
+├── client/                      # 외부 API 클라이언트 (GitHub, Jira) + Model
 ├── agent/                       # LLM 에이전트 + Prompt
-├── task/                        # BackgroundTasks 비동기 작업
-└── core/                        # 설정, DB, 예외, Enum
+├── task/                        # APScheduler 백그라운드 태스크
+├── core/                        # 설정, DB, Redis, 예외, Enum, 스케줄러
+└── util/                        # 분산 락, 날짜 유틸리티
 ```
 
 상세 문서:
 - @docs/ARCHITECTURE.md — 시스템 구조, 레이어, 파이프라인
 - @docs/API.md — 엔드포인트, DTO, 예외 처리
 - @docs/DATABASE.md — Entity, Repository, 세션 관리
-- @docs/INFRASTRUCTURE.md — Docker, PostgreSQL, Ollama, 환경 설정
+- @docs/INFRASTRUCTURE.md — Docker, PostgreSQL, Redis, APScheduler, Ollama, 환경 설정
 - @docs/TEST.md — 테스트 구성, 작성 가이드, 컨벤션
 
 ## Key Conventions
@@ -86,8 +90,8 @@ dev_blackbox/
 ### 외부 클라이언트
 
 - `client/` 디렉토리에 클라이언트 클래스 + `client/model/`에 Pydantic 모델
-- `httpx` 비동기 HTTP 클라이언트 사용
-- `create()` 팩토리 메서드로 인스턴스 생성
+- `GithubClient` — `httpx` 비동기 HTTP, `create()` 팩토리 메서드
+- `JiraClient` — `jira` 라이브러리 (Basic Auth), `get_jira_client()` `@lru_cache` 팩토리
 
 ### 예외 처리
 
@@ -106,3 +110,5 @@ dev_blackbox/
 - **REPEATABLE READ**: DB 격리 수준이 `REPEATABLE READ`이므로 동일 트랜잭션 내에서 다른 트랜잭션의 커밋을 볼 수 없음
 - **SoftDelete 주의**: `find_by_id()` 등 Repository 조회 메서드는 `is_deleted=False` 조건을 포함해야 함
 - **날짜 기본값**: `target_date`가 null이면 유저 타임존 기준 어제 날짜로 자동 설정
+- **분산 락**: 백그라운드 태스크는 `distributed_lock()`으로 중복 실행 방지. Redis 불가용 시 락 없이 진행 (graceful degradation)
+- **JiraUser 할당**: `jira_user.user_id`는 NULLABLE — Jira에서 동기화된 사용자는 수동으로 User에 할당해야 함

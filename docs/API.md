@@ -86,6 +86,26 @@ REST API 엔드포인트 명세.
 | event_id    | str  | GitHub 이벤트 ID |
 | target_date | date | 수집 대상 날짜      |
 
+## 서비스 모델
+
+### UserWithRelated
+
+User 엔티티와 관련 정보를 통합한 서비스 계층 모델.
+
+| 필드                 | 타입                         | 설명                    |
+|--------------------|----------------------------|-----------------------|
+| id                 | int                        | 사용자 ID                |
+| name               | str                        | 이름                    |
+| email              | str                        | 이메일                   |
+| timezone           | str                        | 타임존                   |
+| tz_info            | ZoneInfo                   | 타임존 객체                |
+| created_at         | datetime                   | 생성일시                  |
+| updated_at         | datetime                   | 수정일시                  |
+| github_user_secret | GitHubUserSecretInfo / null | GitHub 시크릿 정보         |
+| jira_user          | JiraUserInfo / null        | Jira 사용자 정보           |
+
+- `UserWithRelated.from_entity(user)` 팩토리 메서드로 User 엔티티에서 변환
+
 ## 커스텀 타입
 
 | 타입          | 정의                                                                       | 설명               |
@@ -101,7 +121,8 @@ ServiceException (500)
 └── EntityNotFoundException (404)
     ├── UserByIdNotFoundException
     ├── UserByNameNotFoundException
-    └── GitHubSecretByUserIdNotFoundException
+    ├── GitHubSecretByUserIdNotFoundException
+    └── JiraUserByIdNotFoundException
 ```
 
 - `exception_handler.py`에서 FastAPI에 핸들러 등록

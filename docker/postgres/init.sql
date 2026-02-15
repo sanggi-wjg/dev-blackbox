@@ -205,6 +205,7 @@ CREATE TABLE IF NOT EXISTS jira_user
     display_name  VARCHAR(255) NOT NULL,
     email_address VARCHAR(255) NOT NULL,
     url           VARCHAR(512) NOT NULL,
+    project       VARCHAR(100) NULL,
 
     created_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     updated_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
@@ -225,9 +226,10 @@ CREATE INDEX idx_jira_user_002 ON jira_user (account_id);
 CREATE INDEX idx_jira_user_003 ON jira_user (created_at DESC);
 
 COMMENT ON TABLE jira_user IS 'Jira 사용자 정보 테이블';
-COMMENT ON COLUMN jira_user.user_id IS '사용자 FK';
 COMMENT ON COLUMN jira_user.account_id IS 'Jira 계정 ID (UNIQUE)';
 COMMENT ON COLUMN jira_user.active IS '활성 상태';
 COMMENT ON COLUMN jira_user.display_name IS 'Jira 표시 이름';
 COMMENT ON COLUMN jira_user.email_address IS 'Jira 이메일';
 COMMENT ON COLUMN jira_user.url IS 'Jira 프로필 URL';
+COMMENT ON COLUMN jira_user.project IS 'Jira 프로젝트명 (선택적)';
+COMMENT ON COLUMN jira_user.user_id IS '사용자 FK';

@@ -13,6 +13,9 @@ class EntityNotFoundException(ServiceException):
         super().__init__(f"{entity_name} not found by {identifier}")
 
 
+###############################
+# NotFoundException
+###############################
 class UserByIdNotFoundException(EntityNotFoundException):
 
     def __init__(self, user_id: int):
@@ -25,7 +28,7 @@ class UserByNameNotFoundException(EntityNotFoundException):
         super().__init__(entity_name="User", identifier=username)
 
 
-class GitHubSecretByUserIdNotFoundException(EntityNotFoundException):
+class GitHubUserSecretByUserIdNotFoundException(EntityNotFoundException):
 
     def __init__(self, user_id: int):
         super().__init__(entity_name="GitHubUserSecret", identifier=user_id)
@@ -35,3 +38,12 @@ class JiraUserByIdNotFoundException(EntityNotFoundException):
 
     def __init__(self, jira_user_id: int):
         super().__init__(entity_name="JiraUser", identifier=jira_user_id)
+
+
+###############################
+class GitHubUserSecretNotSetException(ServiceException):
+
+    def __init__(self, user_id: int):
+        super().__init__(
+            f"Set GitHub personal access token before executing events. (UserId: {user_id})"
+        )
