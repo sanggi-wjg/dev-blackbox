@@ -27,6 +27,11 @@ class PostgresDatabaseSecrets(BaseModel):
         return f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}"
 
 
+class RedisSecrets(BaseModel):
+    host: str
+    port: int
+
+
 class EncryptionSecrets(BaseModel):
     key: str
     pepper: str
@@ -64,6 +69,7 @@ class Settings(BaseSettings):
 
     env: Literal["local", "dev", "stage", "prod"]
     database: PostgresDatabaseSecrets
+    redis: RedisSecrets
     encryption: EncryptionSecrets
     jira: JiraSecrets
     confluence: ConfluenceSecrets

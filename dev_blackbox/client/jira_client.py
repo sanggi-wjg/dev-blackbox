@@ -1,6 +1,6 @@
 from functools import lru_cache
 
-from jira import JIRA, Issue
+from jira import JIRA, Issue, User
 from jira.client import ResultList
 
 from dev_blackbox.core.config import get_settings
@@ -20,7 +20,7 @@ class JiraClient:
     ):
         self.jira = JIRA(server=server, basic_auth=(username, api_token))
 
-    def fetch_assignable_users(self, project: str = "FMP") -> list:
+    def fetch_assignable_users(self, project: str = "FMP") -> ResultList[User]:
         return self.jira.search_assignable_users_for_projects("", projectKeys=project)
 
     def fetch_search_issues(

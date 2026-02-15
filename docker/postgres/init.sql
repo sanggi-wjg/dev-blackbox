@@ -193,3 +193,41 @@ COMMENT ON COLUMN daily_summary.summary IS '통합 요약 텍스트';
 COMMENT ON COLUMN daily_summary.embedding IS '요약 임베딩 벡터 (1024차원)';
 COMMENT ON COLUMN daily_summary.model_name IS '사용 LLM 모델명';
 COMMENT ON COLUMN daily_summary.prompt IS '요약 생성에 사용된 프롬프트';
+
+
+-- jira_user 테이블 (Jira 사용자 정보)
+CREATE TABLE IF NOT EXISTS jira_user
+(
+    id            BIGSERIAL PRIMARY KEY,
+    user_id       BIGINT       NULL,
+    account_id    VARCHAR(128) NOT NULL,
+    active        BOOLEAN      NOT NULL DEFAULT TRUE,
+    display_name  VARCHAR(255) NOT NULL,
+    email_address VARCHAR(255) NOT NULL,
+    url           VARCHAR(512) NOT NULL,
+
+    created_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT fk_jira_user_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE RESTRICT,
+
+    CONSTRAINT uq_jira_user_account_id UNIQUE (account_id)
+);
+
+CREATE TRIGGER tr_jira_user_updated_at
+    BEFORE UPDATE
+    ON jira_user
+    FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+CREATE INDEX idx_jira_user_001 ON jira_user (user_id);
+CREATE INDEX idx_jira_user_002 ON jira_user (account_id);
+CREATE INDEX idx_jira_user_003 ON jira_user (created_at DESC);
+
+COMMENT ON TABLE jira_user IS 'Jira 사용자 정보 테이블';
+COMMENT ON COLUMN jira_user.user_id IS '사용자 FK';
+COMMENT ON COLUMN jira_user.account_id IS 'Jira 계정 ID (UNIQUE)';
+COMMENT ON COLUMN jira_user.active IS '활성 상태';
+COMMENT ON COLUMN jira_user.display_name IS 'Jira 표시 이름';
+COMMENT ON COLUMN jira_user.email_address IS 'Jira 이메일';
+COMMENT ON COLUMN jira_user.url IS 'Jira 프로필 URL';
