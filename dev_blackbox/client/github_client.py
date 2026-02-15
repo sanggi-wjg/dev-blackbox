@@ -9,7 +9,7 @@ from dev_blackbox.client.model.github_model import GithubEventModelList, GithubC
 logger = logging.getLogger(__name__)
 
 
-class GithubClient:
+class GitHubClient:
 
     def __init__(self, token: str):
         self._token = token

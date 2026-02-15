@@ -32,6 +32,16 @@ class EncryptionSecrets(BaseModel):
     pepper: str
 
 
+class JiraSecrets(BaseModel):
+    url: str
+    username: str
+    api_token: str
+
+
+class ConfluenceSecrets(BaseModel):
+    spaces: list[str]
+
+
 class LoggingConfig(BaseModel):
     level: str = "INFO"  # 루트 로거 레벨
     uvicorn_level: str = "INFO"
@@ -55,6 +65,8 @@ class Settings(BaseSettings):
     env: Literal["local", "dev", "stage", "prod"]
     database: PostgresDatabaseSecrets
     encryption: EncryptionSecrets
+    jira: JiraSecrets
+    confluence: ConfluenceSecrets
     logging: LoggingConfig = LoggingConfig()
 
     @property

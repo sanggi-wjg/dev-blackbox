@@ -12,14 +12,14 @@ LLM을 통해 일일 업무 일지를 자동 생성하는 시스템이다.
 │                  Controller Layer                    │
 │  REST API 엔드포인트, DTO 변환, 예외 핸들러 등록       │
 │  UserController, GitHubSecretController,             │
-│  GitHubCollectController, GitHubEventController      │
+│  GitHubEventController                               │
 └──────────────────────┬──────────────────────────────┘
                        │
 ┌──────────────────────▼──────────────────────────────┐
 │                   Service Layer                      │
 │  비즈니스 로직, 트랜잭션 조율                          │
 │  UserService, GitHubUserSecretService,               │
-│  GitHubCollectService, GitHubEventService            │
+│  GitHubEventService                                  │
 └──────────────────────┬──────────────────────────────┘
                        │
 ┌──────────────────────▼──────────────────────────────┐
@@ -58,8 +58,7 @@ LLM을 통해 일일 업무 일지를 자동 생성하는 시스템이다.
 - `get_db_session()` context manager로 자동 트랜잭션 관리
 - `UserService` — 사용자 CRUD
 - `GitHubUserSecretService` — GitHub 인증 정보 관리 (암호화/복호화 포함)
-- `GitHubCollectService` — GitHub 이벤트/커밋 수집 및 DB 저장
-- `GitHubEventService` — GitHub 이벤트 조회
+- `GitHubEventService` — GitHub 이벤트 조회 및 수집 (이벤트/커밋 수집, DB 저장 포함)
 
 ### `storage/rds/`
 
@@ -107,15 +106,14 @@ LLM을 통해 일일 업무 일지를 자동 생성하는 시스템이다.
 ## 데이터 수집 파이프라인
 
 ```
-POST /collect/github/users/{user_id}
+POST /github-events/users/{user_id}/collect
        │
        ▼
-  GitHubCollectService.collect_github_events()
+  GitHubEventService.save_github_events()
        │
        ├── 기존 이벤트 삭제 (target_date 기준)
        │
-       ├── GitHubUserSecretService.get_decrypted_token_by_secret()
-       │       └── EncryptService.decrypt()   ← PAT 복호화
+       ├── EncryptService.decrypt()   ← PAT 복호화
        │
        ├── GithubClient.fetch_events_by_date()   ← GitHub API v3
        │       │

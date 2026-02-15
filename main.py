@@ -9,7 +9,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.gzip import GZipMiddleware
 
 from dev_blackbox.controller.exception_handler import register_exception_handlers
-from dev_blackbox.controller.github_collect_controller import router as github_collect_router
 from dev_blackbox.controller.github_event_controller import router as github_event_router
 from dev_blackbox.controller.github_user_secret_controller import router as github_secret_router
 from dev_blackbox.controller.health_controller import router as health_router
@@ -54,7 +53,6 @@ app.include_router(home_router)
 app.include_router(health_router)
 app.include_router(user_router)
 app.include_router(github_secret_router)
-app.include_router(github_collect_router)
 app.include_router(github_event_router)
 
 

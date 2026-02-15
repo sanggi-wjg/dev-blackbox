@@ -6,7 +6,7 @@ from dev_blackbox.agent.model.llm_model import SummaryOllamaConfig
 from dev_blackbox.agent.model.prompt import GITHUB_COMMIT_SUMMARY_PROMPT
 from dev_blackbox.core.database import get_db_session
 from dev_blackbox.core.enum import PlatformEnum
-from dev_blackbox.service.github_collect_service import GitHubCollectService
+from dev_blackbox.service.github_event_service import GitHubEventService
 from dev_blackbox.service.summary_service import SummaryService
 from dev_blackbox.service.user_service import UserService
 
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 def _collect_github_dataset(user_id: int, target_date: date) -> str:
     with get_db_session() as session:
-        service = GitHubCollectService(session)
+        service = GitHubEventService(session)
         events = service.save_github_events(user_id, target_date)
         commit_message = "\n".join(
             [e.commit_model.commit_detail_text for e in events if e.commit_model is not None]
