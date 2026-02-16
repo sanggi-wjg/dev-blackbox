@@ -1,5 +1,5 @@
 import logging
-from datetime import timedelta, datetime, date
+from datetime import date
 
 from dev_blackbox.agent.llm_agent import LLMAgent
 from dev_blackbox.agent.model.llm_model import SummaryOllamaConfig
@@ -11,6 +11,7 @@ from dev_blackbox.service.jira_event_service import JiraEventService
 from dev_blackbox.service.model.user_model import UserWithRelated
 from dev_blackbox.service.summary_service import SummaryService
 from dev_blackbox.service.user_service import UserService
+from dev_blackbox.util.datetime_util import get_yesterday
 from dev_blackbox.util.distributed_lock import DistributedLockName, distributed_lock
 
 logger = logging.getLogger(__name__)
@@ -30,7 +31,7 @@ def collect_platform_task():
             users_with_related = [UserWithRelated.from_entity(user) for user in users]
 
         for user in users_with_related:
-            target_date = datetime.now(user.tz_info).date() - timedelta(days=1)
+            target_date = get_yesterday(user.tz_info)
             try:
                 _collect_and_summary(user, target_date)
                 logger.info(f"요약 완료: user_id={user.id}, target_date={target_date}")

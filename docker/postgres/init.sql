@@ -240,20 +240,22 @@ COMMENT ON COLUMN jira_user.user_id IS '사용자 FK';
 -- jira_event 테이블 (Jira 이슈 수집 데이터)
 CREATE TABLE IF NOT EXISTS jira_event
 (
-    id            BIGSERIAL PRIMARY KEY,
-    user_id       BIGINT       NOT NULL,
-    jira_user_id  BIGINT       NOT NULL,
-    issue_key     VARCHAR(100) NOT NULL,
-    target_date   DATE         NOT NULL,
-    issue         JSONB        NOT NULL,
-    changelog     JSONB        NULL,
+    id           BIGSERIAL PRIMARY KEY,
+    user_id      BIGINT       NOT NULL,
+    jira_user_id BIGINT       NOT NULL,
+    issue_id     VARCHAR(100) NOT NULL,
+    issue_key    VARCHAR(100) NOT NULL,
+    target_date  DATE         NOT NULL,
+    issue        JSONB        NOT NULL,
+    changelog    JSONB        NULL,
 
-    created_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
-    updated_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    created_at   TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at   TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
 
     CONSTRAINT fk_jira_event_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE RESTRICT,
     CONSTRAINT fk_jira_event_jira_user FOREIGN KEY (jira_user_id) REFERENCES jira_user (id) ON DELETE RESTRICT,
-    CONSTRAINT uq_jira_event_issue_key_target_date UNIQUE (issue_key, target_date)
+
+    CONSTRAINT uq_jira_event_issue_issue_id UNIQUE (issue_id)
 );
 
 CREATE TRIGGER tr_jira_event_updated_at

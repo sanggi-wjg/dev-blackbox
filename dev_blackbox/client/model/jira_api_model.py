@@ -69,8 +69,8 @@ class IssueJQL(JQL):
     include_status: JiraIssueStatus | None = None
     include_statuses: list[JiraIssueStatus] | None = None
     updated_within: str | None = None
-    updated_after: str | None = None  # 절대 날짜 (e.g. "2024-01-15")
-    updated_before: str | None = None  # 절대 날짜 (e.g. "2024-01-16")
+    updated_after: str | None = None  # 날짜 입력, 2026-01-16
+    updated_before: str | None = None  # 날짜 입력, 2026-01-17
     order_by: str | None = "updatedDate DESC"
 
     def build(self) -> str:
@@ -107,18 +107,14 @@ class IssueJQL(JQL):
 
 
 class JiraChangelogItemModel(BaseModel):
-    """changelog.histories[].items[] 항목"""
-
     field: str
     from_string: str | None = None
     to_string: str | None = None
 
 
 class JiraChangelogHistoryModel(BaseModel):
-    """changelog.histories[] 항목"""
-
     id: str
-    created: str  # ISO 8601 형식
+    created: str
     items: list[JiraChangelogItemModel]
 
     def get_created_date(self, tz_info: ZoneInfo) -> date:
@@ -126,19 +122,16 @@ class JiraChangelogHistoryModel(BaseModel):
 
 
 class JiraCommentModel(BaseModel):
-    """issue.fields.comment.comments[] 항목"""
-
     author_display_name: str
     body: str
-    created: str  # ISO 8601 형식
+    created: str  # ISO 형식
 
     def get_created_date(self, tz_info: ZoneInfo) -> date:
         return get_date_from_iso_format(self.created, tz_info=tz_info)
 
 
 class JiraIssueModel(BaseModel):
-    """Jira Issue를 구조화한 모델. issue.raw dict에서 파싱."""
-
+    id: str  # Jira 아이디
     key: str  # "FMP-123"
     summary: str
     status: str
@@ -151,15 +144,14 @@ class JiraIssueModel(BaseModel):
 
     @classmethod
     def from_raw(cls, raw: dict) -> "JiraIssueModel":
-        """issue.raw dict에서 JiraIssueModel 생성"""
         fields = raw.get("fields", {})
 
-        # 코멘트 파싱
+        # comment 파싱
         comment_data = fields.get("comment", {})
         comments_raw = comment_data.get("comments", []) if isinstance(comment_data, dict) else []
         comments = [
             JiraCommentModel(
-                author_display_name=c.get("author", {}).get("displayName", ""),
+                author_display_name=c.get("author", {}).get("displayName", "Unknown Author"),
                 body=c.get("body", ""),
                 created=c.get("created", ""),
             )
@@ -186,32 +178,42 @@ class JiraIssueModel(BaseModel):
         ]
 
         return cls(
+            id=raw.get("id", ""),
             key=raw.get("key", ""),
             summary=fields.get("summary", ""),
             status=(fields.get("status") or {}).get("name", ""),
             issue_type=(fields.get("issuetype") or {}).get("name", ""),
             priority=(fields.get("priority") or {}).get("name"),
-            labels=fields.get("labels", []),
             assignee_display_name=(fields.get("assignee") or {}).get("displayName"),
             comments=comments,
             changelog_histories=histories,
         )
 
     def filter_changelog_by_date(
-        self, target_date: date, tz_info: ZoneInfo
+        self,
+        target_date: date,
+        tz_info: ZoneInfo,
     ) -> list[JiraChangelogHistoryModel]:
-        """target_date에 해당하는 changelog만 필터링"""
+        """
+        target_date에 해당하는 changelog만 필터링
+        """
         return [h for h in self.changelog_histories if h.get_created_date(tz_info) == target_date]
 
     def filter_comments_by_date(
-        self, target_date: date, tz_info: ZoneInfo
+        self,
+        target_date: date,
+        tz_info: ZoneInfo,
     ) -> list[JiraCommentModel]:
-        """target_date에 해당하는 코멘트만 필터링"""
+        """
+        target_date에 해당하는 코멘트만 필터링
+        """
         return [c for c in self.comments if c.get_created_date(tz_info) == target_date]
 
     @cached_property
     def _base_info_text(self) -> str:
-        """이슈 기본 정보 텍스트"""
+        """
+        이슈 기본 정보 텍스트
+        """
         lines = [
             f"[{self.key}] {self.issue_type}: {self.summary}",
             f"현재 상태: {self.status}",
@@ -223,7 +225,9 @@ class JiraIssueModel(BaseModel):
         return "\n".join(lines)
 
     def issue_detail_text(self, target_date: date, tz_info: ZoneInfo) -> str:
-        """LLM에 전달할 이슈 상세 텍스트 생성 (target_date 기준 필터링)"""
+        """
+        LLM에 전달할 이슈 상세 텍스트 생성 (target_date 기준 필터링)
+        """
         lines = [self._base_info_text]
 
         # target_date changelog만

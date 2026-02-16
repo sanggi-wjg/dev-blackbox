@@ -1,10 +1,10 @@
 import logging
-from datetime import date, timedelta, datetime
+from datetime import date, timedelta
 
 from sqlalchemy.orm import Session
 
 from dev_blackbox.client.jira_client import get_jira_client
-from dev_blackbox.client.model.jira_model import (
+from dev_blackbox.client.model.jira_api_model import (
     IssueJQL,
     JiraIssueModel,
     JiraStatusGroup,
@@ -12,6 +12,7 @@ from dev_blackbox.client.model.jira_model import (
 from dev_blackbox.core.exception import (
     UserByIdNotFoundException,
     JiraUserNotAssignedException,
+    JiraUserProjectNotAssignedException,
 )
 from dev_blackbox.storage.rds.entity.jira_event import JiraEvent
 from dev_blackbox.storage.rds.repository import (
@@ -19,11 +20,9 @@ from dev_blackbox.storage.rds.repository import (
     JiraUserRepository,
     JiraEventRepository,
 )
+from dev_blackbox.util.datetime_util import get_yesterday
 
 logger = logging.getLogger(__name__)
-
-MAX_PAGES = 10
-PAGE_SIZE = 50
 
 
 class JiraEventService:
@@ -44,19 +43,14 @@ class JiraEventService:
 
         # target_date가 없으면 유저 타임존 기준 어제 날짜로 설정
         if target_date is None:
-            target_date = datetime.now(user.tz_info).date() - timedelta(days=1)
+            target_date = get_yesterday(user.tz_info)
 
         # JiraUser 조회 (user_id로 매핑된 jira_user)
-        jira_users = self.jira_user_repository.find_by_user_id(user_id)
-        if not jira_users:
+        jira_user = self.jira_user_repository.find_by_user_id(user_id)
+        if not jira_user:
             raise JiraUserNotAssignedException(user_id)
-
-        jira_user = jira_users[0]
         if not jira_user.project:
-            logger.warning(
-                f"JiraUser에 프로젝트 미할당: jira_user_id={jira_user.id}, user_id={user_id}"
-            )
-            return []
+            raise JiraUserProjectNotAssignedException(user_id)
 
         # 기존 데이터 삭제 후 갱신
         self.jira_event_repository.delete_by_user_id_and_target_date(user_id, target_date)
@@ -71,35 +65,23 @@ class JiraEventService:
             updated_before=next_date.isoformat(),
         )
 
-        # Jira API 호출 (페이지네이션)
         jira_client = get_jira_client()
-        all_issues: list[JiraIssueModel] = []
+        issues: list[JiraIssueModel] = []
 
-        for page in range(MAX_PAGES):
-            start_at = page * PAGE_SIZE
-            result = jira_client.fetch_search_issues(
-                jql=jql,
-                start_at=start_at,
-                max_results=PAGE_SIZE,
-            )
-            for issue in result:
-                issue_model = JiraIssueModel.from_raw(issue.raw)
-                all_issues.append(issue_model)
-
-            if len(result) < PAGE_SIZE:
-                break
+        # Jira API 호출 (페이지네이션 하지 않음, 하루 50개 이상 이슈 업데이트 되는 경우는 드물다고 가정)
+        result = jira_client.fetch_search_issues(jql=jql)
+        for issue in result:
+            issue_model = JiraIssueModel.from_raw(issue.raw)
+            issues.append(issue_model)
 
         logger.info(
-            f"Collected {len(all_issues)} Jira issues "
-            f"for user_id={user_id}, target_date={target_date}"
+            f"Collected {len(issues)} issues for user_id={user_id}, target_date={target_date}"
         )
-
-        if not all_issues:
+        if not issues:
             return []
 
-        # Entity 생성 및 저장
         events = []
-        for issue_model in all_issues:
+        for issue_model in issues:
             # changelog를 target_date 기준으로 필터링하여 저장
             filtered_changelog = issue_model.filter_changelog_by_date(target_date, user.tz_info)
             changelog_data = (
@@ -113,6 +95,7 @@ class JiraEventService:
                     user_id=user_id,
                     jira_user_id=jira_user.id,
                     target_date=target_date,
+                    issue_id=issue_model.id,
                     issue_key=issue_model.key,
                     issue=issue_model.model_dump(mode="json"),
                     changelog=changelog_data,

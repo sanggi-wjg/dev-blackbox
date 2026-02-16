@@ -1,23 +1,22 @@
 from datetime import date
 from functools import cached_property
 
-from sqlalchemy import BigInteger, Date, ForeignKey, String, UniqueConstraint
+from sqlalchemy import BigInteger, Date, ForeignKey, String
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
-from dev_blackbox.client.model.jira_model import JiraIssueModel
+from dev_blackbox.client.model.jira_api_model import JiraIssueModel
 from dev_blackbox.storage.rds.entity.base import Base
 
 
 class JiraEvent(Base):
     __tablename__ = "jira_event"
-    __table_args__ = (
-        UniqueConstraint("issue_key", "target_date", name="uq_jira_event_issue_key_target_date"),
-    )
+    __table_args__ = ()
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    issue_key: Mapped[str] = mapped_column(String(100), nullable=False)
     target_date: Mapped[date] = mapped_column(Date, nullable=False)
+    issue_id: Mapped[str] = mapped_column(String(100), nullable=False)
+    issue_key: Mapped[str] = mapped_column(String(100), nullable=False)
     issue: Mapped[dict] = mapped_column(JSONB, nullable=False)
     changelog: Mapped[list | None] = mapped_column(JSONB, nullable=True)
 
@@ -41,6 +40,7 @@ class JiraEvent(Base):
         user_id: int,
         jira_user_id: int,
         target_date: date,
+        issue_id: str,
         issue_key: str,
         issue: dict,
         changelog: list | None,
@@ -49,6 +49,7 @@ class JiraEvent(Base):
             user_id=user_id,
             jira_user_id=jira_user_id,
             target_date=target_date,
+            issue_id=issue_id,
             issue_key=issue_key,
             issue=issue,
             changelog=changelog,

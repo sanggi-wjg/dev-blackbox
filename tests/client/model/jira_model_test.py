@@ -1,4 +1,4 @@
-from dev_blackbox.client.model.jira_model import JiraStatusGroup
+from dev_blackbox.client.model.jira_api_model import JiraStatusGroup
 
 
 def test_jira_status_group():

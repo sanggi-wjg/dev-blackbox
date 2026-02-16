@@ -14,10 +14,10 @@ class GitHubUserSecret(SoftDeleteMixin, Base):
     __tablename__ = "github_user_secret"
     __table_args__ = (
         Index(
-            'uq_github_user_secret_user_id_active',
-            'user_id',
+            "uq_github_user_secret_user_id_active",
+            "user_id",
             unique=True,
-            postgresql_where='is_deleted = FALSE',
+            postgresql_where="is_deleted = FALSE",
         ),
     )
 

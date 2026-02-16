@@ -5,7 +5,7 @@ from sqlalchemy import BigInteger, Date, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
-from dev_blackbox.client.model.github_model import GithubCommitModel, GithubEventModel
+from dev_blackbox.client.model.github_api_model import GithubCommitModel, GithubEventModel
 from dev_blackbox.storage.rds.entity.base import Base
 
 

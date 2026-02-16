@@ -4,7 +4,7 @@ from zoneinfo import ZoneInfo
 
 import httpx
 
-from dev_blackbox.client.model.github_model import GithubEventModelList, GithubCommitModel
+from dev_blackbox.client.model.github_api_model import GithubEventModelList, GithubCommitModel
 
 logger = logging.getLogger(__name__)
 

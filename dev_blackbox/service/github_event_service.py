@@ -1,10 +1,10 @@
 import logging
-from datetime import date, timedelta, datetime
+from datetime import date
 
 from sqlalchemy.orm import Session
 
 from dev_blackbox.client.github_client import GitHubClient
-from dev_blackbox.client.model.github_model import GithubEventModel, GithubCommitModel
+from dev_blackbox.client.model.github_api_model import GithubEventModel, GithubCommitModel
 from dev_blackbox.core.encrypt import get_encrypt_service
 from dev_blackbox.core.exception import (
     UserByIdNotFoundException,
@@ -17,6 +17,7 @@ from dev_blackbox.storage.rds.repository import (
     UserRepository,
     GitHubUserSecretRepository,
 )
+from dev_blackbox.util.datetime_util import get_yesterday
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +49,7 @@ class GitHubEventService:
 
         # target_date가 없으면 유저 타임존 기준 어제 날짜로 설정
         if target_date is None:
-            target_date = datetime.now(user.tz_info).date() - timedelta(days=1)
+            target_date = get_yesterday(user.tz_info)
 
         # 기존 데이터 삭제 후 갱신하도록
         self.github_event_repository.delete_by_user_id_and_target_date(user_id, target_date)
