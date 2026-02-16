@@ -1,7 +1,7 @@
-from datetime import date
+from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
-from dev_blackbox.util.datetime_util import get_date_from_iso_format
+from dev_blackbox.util.datetime_util import get_date_from_iso_format, get_yesterday
 
 
 def test_get_date_from_iso_format():
@@ -14,3 +14,15 @@ def test_get_date_from_iso_format():
 
     # then
     assert result == date(2026, 2, 15)
+
+
+def test_get_yesterday():
+    # given
+    tz_info = ZoneInfo("Asia/Seoul")
+
+    # when
+    result = get_yesterday(tz_info)
+
+    # then
+    expected = datetime.now(tz_info).date() - timedelta(days=1)
+    assert result == expected

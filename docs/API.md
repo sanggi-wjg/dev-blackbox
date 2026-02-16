@@ -15,8 +15,8 @@ REST API 엔드포인트 명세.
 | GET    | `/users`                          | 전체 사용자 목록          | 200   |
 | POST   | `/github-secrets`                 | GitHub 시크릿 등록      | 201   |
 | GET    | `/github-secrets/users/{user_id}` | 사용자별 GitHub 시크릿 조회 | 200   |
-| POST   | `/collect/github/users/{user_id}` | GitHub 데이터 수집      | 201   |
-| GET    | `/github-events/users/{user_id}`  | 사용자별 GitHub 이벤트 조회 | 200   |
+| GET    | `/github-events/users/{user_id}`         | 사용자별 GitHub 이벤트 조회 | 200   |
+| POST   | `/github-events/users/{user_id}/collect` | GitHub 데이터 수집       | 201   |
 
 ## DTO 상세
 
@@ -60,15 +60,6 @@ REST API 엔드포인트 명세.
 | user_id   | int  | 사용자 ID      |
 | is_active | bool | 활성 상태       |
 
-### GitHub Collect
-
-**`CollectGitHubRequestDto`** (Request)
-
-| 필드          | 타입          | 필수 | 설명                     |
-|-------------|-------------|:--:|------------------------|
-| user_id     | int         | O  | 사용자 ID                 |
-| target_date | date / null | X  | 수집 대상 날짜 (null: 어제 날짜) |
-
 ### GitHub Event
 
 **`GitHubEventResponseDto`** (Response)
@@ -81,6 +72,12 @@ REST API 엔드포인트 명세.
 | event       | dict        | 이벤트 원본 데이터    |
 | commit      | dict / null | 커밋 상세 데이터     |
 
+**`CollectGitHubRequestDto`** (Request — 수집 API용)
+
+| 필드          | 타입          | 필수 | 설명                     |
+|-------------|-------------|:--:|------------------------|
+| target_date | date / null | X  | 수집 대상 날짜 (null: 어제 날짜) |
+
 **`MinimumGitHubEventResponseDto`** (Response — 수집 API 응답용)
 
 | 필드          | 타입   | 설명            |
@@ -88,6 +85,26 @@ REST API 엔드포인트 명세.
 | id          | int  | 이벤트 ID        |
 | event_id    | str  | GitHub 이벤트 ID |
 | target_date | date | 수집 대상 날짜      |
+
+## 서비스 모델
+
+### UserWithRelated
+
+User 엔티티와 관련 정보를 통합한 서비스 계층 모델.
+
+| 필드                 | 타입                         | 설명                    |
+|--------------------|----------------------------|-----------------------|
+| id                 | int                        | 사용자 ID                |
+| name               | str                        | 이름                    |
+| email              | str                        | 이메일                   |
+| timezone           | str                        | 타임존                   |
+| tz_info            | ZoneInfo                   | 타임존 객체                |
+| created_at         | datetime                   | 생성일시                  |
+| updated_at         | datetime                   | 수정일시                  |
+| github_user_secret | GitHubUserSecretInfo / null | GitHub 시크릿 정보         |
+| jira_user          | JiraUserInfo / null        | Jira 사용자 정보           |
+
+- `UserWithRelated.from_entity(user)` 팩토리 메서드로 User 엔티티에서 변환
 
 ## 커스텀 타입
 
@@ -104,7 +121,8 @@ ServiceException (500)
 └── EntityNotFoundException (404)
     ├── UserByIdNotFoundException
     ├── UserByNameNotFoundException
-    └── GitHubSecretByUserIdNotFoundException
+    ├── GitHubSecretByUserIdNotFoundException
+    └── JiraUserByIdNotFoundException
 ```
 
 - `exception_handler.py`에서 FastAPI에 핸들러 등록

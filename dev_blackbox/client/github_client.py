@@ -4,12 +4,12 @@ from zoneinfo import ZoneInfo
 
 import httpx
 
-from dev_blackbox.client.model.github_model import GithubEventModelList, GithubCommitModel
+from dev_blackbox.client.model.github_api_model import GithubEventModelList, GithubCommitModel
 
 logger = logging.getLogger(__name__)
 
 
-class GithubClient:
+class GitHubClient:
 
     def __init__(self, token: str):
         self._token = token

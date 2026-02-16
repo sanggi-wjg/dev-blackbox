@@ -40,7 +40,78 @@ docker compose -f docker/docker-compose.yaml up -d
 ### pgvector
 
 - `CREATE EXTENSION IF NOT EXISTS vector`로 활성화
-- 향후 임베딩 저장에 활용 예정
+- PlatformSummary, DailySummary 임베딩 벡터 저장에 활용 (`vector(1024)`)
+
+## Redis
+
+- 이미지: `redis:8-alpine`
+- 컨테이너: `dev-blackbox-redis`
+- 포트: `7410:6379`
+- 리소스: CPU 0.5, Memory 512MB
+- Healthcheck: `redis-cli ping` (30s interval)
+
+### 사용 목적
+
+- **APScheduler JobStore** — 스케줄링 태스크 상태 저장
+- **분산 락** — 동일 태스크 중복 실행 방지 (`distributed_lock()`)
+
+### Redis 클라이언트
+
+`get_redis_client(database)` — `@lru_cache` 기반 Redis 클라이언트 팩토리.
+연결 실패 시 `None` 반환 (graceful degradation).
+
+## APScheduler (백그라운드 스케줄러)
+
+APScheduler `BackgroundScheduler` 기반 태스크 스케줄링.
+
+### 설정
+
+| 설정                 | 값                       | 설명            |
+|--------------------|-------------------------|---------------|
+| JobStore           | RedisJobStore           | Redis 기반 저장소  |
+| Executor (default) | ThreadPoolExecutor(20)  | 스레드 풀         |
+| Executor (process) | ProcessPoolExecutor(5)  | 프로세스 풀        |
+| misfire_grace_time | 3600 (1시간)              | 미실행 허용 시간     |
+| max_instances      | 1                       | 동일 작업 중복 방지   |
+| coalesce           | False                   | 밀린 작업 병합 안함   |
+| timezone           | UTC                     | 스케줄러 타임존      |
+
+### 등록된 태스크
+
+| 태스크                      | 스케줄                  | 설명                |
+|--------------------------|----------------------|-------------------|
+| `health_check_task()`    | 매 1분 (interval)      | 헬스 체크             |
+| `collect_platform_task()` | 매일 00:00 UTC (cron)  | 플랫폼별 데이터 수집 + 요약 |
+| `sync_jira_users_task()` | 매일 15:00 UTC (cron)  | Jira 사용자 동기화      |
+
+### Lifespan
+
+`main.py`에서 FastAPI lifespan으로 관리:
+- 시작: `scheduler.start()`
+- 종료: `scheduler.shutdown(wait=True)` → `engine.dispose()`
+
+## 분산 락
+
+Redis 기반 분산 락으로 동일 태스크 중복 실행 방지.
+
+```python
+with distributed_lock(DistributedLockName.COLLECT_PLATFORM_TASK, timeout=300) as acquired:
+    if not acquired:
+        return  # 이미 실행 중, 스킵
+    do_work()
+```
+
+| 파라미터             | 기본값 | 설명                              |
+|------------------|-----|---------------------------------|
+| lock_name        | -   | 락 이름 (`DistributedLockName` Enum) |
+| timeout          | 60  | 락 자동 해제 시간 (초, 데드락 방지)          |
+| blocking_timeout | 0   | 락 획득 대기 시간 (0: non-blocking)    |
+
+**DistributedLockName:**
+- `SYNC_JIRA_USERS_TASK`
+- `COLLECT_PLATFORM_TASK`
+
+**Fallback:** Redis 불가용 시 락 없이 진행 (graceful degradation).
 
 ## Ollama (LLM)
 
@@ -88,13 +159,26 @@ DATABASE__PASSWORD=passw0rd
 
 ENCRYPTION__KEY=...
 ENCRYPTION__PEPPER=...
+
+REDIS__HOST=localhost
+REDIS__PORT=7410
+
+JIRA__URL=your-jira-base-url-here
+JIRA__USERNAME=your-jira-username-here
+JIRA__API_TOKEN=your-jira-api-token-here
+
+CONFLUENCE__SPACES='["target-space-1", "target-space-2"]'
 ```
 
 ### 설정 클래스 계층
 
 - `Settings` — 최상위 설정 (싱글턴, `@lru_cache`)
     - `PostgresDatabaseSecrets` — DB 연결 정보 + 커넥션 풀 설정
+    - `RedisSecrets` — Redis 연결 정보 (host, port)
     - `EncryptionSecrets` — 암호화 키/페퍼
+    - `JiraSecrets` — Jira 연결 정보 (url, username, api_token)
+    - `ConfluenceSecrets` — Confluence 대상 스페이스 목록
+    - `LoggingConfig` — 로깅 설정 (레벨, 포맷)
 
 ### 커넥션 풀 설정
 
@@ -116,10 +200,3 @@ GitHub PAT 등 민감 정보를 암호화하여 DB에 저장.
 - 바이너리 형식: `salt(16) + nonce(12) + tag(16) + ciphertext`
 - 인코딩: URL-safe Base64
 - `EncryptService.encrypt(plaintext)` / `decrypt(encrypted)`
-
-## Redis (예정)
-
-Docker Compose에 정의되어 있으나 현재 비활성화 (주석 처리).
-
-- 이미지: `redis:8-alpine`
-- 포트: `7410:6379`
