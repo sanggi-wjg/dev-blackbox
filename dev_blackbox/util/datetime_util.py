@@ -8,3 +8,12 @@ def get_date_from_iso_format(iso_datetime: str, tz_info: ZoneInfo) -> date:
 
 def get_yesterday(tz_info: ZoneInfo) -> date:
     return datetime.now(tz_info).date() - timedelta(days=1)
+
+
+def get_daily_timestamp_range(target_date: date, tz_info: ZoneInfo) -> tuple[str, str]:
+    """
+    target_date를 날짜 기준 시작/종료 Unix timestamp 문자열로 변환
+    """
+    start_dt = datetime(target_date.year, target_date.month, target_date.day, tzinfo=tz_info)
+    end_dt = start_dt + timedelta(days=1)
+    return str(start_dt.timestamp()), str(end_dt.timestamp())

@@ -12,8 +12,8 @@ from dev_blackbox.core.database import get_db_session
 from dev_blackbox.core.enum import PlatformEnum
 from dev_blackbox.service.github_event_service import GitHubEventService
 from dev_blackbox.service.jira_event_service import JiraEventService
-from dev_blackbox.service.slack_message_service import SlackMessageService
 from dev_blackbox.service.model.user_model import UserWithRelated
+from dev_blackbox.service.slack_message_service import SlackMessageService
 from dev_blackbox.service.summary_service import SummaryService
 from dev_blackbox.service.user_service import UserService
 from dev_blackbox.util.datetime_util import get_yesterday
@@ -33,7 +33,7 @@ def collect_platform_task():
         with get_db_session() as session:
             user_service = UserService(session)
             users = user_service.get_users()  # fixme n+1
-            users_with_related = [UserWithRelated.from_entity(user) for user in users]
+            users_with_related = [UserWithRelated.model_validate(user) for user in users]
 
         for user in users_with_related:
             target_date = get_yesterday(user.tz_info)

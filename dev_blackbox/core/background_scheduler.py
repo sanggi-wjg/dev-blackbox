@@ -1,3 +1,5 @@
+import multiprocessing
+
 from apscheduler.executors.pool import ThreadPoolExecutor, ProcessPoolExecutor
 from apscheduler.jobstores.redis import RedisJobStore
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -14,6 +16,7 @@ https://apscheduler.readthedocs.io/en/3.x/userguide.html#
 """
 
 _redis_secret = get_settings().redis
+_cpu_count = multiprocessing.cpu_count()
 
 
 class _BackgroundSchedulerStores:
@@ -34,7 +37,7 @@ scheduler = BackgroundScheduler(
     },
     executors={
         _BackgroundSchedulerExecutors.DEFAULT: ThreadPoolExecutor(20),
-        _BackgroundSchedulerExecutors.PROCESS_POOL: ProcessPoolExecutor(5),
+        _BackgroundSchedulerExecutors.PROCESS_POOL: ProcessPoolExecutor(_cpu_count),
     },
     job_defaults={
         "misfire_grace_time": 3600,  # 1시간까지 지나도 실행 허용
@@ -47,13 +50,13 @@ scheduler = BackgroundScheduler(
 scheduler.add_job(health_check_task, "interval", minutes=1)
 scheduler.add_job(
     collect_platform_task,
-    CronTrigger(hour=0, minute=0),
+    CronTrigger(hour=0, minute=0, day_of_week="mon-fri"),  # 09:00 KST, 평일만
 )
 scheduler.add_job(
     sync_jira_users_task,
-    CronTrigger(hour=15, minute=00),
+    CronTrigger(hour=15, minute=00),  # 00:00 KST
 )
 scheduler.add_job(
     sync_slack_users_task,
-    CronTrigger(hour=15, minute=30),
+    CronTrigger(hour=15, minute=10),  # 00:10 KST
 )

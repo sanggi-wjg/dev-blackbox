@@ -1,5 +1,5 @@
 import logging
-from datetime import date, datetime, timedelta
+from datetime import date
 from functools import lru_cache
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -9,6 +9,7 @@ from slack_sdk import WebClient
 from dev_blackbox.client.model.slack_api_model import SlackChannelModel, SlackMessageModel
 from dev_blackbox.core.config import get_settings
 from dev_blackbox.core.exception import SlackClientException
+from dev_blackbox.util.datetime_util import get_daily_timestamp_range
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +39,9 @@ class SlackClient:
         return users
 
     def fetch_channels(self) -> list[SlackChannelModel]:
-        """봇이 참여한 채널 목록 조회"""
+        """
+        봇이 참여한 채널 목록 조회
+        """
         channels: list[SlackChannelModel] = []
         cursor = None
 
@@ -72,8 +75,10 @@ class SlackClient:
         target_date: date,
         tz_info: ZoneInfo,
     ) -> list[SlackMessageModel]:
-        """특정 채널에서 target_date 하루 범위의 메시지 조회"""
-        oldest, latest = self._date_to_timestamps(target_date, tz_info)
+        """
+        특정 채널에서 target_date 하루 범위의 메시지 조회
+        """
+        oldest, latest = get_daily_timestamp_range(target_date, tz_info)
         messages: list[SlackMessageModel] = []
         cursor = None
 
@@ -112,7 +117,7 @@ class SlackClient:
         tz_info: ZoneInfo,
     ) -> list[SlackMessageModel]:
         """스레드 답글 조회 (부모 메시지 제외, target_date 범위만)"""
-        oldest, latest = self._date_to_timestamps(target_date, tz_info)
+        oldest, latest = get_daily_timestamp_range(target_date, tz_info)
         replies: list[SlackMessageModel] = []
         cursor = None
 
@@ -146,13 +151,6 @@ class SlackClient:
                 break
 
         return replies
-
-    @staticmethod
-    def _date_to_timestamps(target_date: date, tz_info: ZoneInfo) -> tuple[str, str]:
-        """target_date를 사용자 타임존 기준 시작/종료 Unix timestamp 문자열로 변환"""
-        start_dt = datetime(target_date.year, target_date.month, target_date.day, tzinfo=tz_info)
-        end_dt = start_dt + timedelta(days=1)
-        return str(start_dt.timestamp()), str(end_dt.timestamp())
 
 
 @lru_cache

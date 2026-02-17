@@ -10,10 +10,10 @@ from dev_blackbox.core.exception import (
     UserByIdNotFoundException,
     SlackUserNotAssignedException,
 )
+from dev_blackbox.storage.rds.entity import User
 from dev_blackbox.storage.rds.entity.slack_message import SlackMessage
 from dev_blackbox.storage.rds.repository import (
     UserRepository,
-    SlackUserRepository,
     SlackMessageRepository,
 )
 from dev_blackbox.util.datetime_util import get_yesterday
@@ -26,7 +26,6 @@ class SlackMessageService:
     def __init__(self, session: Session):
         self.session = session
         self.user_repository = UserRepository(session)
-        self.slack_user_repository = SlackUserRepository(session)
         self.slack_message_repository = SlackMessageRepository(session)
 
     def get_slack_messages(
@@ -35,7 +34,8 @@ class SlackMessageService:
         target_date: date,
     ) -> list[SlackMessage]:
         return self.slack_message_repository.find_all_by_user_id_and_target_date(
-            user_id, target_date
+            user_id,
+            target_date,
         )
 
     def save_slack_messages(
@@ -43,18 +43,14 @@ class SlackMessageService:
         user_id: int,
         target_date: date | None = None,
     ) -> list[SlackMessage]:
-        user = self.user_repository.find_by_id(user_id)
-        if user is None:
-            raise UserByIdNotFoundException(user_id)
-
-        if target_date is None:
-            target_date = get_yesterday(user.tz_info)
-
-        slack_user = self.slack_user_repository.find_by_user_id(user_id)
+        user = self._get_user_or_throw(user_id)
+        target_date = target_date or get_yesterday(user.tz_info)
+        slack_user = user.slack_user
         if not slack_user:
             raise SlackUserNotAssignedException(user_id)
+        logger.info(f"Collecting Slack messages for user_id={user_id}, target_date={target_date}")
 
-        # 기존 데이터 삭제 후 갱신 (멱등성 보장)
+        # 기존 데이터 삭제 후 갱신
         self.slack_message_repository.delete_by_user_id_and_target_date(user_id, target_date)
 
         slack_client = get_slack_client()
@@ -124,3 +120,9 @@ class SlackMessageService:
             return []
 
         return self.slack_message_repository.save_all(all_messages)
+
+    def _get_user_or_throw(self, user_id: int) -> User:
+        user = self.user_repository.find_by_id(user_id)
+        if user is None:
+            raise UserByIdNotFoundException(user_id)
+        return user

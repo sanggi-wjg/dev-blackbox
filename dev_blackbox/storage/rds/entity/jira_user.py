@@ -52,6 +52,9 @@ class JiraUser(Base):
             user_id=user_id,
         )
 
+    def has_project(self) -> bool:
+        return self.project is not None
+
     def assign_user_and_project(self, user_id: int, project: str) -> "JiraUser":
         self.project = project
         self.user_id = user_id

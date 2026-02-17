@@ -1,6 +1,5 @@
 import logging
 
-from sqlalchemy.event import dispatcher
 from sqlalchemy.orm import Session
 
 from dev_blackbox.client.slack_client import get_slack_client
