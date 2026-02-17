@@ -93,8 +93,8 @@ class SlackClient:
         while True:
             response = self.client.conversations_history(
                 channel=channel_id,
-                oldest=oldest,
-                latest=latest,
+                oldest=str(oldest),
+                latest=str(latest),
                 limit=200,
                 cursor=cursor,
             )
@@ -138,8 +138,8 @@ class SlackClient:
             response = self.client.conversations_replies(
                 channel=channel_id,
                 ts=thread_ts,
-                oldest=oldest,
-                latest=latest,
+                oldest=str(oldest),
+                latest=str(latest),
                 limit=100,
                 cursor=cursor,
             )
