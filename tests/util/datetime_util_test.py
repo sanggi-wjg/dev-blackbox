@@ -5,6 +5,7 @@ from dev_blackbox.util.datetime_util import (
     get_daily_timestamp_range,
     get_date_from_iso_format,
     get_yesterday,
+    is_timestamp_in_range,
 )
 
 
@@ -43,5 +44,21 @@ def test_get_daily_timestamp_range():
     # then
     start_dt = datetime(2026, 2, 15, tzinfo=tz_info)
     end_dt = datetime(2026, 2, 16, tzinfo=tz_info)
-    assert oldest == str(start_dt.timestamp())
-    assert latest == str(end_dt.timestamp())
+
+    assert oldest == start_dt.timestamp()
+    assert latest == end_dt.timestamp()
+
+
+def test_is_timestamp_in_range():
+    # given
+    tz_info = ZoneInfo("Asia/Seoul")
+    target_date = date(2026, 2, 15)
+    target_datetime = datetime(2026, 2, 15, 12, tzinfo=tz_info)
+
+    oldest, latest = get_daily_timestamp_range(target_date, tz_info)
+
+    # when
+    result = is_timestamp_in_range(target_datetime.timestamp(), oldest, latest)
+
+    # then
+    assert result

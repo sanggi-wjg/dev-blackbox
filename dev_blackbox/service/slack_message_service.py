@@ -4,6 +4,7 @@ from datetime import date
 
 from sqlalchemy.orm import Session
 
+from dev_blackbox.client.model.slack_api_model import SlackMessageModel
 from dev_blackbox.client.slack_client import get_slack_client
 from dev_blackbox.core.exception import (
     UserByIdNotFoundException,
@@ -16,7 +17,11 @@ from dev_blackbox.storage.rds.repository import (
     UserRepository,
     SlackMessageRepository,
 )
-from dev_blackbox.util.datetime_util import get_daily_timestamp_range, get_yesterday
+from dev_blackbox.util.datetime_util import (
+    get_daily_timestamp_range,
+    get_yesterday,
+    is_timestamp_in_range,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -58,40 +63,27 @@ class SlackMessageService:
         if not channels:
             raise NoSlackChannelsFound()
 
-        # target_date 타임스탬프 범위 (lookback 확장 시 필터링용)
         target_oldest, target_latest = get_daily_timestamp_range(target_date, user.tz_info)
-
-        def _is_in_target_date(ts: str) -> bool:
-            return float(target_oldest) <= float(ts) < float(target_latest)
-
         new_messages: list[SlackMessage] = []
 
         for channel in channels:
-            time.sleep(1)  # Rate limit 대응
             messages = slack_client.fetch_messages_by_date(
                 channel_id=channel.id,
                 target_date=target_date,
                 tz_info=user.tz_info,
-                lookback_days=10,  # 과거 스레드 부모 메시지 포함을 위해 조회 범위 확장
+                lookback_days=15,  # 과거 스레드 부모 메시지 포함을 위해서 과거도 같이 조회 하도록 (15일 정도면...??)
             )
 
-            messages_no_thread = [
-                m
-                for m in messages
-                if m.thread_ts is None
-                and m.user == slack_user.member_id
-                and _is_in_target_date(m.ts)
-            ]
-            thread_parents = [
-                m
-                for m in messages
-                if m.thread_ts is not None
-                and (
-                    _is_in_target_date(m.ts)
-                    or (m.latest_reply and _is_in_target_date(m.latest_reply))
-                )
-            ]
-            thread_ts_set = {m.thread_ts for m in thread_parents if m.thread_ts is not None}
+            # 유저 메시지 중 스레드 없는 메시지 / 스레드 있는 메시지 구분
+            messages_no_thread = self._filter_message_no_thread(
+                messages, slack_user.member_id, target_oldest, target_latest
+            )
+            messages_with_thread = self._filter_message_with_thread(
+                messages, target_oldest, target_latest
+            )
+            thread_ts_set = {m.thread_ts for m in messages_with_thread if m.thread_ts is not None}
+            logger.info(f"Collected {len(messages_no_thread)} Slack messages without thread.")
+            logger.info(f"Collected {len(messages_with_thread)} Slack messages with thread.")
 
             for msg in messages_no_thread:
                 new_messages.append(
@@ -110,7 +102,6 @@ class SlackMessageService:
 
             # 스레드 답글: 사용자의 답글만 개별 row로 저장
             for thread_ts in thread_ts_set:
-                time.sleep(2)  # Rate limit 대응
                 thread_replies = slack_client.fetch_thread_replies(
                     channel_id=channel.id,
                     thread_ts=thread_ts,
@@ -133,7 +124,8 @@ class SlackMessageService:
                             thread_ts=thread_ts,
                         )
                     )
-
+                time.sleep(2)  # rate limit
+            time.sleep(2)  # rate limit
         logger.info(
             f"Collected {len(new_messages)} Slack messages for user_id={user_id}, target_date={target_date}"
         )
@@ -144,3 +136,37 @@ class SlackMessageService:
         if user is None:
             raise UserByIdNotFoundException(user_id)
         return user
+
+    def _filter_message_no_thread(
+        self,
+        messages: list[SlackMessageModel],
+        slack_member_id: str,
+        target_oldest: float,
+        target_latest: float,
+    ) -> list[SlackMessageModel]:
+        return [
+            m
+            for m in messages
+            if m.thread_ts is None
+            and m.user == slack_member_id
+            and is_timestamp_in_range(m.ts, target_oldest, target_latest)
+        ]
+
+    def _filter_message_with_thread(
+        self,
+        messages: list[SlackMessageModel],
+        target_oldest: float,
+        target_latest: float,
+    ) -> list[SlackMessageModel]:
+        return [
+            m
+            for m in messages
+            if m.thread_ts is not None
+            and (
+                is_timestamp_in_range(m.ts, target_oldest, target_latest)
+                or (
+                    m.latest_reply
+                    and is_timestamp_in_range(m.latest_reply, target_oldest, target_latest)
+                )
+            )
+        ]
