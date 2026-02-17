@@ -43,6 +43,10 @@ class JiraSecrets(BaseModel):
     api_token: str
 
 
+class SlackSecrets(BaseModel):
+    bot_token: str
+
+
 class ConfluenceSecrets(BaseModel):
     spaces: list[str]
 
@@ -72,6 +76,7 @@ class Settings(BaseSettings):
     redis: RedisSecrets
     encryption: EncryptionSecrets
     jira: JiraSecrets
+    slack: SlackSecrets
     confluence: ConfluenceSecrets
     logging: LoggingConfig = LoggingConfig()
 

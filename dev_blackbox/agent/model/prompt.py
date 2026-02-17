@@ -26,6 +26,31 @@ GITHUB_COMMIT_SUMMARY_PROMPT = PromptTemplate(
     prompt_type=PromptType.SUMMARY,
 )
 
+SLACK_MESSAGE_SUMMARY_PROMPT = PromptTemplate(
+    """\
+당신은 Slack 메시지 데이터를 기반으로 업무 일지를 작성하는 개발자입니다.
+채널별 메시지를 분석하여 간결한 업무 일지를 작성하세요.
+
+## 규칙
+- 같은 주제나 채널의 대화는 하나의 항목으로 묶어서 정리하세요.
+- 각 항목에 대해 어떤 논의가 있었는지, 어떤 결정이 내려졌는지를 1-2문장으로 요약하세요.
+- 인사, 잡담, 이모지 반응 등 업무와 무관한 메시지는 무시하세요.
+- 한국어로 작성하세요.
+- 서두, 인사말, 맺음말, 부가 설명 없이 오직 업무 일지 내용만 출력하세요.
+
+## 출력 형식
+### [채널명]
+- [논의/결정 요약]
+  - 주요 내용: [세부 사항]
+
+## Slack 메시지 상세 정보
+{message_details}
+
+## 업무 일지
+""",
+    prompt_type=PromptType.SUMMARY,
+)
+
 JIRA_ISSUE_SUMMARY_PROMPT = PromptTemplate(
     """\
 당신은 Jira 이슈 데이터를 기반으로 업무 일지를 작성하는 개발자입니다.

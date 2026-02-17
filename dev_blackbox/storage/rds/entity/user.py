@@ -9,6 +9,7 @@ from dev_blackbox.storage.rds.entity.base import SoftDeleteMixin, Base
 if TYPE_CHECKING:
     from dev_blackbox.storage.rds.entity.github_user_secret import GitHubUserSecret
     from dev_blackbox.storage.rds.entity.jira_user import JiraUser
+    from dev_blackbox.storage.rds.entity.slack_user import SlackUser
 
 
 class User(SoftDeleteMixin, Base):
@@ -26,6 +27,11 @@ class User(SoftDeleteMixin, Base):
     )
     jira_user: Mapped["JiraUser | None"] = relationship(
         "JiraUser",
+        back_populates="user",
+        uselist=False,
+    )
+    slack_user: Mapped["SlackUser | None"] = relationship(
+        "SlackUser",
         back_populates="user",
         uselist=False,
     )

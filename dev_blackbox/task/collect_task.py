@@ -3,12 +3,17 @@ from datetime import date
 
 from dev_blackbox.agent.llm_agent import LLMAgent
 from dev_blackbox.agent.model.llm_model import SummaryOllamaConfig
-from dev_blackbox.agent.model.prompt import GITHUB_COMMIT_SUMMARY_PROMPT, JIRA_ISSUE_SUMMARY_PROMPT
+from dev_blackbox.agent.model.prompt import (
+    GITHUB_COMMIT_SUMMARY_PROMPT,
+    JIRA_ISSUE_SUMMARY_PROMPT,
+    SLACK_MESSAGE_SUMMARY_PROMPT,
+)
 from dev_blackbox.core.database import get_db_session
 from dev_blackbox.core.enum import PlatformEnum
 from dev_blackbox.service.github_event_service import GitHubEventService
 from dev_blackbox.service.jira_event_service import JiraEventService
 from dev_blackbox.service.model.user_model import UserWithRelated
+from dev_blackbox.service.slack_message_service import SlackMessageService
 from dev_blackbox.service.summary_service import SummaryService
 from dev_blackbox.service.user_service import UserService
 from dev_blackbox.util.datetime_util import get_yesterday
@@ -27,8 +32,8 @@ def collect_platform_task():
 
         with get_db_session() as session:
             user_service = UserService(session)
-            users = user_service.get_users()
-            users_with_related = [UserWithRelated.from_entity(user) for user in users]
+            users = user_service.get_users()  # fixme n+1
+            users_with_related = [UserWithRelated.model_validate(user) for user in users]
 
         for user in users_with_related:
             target_date = get_yesterday(user.tz_info)
@@ -71,6 +76,16 @@ def _collect_and_summary(user: UserWithRelated, target_date: date):
     else:
         logger.info(f"JiraUser 미할당, Jira 수집 건너뜀: user_id={user.id}")
 
+    # Slack 데이터셋 수집 + 요약
+    if user.slack_user is not None:
+        message_details = _collect_slack_dataset(user, target_date)
+        if message_details:
+            _summarize_slack(user, target_date, message_details)
+        else:
+            logger.info(f"Slack 메시지 데이터 없음: user_id={user.id}, target_date={target_date}")
+    else:
+        logger.info(f"SlackUser 미할당, Slack 수집 건너뜀: user_id={user.id}")
+
 
 def _collect_github_dataset(user_id: int, target_date: date) -> str:
     with get_db_session() as session:
@@ -109,6 +124,40 @@ def _summarize_github(user: UserWithRelated, target_date: date, commit_message: 
             user_id=user.id,
             target_date=target_date,
             platform=PlatformEnum.GITHUB,
+            summary=summary_text,
+            model_name=llm_config.model,
+            prompt=prompt.template,
+        )
+
+
+def _collect_slack_dataset(user: UserWithRelated, target_date: date) -> str:
+    with get_db_session() as session:
+        service = SlackMessageService(session)
+        messages = service.save_slack_messages(user.id, target_date)
+        message_details = "\n".join(f"[#{m.channel_name}] {m.message_text}" for m in messages)
+    # LLM context 초과 방지
+    if len(message_details) > 50000:
+        message_details = message_details[:50000]
+    return message_details
+
+
+def _summarize_slack(user: UserWithRelated, target_date: date, message_details: str):
+    llm_config = SummaryOllamaConfig()
+    prompt = SLACK_MESSAGE_SUMMARY_PROMPT
+
+    try:
+        llm_agent = LLMAgent.create_with_ollama(llm_config)
+        summary_text = llm_agent.query(prompt, message_details=message_details)
+    except Exception:
+        logger.exception(f"LLM 요약 실패 (Slack): user_id={user.id}, target_date={target_date}")
+        raise
+
+    with get_db_session() as session:
+        summary_service = SummaryService(session)
+        summary_service.save_platform_summary(
+            user_id=user.id,
+            target_date=target_date,
+            platform=PlatformEnum.SLACK,
             summary=summary_text,
             model_name=llm_config.model,
             prompt=prompt.template,

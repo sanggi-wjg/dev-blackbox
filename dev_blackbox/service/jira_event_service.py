@@ -14,6 +14,7 @@ from dev_blackbox.core.exception import (
     JiraUserNotAssignedException,
     JiraUserProjectNotAssignedException,
 )
+from dev_blackbox.storage.rds.entity import User, JiraUser
 from dev_blackbox.storage.rds.entity.jira_event import JiraEvent
 from dev_blackbox.storage.rds.repository import (
     UserRepository,
@@ -30,27 +31,32 @@ class JiraEventService:
     def __init__(self, session: Session):
         self.session = session
         self.user_repository = UserRepository(session)
-        self.jira_user_repository = JiraUserRepository(session)
         self.jira_event_repository = JiraEventRepository(session)
 
-    def get_jira_events(self, user_id: int, target_date: date) -> list[JiraEvent]:
-        return self.jira_event_repository.find_all_by_user_id_and_target_date(user_id, target_date)
+    def get_jira_events(
+        self,
+        user_id: int,
+        target_date: date,
+    ) -> list[JiraEvent]:
+        return self.jira_event_repository.find_all_by_user_id_and_target_date(
+            user_id,
+            target_date,
+        )
 
-    def save_jira_events(self, user_id: int, target_date: date | None = None) -> list[JiraEvent]:
-        user = self.user_repository.find_by_id(user_id)
-        if user is None:
-            raise UserByIdNotFoundException(user_id)
-
+    def save_jira_events(
+        self,
+        user_id: int,
+        target_date: date | None = None,
+    ) -> list[JiraEvent]:
+        user = self._get_user_or_throw(user_id)
         # target_date가 없으면 유저 타임존 기준 어제 날짜로 설정
-        if target_date is None:
-            target_date = get_yesterday(user.tz_info)
-
-        # JiraUser 조회 (user_id로 매핑된 jira_user)
-        jira_user = self.jira_user_repository.find_by_user_id(user_id)
+        target_date = target_date or get_yesterday(user.tz_info)
+        jira_user = user.jira_user
         if not jira_user:
             raise JiraUserNotAssignedException(user_id)
-        if not jira_user.project:
+        if not jira_user.has_project():
             raise JiraUserProjectNotAssignedException(user_id)
+        logger.info(f"Collecting events for user_id={user_id}, target_date={target_date}")
 
         # 기존 데이터 삭제 후 갱신
         self.jira_event_repository.delete_by_user_id_and_target_date(user_id, target_date)
@@ -103,3 +109,9 @@ class JiraEventService:
             )
 
         return self.jira_event_repository.save_all(events)
+
+    def _get_user_or_throw(self, user_id: int) -> User:
+        user = self.user_repository.find_by_id(user_id)
+        if user is None:
+            raise UserByIdNotFoundException(user_id)
+        return user

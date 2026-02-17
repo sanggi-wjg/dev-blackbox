@@ -275,3 +275,83 @@ COMMENT ON COLUMN jira_event.issue_key IS 'Jira 이슈 키 (FMP-123)';
 COMMENT ON COLUMN jira_event.target_date IS '수집 대상 날짜';
 COMMENT ON COLUMN jira_event.issue IS '이슈 원본 데이터 (JSONB)';
 COMMENT ON COLUMN jira_event.changelog IS '변경 이력 데이터 (JSONB)';
+
+
+-- slack_user 테이블 (Slack 사용자 정보)
+CREATE TABLE IF NOT EXISTS slack_user
+(
+    id           BIGSERIAL PRIMARY KEY,
+    user_id      BIGINT       NULL,
+    member_id    VARCHAR(128) NOT NULL,
+    display_name VARCHAR(255) NOT NULL,
+    real_name    VARCHAR(255) NOT NULL,
+    email        VARCHAR(255) NULL,
+
+    created_at   TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at   TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT fk_slack_user_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE RESTRICT,
+
+    CONSTRAINT uq_slack_user_member_id UNIQUE (member_id),
+    CONSTRAINT uq_slack_user_user_id UNIQUE (user_id)
+);
+
+CREATE TRIGGER tr_slack_user_updated_at
+    BEFORE UPDATE
+    ON slack_user
+    FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+CREATE INDEX idx_slack_user_001 ON slack_user (user_id);
+CREATE INDEX idx_slack_user_002 ON slack_user (member_id);
+CREATE INDEX idx_slack_user_003 ON slack_user (created_at DESC);
+
+COMMENT ON TABLE slack_user IS 'Slack 사용자 정보 테이블';
+COMMENT ON COLUMN slack_user.member_id IS 'Slack 멤버 ID (UNIQUE)';
+COMMENT ON COLUMN slack_user.display_name IS 'Slack 표시 이름';
+COMMENT ON COLUMN slack_user.real_name IS 'Slack 실제 이름';
+COMMENT ON COLUMN slack_user.email IS 'Slack 이메일';
+COMMENT ON COLUMN slack_user.user_id IS '사용자 FK';
+
+
+-- slack_message 테이블 (Slack 메시지 수집 데이터)
+CREATE TABLE IF NOT EXISTS slack_message
+(
+    id            BIGSERIAL PRIMARY KEY,
+    user_id       BIGINT       NOT NULL,
+    slack_user_id BIGINT       NOT NULL,
+    target_date   DATE         NOT NULL,
+    channel_id    VARCHAR(100) NOT NULL,
+    channel_name  VARCHAR(255) NOT NULL,
+    message_ts    VARCHAR(100) NOT NULL,
+    message_text  TEXT         NOT NULL DEFAULT '',
+    message       JSONB        NOT NULL,
+    thread_ts     VARCHAR(100) NULL,
+
+    created_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT fk_slack_message_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE RESTRICT,
+    CONSTRAINT fk_slack_message_slack_user FOREIGN KEY (slack_user_id) REFERENCES slack_user (id) ON DELETE RESTRICT
+);
+
+CREATE TRIGGER tr_slack_message_updated_at
+    BEFORE UPDATE
+    ON slack_message
+    FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+CREATE INDEX idx_slack_message_001 ON slack_message (user_id, target_date);
+CREATE INDEX idx_slack_message_002 ON slack_message (target_date);
+CREATE INDEX idx_slack_message_003 ON slack_message (created_at DESC);
+
+COMMENT ON TABLE slack_message IS 'Slack 메시지 수집 데이터';
+COMMENT ON COLUMN slack_message.user_id IS '사용자 FK';
+COMMENT ON COLUMN slack_message.slack_user_id IS 'Slack 사용자 FK';
+COMMENT ON COLUMN slack_message.target_date IS '수집 대상 날짜';
+COMMENT ON COLUMN slack_message.channel_id IS 'Slack 채널 ID';
+COMMENT ON COLUMN slack_message.channel_name IS 'Slack 채널 이름';
+COMMENT ON COLUMN slack_message.message_ts IS 'Slack 메시지 타임스탬프 (고유 ID)';
+COMMENT ON COLUMN slack_message.message_text IS '메시지 본문 (평문)';
+COMMENT ON COLUMN slack_message.message IS '메시지 원본 데이터 (JSONB)';
+COMMENT ON COLUMN slack_message.thread_ts IS '스레드 부모 타임스탬프';

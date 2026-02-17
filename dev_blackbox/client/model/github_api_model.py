@@ -103,6 +103,9 @@ class GithubCommitFileModel(BaseModel):
     patch: str | None = None
 
 
+_MAX_PATCH_LENGTH = 500
+
+
 class GithubCommitModel(BaseModel):
     sha: str
     node_id: str
@@ -127,7 +130,10 @@ class GithubCommitModel(BaseModel):
         for f in self.files:
             detail += f"{f.status}: {f.filename} +{f.additions}/-{f.deletions}"
             if f.patch:
-                detail += f"\n\n{f.patch}"
+                patch = f.patch[:_MAX_PATCH_LENGTH]
+                if len(f.patch) > _MAX_PATCH_LENGTH:
+                    patch += "\n... (truncated)"
+                detail += f"\n\n{patch}"
 
             detail += "\n\n"
 

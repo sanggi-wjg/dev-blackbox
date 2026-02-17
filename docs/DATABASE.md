@@ -88,11 +88,30 @@ PostgreSQL 데이터 모델, ORM 엔티티, 세션 관리.
 | display_name  | VARCHAR(255) | NOT NULL                      | 표시 이름       |
 | email_address | VARCHAR(255) | NOT NULL                      | Jira 이메일    |
 | url           | VARCHAR(512) | NOT NULL                      | 프로필 URL     |
-| user_id       | BIGINT       | FK → users.id, NULLABLE       | 사용자 FK (선택) |
+| project       | VARCHAR(100) | NULLABLE                      | Jira 프로젝트명  |
+| user_id       | BIGINT       | FK → users.id, NULLABLE, UNIQUE | 사용자 FK (선택) |
 
 - Mixin: 없음 (Base만 상속)
 - Relationship: `user` (N:1 → User, back_populates="jira_user")
-- Method: `create(...)` 팩토리, `assign_user(user_id)` — user_id 할당
+- Method: `create(...)` 팩토리, `assign_user_and_project(user_id, project)` — user_id + 프로젝트 할당
+
+### JiraEvent
+
+테이블: `jira_event`
+
+| 컬럼          | 타입           | 제약 조건                      | 설명            |
+|-------------|--------------|----------------------------|---------------|
+| id          | BIGSERIAL    | PK, AUTO_INCREMENT         | 이벤트 ID        |
+| user_id     | BIGINT       | FK → users.id              | 사용자 FK        |
+| jira_user_id | BIGINT      | FK → jira_user.id          | Jira 사용자 FK   |
+| issue_id    | VARCHAR(100) | NOT NULL, UNIQUE           | Jira 이슈 ID    |
+| issue_key   | VARCHAR(100) | NOT NULL                   | Jira 이슈 키 (e.g., FMP-123) |
+| target_date | DATE         | NOT NULL                   | 수집 대상 날짜      |
+| issue       | JSONB        | NOT NULL                   | 이슈 원본 데이터     |
+| changelog   | JSONB        | NULLABLE                   | 변경 이력 데이터 (target_date 기준 필터링) |
+
+- Mixin: 없음 (Base만 상속)
+- Property: `issue_model` → `JiraIssueModel` (cached_property, JSONB에서 변환)
 
 ### PlatformSummary
 
@@ -176,6 +195,14 @@ Repository는 `Session`을 주입받아 데이터 접근을 캡슐화.
 | find_by_account_id(account_id)  | JiraUser \| None | Jira 계정 ID로 조회  |
 | find_by_account_ids(account_ids) | list[JiraUser]   | 다중 계정 ID 조회     |
 
+### JiraEventRepository
+
+| 메서드                                            | 반환 타입            | 설명                |
+|------------------------------------------------|-------------------|-------------------|
+| save_all(jira_events)                          | list[JiraEvent]   | 벌크 저장             |
+| find_all_by_user_id_and_target_date(uid, date) | list[JiraEvent]   | 사용자+날짜별 이벤트 조회    |
+| delete_by_user_id_and_target_date(uid, date)   | None              | 사용자+날짜별 삭제 (재수집용) |
+
 ### PlatformSummaryRepository
 
 | 메서드                                                              | 반환 타입                  | 설명                  |
@@ -244,6 +271,9 @@ with get_db_session() as db:
 | jira_user          | idx_jira_user_001          | user_id                         |
 | jira_user          | idx_jira_user_002          | account_id                      |
 | jira_user          | idx_jira_user_003          | created_at DESC                 |
+| jira_event         | idx_jira_event_001         | (user_id, target_date)          |
+| jira_event         | idx_jira_event_002         | target_date                     |
+| jira_event         | idx_jira_event_003         | created_at DESC                 |
 | platform_summary   | idx_platform_summary_001   | (user_id, target_date)          |
 | platform_summary   | idx_platform_summary_002   | target_date                     |
 | platform_summary   | idx_platform_summary_003   | created_at DESC                 |

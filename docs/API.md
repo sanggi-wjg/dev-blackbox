@@ -118,6 +118,10 @@ User 엔티티와 관련 정보를 통합한 서비스 계층 모델.
 
 ```
 ServiceException (500)
+├── GitHubUserSecretAlreadyExistException
+├── GitHubUserSecretNotSetException
+├── JiraUserNotAssignedException
+├── JiraUserProjectNotAssignedException
 └── EntityNotFoundException (404)
     ├── UserByIdNotFoundException
     ├── UserByNameNotFoundException

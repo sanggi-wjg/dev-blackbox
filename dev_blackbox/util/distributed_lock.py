@@ -10,6 +10,7 @@ logger = logging.getLogger(__name__)
 
 class DistributedLockName(str, Enum):
     SYNC_JIRA_USERS_TASK = "sync_jira_users_task"
+    SYNC_SLACK_USERS_TASK = "sync_slack_users_task"
     COLLECT_PLATFORM_TASK = "collect_platform_task"
 
 

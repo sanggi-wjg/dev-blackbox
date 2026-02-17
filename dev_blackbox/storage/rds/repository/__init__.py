@@ -10,6 +10,8 @@ from dev_blackbox.storage.rds.repository.jira_user_repository import JiraUserRep
 from dev_blackbox.storage.rds.repository.platform_summary_repository import (
     PlatformSummaryRepository,
 )
+from dev_blackbox.storage.rds.repository.slack_message_repository import SlackMessageRepository
+from dev_blackbox.storage.rds.repository.slack_user_repository import SlackUserRepository
 from dev_blackbox.storage.rds.repository.user_repository import UserRepository
 
 __all__ = [
@@ -19,5 +21,7 @@ __all__ = [
     "JiraEventRepository",
     "JiraUserRepository",
     "PlatformSummaryRepository",
+    "SlackMessageRepository",
+    "SlackUserRepository",
     "UserRepository",
 ]
