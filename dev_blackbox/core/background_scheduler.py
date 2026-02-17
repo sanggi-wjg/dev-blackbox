@@ -50,7 +50,7 @@ scheduler = BackgroundScheduler(
 scheduler.add_job(health_check_task, "interval", minutes=1)
 scheduler.add_job(
     collect_platform_task,
-    CronTrigger(hour=0, minute=0, day_of_week="mon-fri"),  # 09:00 KST, 평일만
+    CronTrigger(hour=0, minute=0, day_of_week="tue-sat"),  # 09:00 KST, 화~토 (전날 데이터 수집)
 )
 scheduler.add_job(
     sync_jira_users_task,
