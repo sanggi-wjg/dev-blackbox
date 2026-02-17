@@ -1,5 +1,5 @@
 import logging
-from datetime import date
+from datetime import date, timedelta
 from functools import lru_cache
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -74,11 +74,19 @@ class SlackClient:
         channel_id: str,
         target_date: date,
         tz_info: ZoneInfo,
+        lookback_days: int = 0,
     ) -> list[SlackMessageModel]:
         """
-        특정 채널에서 target_date 하루 범위의 메시지 조회
+        특정 채널에서 메시지 조회.
+        lookback_days > 0이면 oldest를 target_date - lookback_days로 확장하여
+        과거 스레드 부모 메시지도 포함.
         """
         oldest, latest = get_daily_timestamp_range(target_date, tz_info)
+        if lookback_days > 0:
+            oldest, _ = get_daily_timestamp_range(
+                target_date - timedelta(days=lookback_days), tz_info
+            )
+
         messages: list[SlackMessageModel] = []
         cursor = None
 
@@ -90,6 +98,8 @@ class SlackClient:
                 limit=200,
                 cursor=cursor,
             )
+            logger.debug(f"Fetched {len(response.get('messages', []))} messages")
+
             for msg in response.get("messages", []):
                 if msg.get("subtype") is None:
                     messages.append(
@@ -98,6 +108,7 @@ class SlackClient:
                             user=msg.get("user", ""),
                             text=msg.get("text", ""),
                             thread_ts=msg.get("thread_ts"),
+                            latest_reply=msg.get("latest_reply"),
                         )
                     )
 
@@ -107,6 +118,7 @@ class SlackClient:
             if not cursor:
                 break
 
+        logger.info(f"Fetched {len(messages)} messages")
         return messages
 
     def fetch_thread_replies(
@@ -115,8 +127,9 @@ class SlackClient:
         thread_ts: str,
         target_date: date,
         tz_info: ZoneInfo,
+        include_parent: bool = False,
     ) -> list[SlackMessageModel]:
-        """스레드 답글 조회 (부모 메시지 제외, target_date 범위만)"""
+        """스레드 답글 조회 (target_date 범위만)"""
         oldest, latest = get_daily_timestamp_range(target_date, tz_info)
         replies: list[SlackMessageModel] = []
         cursor = None
@@ -127,12 +140,13 @@ class SlackClient:
                 ts=thread_ts,
                 oldest=oldest,
                 latest=latest,
-                limit=200,
+                limit=100,
                 cursor=cursor,
             )
+            logger.debug(f"Fetched {len(response.get('messages', []))} replies")
+
             for msg in response.get("messages", []):
-                # 부모 메시지 제외 (ts == thread_ts인 첫 메시지)
-                if msg.get("ts") == thread_ts:
+                if not include_parent and msg.get("ts") == thread_ts:
                     continue
                 if msg.get("subtype") is None:
                     replies.append(
@@ -150,6 +164,7 @@ class SlackClient:
             if not cursor:
                 break
 
+        logger.info(f"Fetched {len(replies)} replies")
         return replies
 
 

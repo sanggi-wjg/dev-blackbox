@@ -86,3 +86,9 @@ class SlackClientException(ServiceException):
 
     def __init__(self, message: str = "Slack API error occurred"):
         super().__init__(message)
+
+
+class NoSlackChannelsFound(ServiceException):
+
+    def __init__(self):
+        super().__init__(f"No channels found invite slack bot first.")

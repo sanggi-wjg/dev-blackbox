@@ -4,11 +4,11 @@ from datetime import date
 
 from sqlalchemy.orm import Session
 
-from dev_blackbox.client.model.slack_api_model import SlackMessageModel
 from dev_blackbox.client.slack_client import get_slack_client
 from dev_blackbox.core.exception import (
     UserByIdNotFoundException,
     SlackUserNotAssignedException,
+    NoSlackChannelsFound,
 )
 from dev_blackbox.storage.rds.entity import User
 from dev_blackbox.storage.rds.entity.slack_message import SlackMessage
@@ -16,7 +16,7 @@ from dev_blackbox.storage.rds.repository import (
     UserRepository,
     SlackMessageRepository,
 )
-from dev_blackbox.util.datetime_util import get_yesterday
+from dev_blackbox.util.datetime_util import get_daily_timestamp_range, get_yesterday
 
 logger = logging.getLogger(__name__)
 
@@ -55,47 +55,46 @@ class SlackMessageService:
 
         slack_client = get_slack_client()
         channels = slack_client.fetch_channels()
+        if not channels:
+            raise NoSlackChannelsFound()
 
-        all_messages: list[SlackMessage] = []
+        # target_date 타임스탬프 범위 (lookback 확장 시 필터링용)
+        target_oldest, target_latest = get_daily_timestamp_range(target_date, user.tz_info)
+
+        def _is_in_target_date(ts: str) -> bool:
+            return float(target_oldest) <= float(ts) < float(target_latest)
+
+        new_messages: list[SlackMessage] = []
 
         for channel in channels:
-            # 채널별 메시지 수집
+            time.sleep(1)  # Rate limit 대응
             messages = slack_client.fetch_messages_by_date(
                 channel_id=channel.id,
                 target_date=target_date,
                 tz_info=user.tz_info,
+                lookback_days=10,  # 과거 스레드 부모 메시지 포함을 위해 조회 범위 확장
             )
 
-            # 해당 Slack 사용자의 메시지만 필터링
-            user_messages = [m for m in messages if m.user == slack_user.member_id]
-
-            # 사용자가 참여한 스레드의 부모 ts 수집 (중복 제거)
-            # 사용자가 직접 작성한 메시지 중 스레드에 속한 것만 대상
-            thread_parent_ts_set: set[str] = {
-                m.thread_ts for m in user_messages if m.thread_ts and m.thread_ts != m.ts
-            }
-
-            # 스레드 답글 수집
-            thread_replies: list[SlackMessageModel] = []
-            for thread_ts in thread_parent_ts_set:
-                replies = slack_client.fetch_thread_replies(
-                    channel_id=channel.id,
-                    thread_ts=thread_ts,
-                    target_date=target_date,
-                    tz_info=user.tz_info,
+            messages_no_thread = [
+                m
+                for m in messages
+                if m.thread_ts is None
+                and m.user == slack_user.member_id
+                and _is_in_target_date(m.ts)
+            ]
+            thread_parents = [
+                m
+                for m in messages
+                if m.thread_ts is not None
+                and (
+                    _is_in_target_date(m.ts)
+                    or (m.latest_reply and _is_in_target_date(m.latest_reply))
                 )
-                thread_replies.extend([r for r in replies if r.user == slack_user.member_id])
-                time.sleep(1)  # Rate limit 대응
+            ]
+            thread_ts_set = {m.thread_ts for m in thread_parents if m.thread_ts is not None}
 
-            # 이미 수집된 채널 메시지와 중복되지 않는 스레드 답글만 추가
-            collected_ts = {m.ts for m in user_messages}
-            for reply in thread_replies:
-                if reply.ts not in collected_ts:
-                    user_messages.append(reply)
-                    collected_ts.add(reply.ts)
-
-            for msg in user_messages:
-                all_messages.append(
+            for msg in messages_no_thread:
+                new_messages.append(
                     SlackMessage.create(
                         user_id=user_id,
                         slack_user_id=slack_user.id,
@@ -105,21 +104,40 @@ class SlackMessageService:
                         message_ts=msg.ts,
                         message_text=msg.text,
                         message=msg.model_dump(mode="json"),
-                        thread_ts=msg.thread_ts,
+                        thread_ts=None,
                     )
                 )
 
-            time.sleep(1)  # Rate limit 대응 (채널 간)
+            # 스레드 답글: 사용자의 답글만 개별 row로 저장
+            for thread_ts in thread_ts_set:
+                time.sleep(2)  # Rate limit 대응
+                thread_replies = slack_client.fetch_thread_replies(
+                    channel_id=channel.id,
+                    thread_ts=thread_ts,
+                    target_date=target_date,
+                    tz_info=user.tz_info,
+                )
+                user_replies = [r for r in thread_replies if r.user == slack_user.member_id]
+
+                for reply in user_replies:
+                    new_messages.append(
+                        SlackMessage.create(
+                            user_id=user_id,
+                            slack_user_id=slack_user.id,
+                            target_date=target_date,
+                            channel_id=channel.id,
+                            channel_name=channel.name,
+                            message_ts=reply.ts,
+                            message_text=reply.text,
+                            message=reply.model_dump(mode="json"),
+                            thread_ts=thread_ts,
+                        )
+                    )
 
         logger.info(
-            f"Collected {len(all_messages)} Slack messages "
-            f"for user_id={user_id}, target_date={target_date}"
+            f"Collected {len(new_messages)} Slack messages for user_id={user_id}, target_date={target_date}"
         )
-
-        if not all_messages:
-            return []
-
-        return self.slack_message_repository.save_all(all_messages)
+        return self.slack_message_repository.save_all(new_messages)
 
     def _get_user_or_throw(self, user_id: int) -> User:
         user = self.user_repository.find_by_id(user_id)
