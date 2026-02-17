@@ -25,6 +25,7 @@ dependencies = [
     "redis (>=7.1.1,<8.0.0)",
     "pytest (>=9.0.2,<10.0.0)",
     "jira (>=3.10.5,<4.0.0)",
+    "slack-sdk (>=3.40.0,<4.0.0)",
 ]
 
 [dependency-groups]

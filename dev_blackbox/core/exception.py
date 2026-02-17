@@ -65,3 +65,24 @@ class JiraUserProjectNotAssignedException(ServiceException):
 
     def __init__(self, user_id: int):
         super().__init__(f"JiraUser project not assigned to User. (UserId: {user_id}")
+
+
+class SlackUserByIdNotFoundException(EntityNotFoundException):
+
+    def __init__(self, slack_user_id: int):
+        super().__init__(entity_name="SlackUser", identifier=slack_user_id)
+
+
+class SlackUserNotAssignedException(ServiceException):
+
+    def __init__(self, user_id: int):
+        super().__init__(f"SlackUser not assigned to User. (UserId: {user_id})")
+
+
+#######################
+
+
+class SlackClientException(ServiceException):
+
+    def __init__(self, message: str = "Slack API error occurred"):
+        super().__init__(message)

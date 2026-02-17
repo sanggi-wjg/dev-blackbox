@@ -20,7 +20,7 @@ LLM을 통해 일일 업무 일지를 자동 생성하는 시스템이다.
 │  비즈니스 로직, 트랜잭션 조율                          │
 │  UserService, GitHubUserSecretService,               │
 │  GitHubEventService, JiraUserService,                │
-│  SummaryService                                      │
+│  JiraEventService, SummaryService                    │
 └──────────────────────┬──────────────────────────────┘
                        │
 ┌──────────────────────▼──────────────────────────────┐
@@ -28,14 +28,15 @@ LLM을 통해 일일 업무 일지를 자동 생성하는 시스템이다.
 │  데이터 접근 추상화                                    │
 │  UserRepository, GitHubUserSecretRepository,         │
 │  GitHubEventRepository, JiraUserRepository,          │
-│  PlatformSummaryRepository, DailySummaryRepository   │
+│  JiraEventRepository, PlatformSummaryRepository,     │
+│  DailySummaryRepository                              │
 └──────────────────────┬──────────────────────────────┘
                        │
 ┌──────────────────────▼──────────────────────────────┐
 │               Entity / ORM Layer                     │
 │  SQLAlchemy ORM 모델                                 │
 │  User, GitHubUserSecret, GitHubEvent,                │
-│  JiraUser, PlatformSummary, DailySummary             │
+│  JiraUser, JiraEvent, PlatformSummary, DailySummary  │
 └──────────────────────┬──────────────────────────────┘
                        │
 ┌──────────────────────▼──────────────────────────────┐
@@ -65,6 +66,7 @@ LLM을 통해 일일 업무 일지를 자동 생성하는 시스템이다.
 - `GitHubUserSecretService` — GitHub 인증 정보 관리 (암호화/복호화 포함)
 - `GitHubEventService` — GitHub 이벤트 조회 및 수집 (이벤트/커밋 수집, DB 저장 포함)
 - `JiraUserService` — Jira 사용자 동기화 및 User 할당
+- `JiraEventService` — Jira 이슈 수집 및 저장 (JQL 기반 검색, changelog 필터링)
 - `SummaryService` — 플랫폼별/통합 일일 LLM 요약 저장 및 조회
 
 ### `storage/rds/`
@@ -92,6 +94,7 @@ LLM을 통해 일일 업무 일지를 자동 생성하는 시스템이다.
 - `LLMAgent` — `query(prompt, **kwargs)` 메서드로 LLM 호출
 - `model/` — LLM 설정 모델 (OllamaConfig, SummaryOllamaConfig), 프롬프트 템플릿
     - `GITHUB_COMMIT_SUMMARY_PROMPT` — GitHub 커밋 기반 업무 일지 요약 프롬프트
+    - `JIRA_ISSUE_SUMMARY_PROMPT` — Jira 이슈 기반 업무 일지 요약 프롬프트
 
 ### `task/`
 
@@ -115,7 +118,7 @@ LLM을 통해 일일 업무 일지를 자동 생성하는 시스템이다.
 
 ### `util/`
 
-- `datetime_util.py` — ISO 형식 날짜 문자열을 특정 타임존의 `date`로 변환
+- `datetime_util.py` — ISO 형식 날짜 변환(`get_date_from_iso_format`), 어제 날짜 조회(`get_yesterday`)
 - `distributed_lock.py` — Redis 기반 분산 락 (`distributed_lock()` context manager)
 
 ## 데이터 수집 파이프라인
@@ -152,6 +155,43 @@ LLM을 통해 일일 업무 일지를 자동 생성하는 시스템이다.
        │
        ▼
   SummaryService.save_platform_summary()         ← 요약 DB 저장
+```
+
+### Jira 수집 + LLM 요약
+
+```
+[APScheduler] collect_platform_task() (매일 00:00 UTC)
+       │
+       ├── distributed_lock 획득
+       │
+       ├── UserService.get_users() → UserWithRelated 변환
+       │
+       ▼  (사용자별 반복, jira_user 할당된 경우만)
+  JiraEventService.save_jira_events()
+       │
+       ├── 기존 이벤트 삭제 (target_date 기준, 멱등성 보장)
+       │
+       ├── IssueJQL 빌드 (프로젝트, 담당자, 상태, 날짜 범위)
+       │
+       ├── JiraClient.fetch_search_issues()      ← Jira REST API
+       │       │
+       │       ▼
+       │   JiraIssueModel.from_raw() 변환
+       │       │
+       │       ▼
+       ├── changelog를 target_date + 타임존 기준 필터링
+       │
+       ▼
+  JiraEventRepository.save_all()                 ← DB 저장
+       │
+       ▼
+  JiraIssueModel.issue_detail_text()             ← LLM 입력 텍스트 생성
+       │
+       ▼
+  LLMAgent.query(JIRA_ISSUE_SUMMARY_PROMPT)      ← Ollama 요약
+       │
+       ▼
+  SummaryService.save_platform_summary()         ← 요약 DB 저장 (PlatformEnum.JIRA)
 ```
 
 ### Jira 사용자 동기화

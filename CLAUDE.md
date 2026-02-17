@@ -96,6 +96,7 @@ dev_blackbox/
 ### 예외 처리
 
 - `ServiceException` → `EntityNotFoundException` → 구체 예외 (e.g., `UserByIdNotFoundException`)
+- `ServiceException` → `JiraUserNotAssignedException`, `JiraUserProjectNotAssignedException`
 - `controller/exception_handler.py`에서 FastAPI 핸들러 등록
 
 ### 환경 변수
@@ -111,4 +112,4 @@ dev_blackbox/
 - **SoftDelete 주의**: `find_by_id()` 등 Repository 조회 메서드는 `is_deleted=False` 조건을 포함해야 함
 - **날짜 기본값**: `target_date`가 null이면 유저 타임존 기준 어제 날짜로 자동 설정
 - **분산 락**: 백그라운드 태스크는 `distributed_lock()`으로 중복 실행 방지. Redis 불가용 시 락 없이 진행 (graceful degradation)
-- **JiraUser 할당**: `jira_user.user_id`는 NULLABLE — Jira에서 동기화된 사용자는 수동으로 User에 할당해야 함
+- **JiraUser 할당**: `jira_user.user_id`와 `project`는 NULLABLE — Jira에서 동기화된 사용자는 `assign_user_and_project()`로 User와 프로젝트를 수동 할당해야 함. 미할당 시 Jira 데이터 수집이 건너뛰어짐

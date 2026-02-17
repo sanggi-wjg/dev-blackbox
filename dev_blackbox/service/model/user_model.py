@@ -26,6 +26,16 @@ class JiraUserInfo(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class SlackUserInfo(BaseModel):
+    id: int
+    member_id: str
+    display_name: str
+    real_name: str
+    email: str | None
+
+    model_config = {"from_attributes": True}
+
+
 class UserWithRelated(BaseModel):
     id: int
     name: str
@@ -36,6 +46,7 @@ class UserWithRelated(BaseModel):
     updated_at: datetime
     github_user_secret: GitHubUserSecretInfo | None = None
     jira_user: JiraUserInfo | None = None
+    slack_user: SlackUserInfo | None = None
 
     model_config = {"from_attributes": True}
 

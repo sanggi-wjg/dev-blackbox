@@ -38,6 +38,9 @@ pythonpath = ['.']
 ```
 tests/
 ├── conftest.py              # 공통 fixture
+├── client/
+│   └── model/
+│       └── jira_model_test.py   # Jira 모델 테스트
 ├── core/
 │   └── encrypt_test.py      # EncryptService 암복호화 테스트
 └── util/
@@ -82,7 +85,8 @@ def test_encrypt_service():
 
 ## 테스트 목록
 
-| 파일                           | 테스트                             | 설명                        |
-|------------------------------|---------------------------------|---------------------------|
-| `core/encrypt_test.py`       | `test_encrypt_service`          | AES-256-GCM 암복호화 정합성 검증   |
-| `util/datetime_util_test.py` | `test_get_date_from_iso_format` | ISO 날짜 → 타임존 변환 후 date 반환 |
+| 파일                                | 테스트                             | 설명                              |
+|-----------------------------------|---------------------------------|---------------------------------|
+| `client/model/jira_model_test.py` | `test_jira_status_group`        | JiraStatusGroup 상태 그룹 조합 검증     |
+| `core/encrypt_test.py`            | `test_encrypt_service`          | AES-256-GCM 암복호화 정합성 검증         |
+| `util/datetime_util_test.py`      | `test_get_date_from_iso_format` | ISO 날짜 → 타임존 변환 후 date 반환       |
