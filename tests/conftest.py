@@ -22,7 +22,6 @@ def test_engine() -> Generator[Engine, None, None]:
         )
         if not result.fetchone():
             conn.execute(text(f"CREATE DATABASE {db.test_database}"))
-        conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
     engine.dispose()
     del engine
 
@@ -33,6 +32,10 @@ def test_engine() -> Generator[Engine, None, None]:
         echo=True,
         echo_pool=True,
     )
+    with engine.connect() as conn:
+        conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+        conn.commit()
+
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
 
