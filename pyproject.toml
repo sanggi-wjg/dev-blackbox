@@ -46,6 +46,7 @@ target-version = ['py314']
 [tool.pytest.ini_options]
 testpaths = ['tests']
 pythonpath = ['.']
+python_classes = ['*Test']
 
 [tool.pyright]
 pythonVersion = "3.14"
