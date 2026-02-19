@@ -3,45 +3,30 @@ from typing import Generator, Callable
 import pytest
 from sqlalchemy import create_engine, text, Engine
 from sqlalchemy.orm import sessionmaker, Session
+from testcontainers.postgres import PostgresContainer
 
-from dev_blackbox.core.config import get_settings
 from dev_blackbox.storage.rds.entity import *  # noqa: F403,F401
 from dev_blackbox.storage.rds.entity.base import Base
 
 
 @pytest.fixture(scope="session")
 def test_engine() -> Generator[Engine, None, None]:
-    settings = get_settings()
-    db = settings.database
-
-    engine = create_engine(url=db.dsn, isolation_level="AUTOCOMMIT")
-    with engine.connect() as conn:
-        result = conn.execute(
-            text("SELECT 1 FROM pg_database WHERE datname = :db"),
-            {"db": db.test_database},
+    with PostgresContainer(
+        image="pgvector/pgvector:pg17",
+        port=7200,
+    ) as postgres:
+        engine = create_engine(
+            url=postgres.get_connection_url(),
+            isolation_level="REPEATABLE READ",
         )
-        if not result.fetchone():
-            conn.execute(text(f"CREATE DATABASE {db.test_database}"))
-    engine.dispose()
-    del engine
+        with engine.connect() as conn:
+            conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+            conn.commit()
 
-    engine = create_engine(
-        url=db.test_dsn,
-        isolation_level=db.isolation_level,
-        pool_pre_ping=True,
-        echo=True,
-        echo_pool=True,
-    )
-    with engine.connect() as conn:
-        conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
-        conn.commit()
+        Base.metadata.create_all(bind=engine)
 
-    Base.metadata.drop_all(bind=engine)
-    Base.metadata.create_all(bind=engine)
-
-    yield engine
-    engine.dispose()
-    del engine
+        yield engine
+        engine.dispose()
 
 
 @pytest.fixture(scope="session")

@@ -26,16 +26,6 @@ class PostgresDatabaseSecrets(BaseModel):
     def dsn(self) -> str:
         return f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}"
 
-    @property
-    def test_database(self) -> str:
-        return f"{self.database}_test"
-
-    @property
-    def test_dsn(self) -> str:
-        return (
-            f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.test_database}"
-        )
-
 
 class RedisSecrets(BaseModel):
     host: str
