@@ -11,10 +11,7 @@ from dev_blackbox.storage.rds.entity.base import Base
 
 @pytest.fixture(scope="session")
 def test_engine() -> Generator[Engine, None, None]:
-    with PostgresContainer(
-        image="pgvector/pgvector:pg17",
-        port=7200,
-    ) as postgres:
+    with PostgresContainer(image="pgvector/pgvector:pg17") as postgres:
         engine = create_engine(
             url=postgres.get_connection_url(),
             isolation_level="REPEATABLE READ",
