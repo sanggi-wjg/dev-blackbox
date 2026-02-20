@@ -6,7 +6,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 
 from dev_blackbox.core.config import get_settings
-from dev_blackbox.task.collect_task import collect_platform_task
+from dev_blackbox.task.collect_task import collect_and_summary_task
 from dev_blackbox.task.health_task import health_check_task
 from dev_blackbox.task.jira_task import sync_jira_users_task
 from dev_blackbox.task.slack_task import sync_slack_users_task
@@ -49,7 +49,7 @@ scheduler = BackgroundScheduler(
 
 scheduler.add_job(health_check_task, "interval", minutes=1)
 scheduler.add_job(
-    collect_platform_task,
+    collect_and_summary_task,
     CronTrigger(hour=0, minute=0),  # 09:00 KST
 )
 scheduler.add_job(

@@ -22,9 +22,7 @@ from dev_blackbox.util.distributed_lock import DistributedLockName, distributed_
 logger = logging.getLogger(__name__)
 
 
-def collect_platform_task():
-    # todo 각 플랫폼별로 user_id 리스트를 가져와서 반복적으로 수집하도록 변경 필요
-    # 아직 미구현이 많아서 코드 정리는 어느정도 이후 진행하자.
+def collect_and_summary_task():
     with distributed_lock(DistributedLockName.COLLECT_PLATFORM_TASK, timeout=300) as acquired:
         if not acquired:
             logger.warning("collect_platform_task is already running, skipping...")
@@ -37,13 +35,10 @@ def collect_platform_task():
 
         for user in users_with_related:
             target_date = get_yesterday(user.tz_info)
-            try:
-                _collect_and_summary(user, target_date)
-                logger.info(f"요약 완료: user_id={user.id}, target_date={target_date}")
-            except Exception:
-                logger.exception(f"요약 실패: user_id={user.id}, target_date={target_date}")
+            _collect_and_summary(user, target_date)
+            logger.info(f"요약 완료: user_id={user.id}, target_date={target_date}")
 
-            # 통합 일일 요약 저장 (현재 단일 플랫폼이므로 주석 처리)
+            # 통합 일일 요약 저장 (고민 중)
             # with get_db_session() as session:
             #     summary_service = SummaryService(session)
             #     summary_service.save_daily_summary(
@@ -57,34 +52,51 @@ def collect_platform_task():
 
 def _collect_and_summary(user: UserWithRelated, target_date: date):
     # GitHub 데이터셋 수집 + 요약
-    if user.github_user_secret is not None:
-        commit_message = _collect_github_dataset(user.id, target_date)
-        if commit_message:
-            _summarize_github(user, target_date, commit_message)
+    try:
+        if user.github_user_secret is not None:
+            commit_message = _collect_github_dataset(user.id, target_date)
+            if commit_message:
+                _summarize_github(user, target_date, commit_message)
+            else:
+                logger.info(f"커밋 데이터 없음: user_id={user.id}, target_date={target_date}")
         else:
-            logger.info(f"커밋 데이터 없음: user_id={user.id}, target_date={target_date}")
-    else:
-        logger.info(f"GitHubUser 미할당, GitHub 수집 건너뜀: user_id={user.id}")
+            logger.info(f"GitHubUser 미할당, GitHub 수집 건너뜀: user_id={user.id}")
+    except Exception as e:
+        logger.exception(
+            f"GitHub 데이터 수집/요약 실패: user_id={user.id}, target_date={target_date}, error={e}"
+        )
 
     # Jira 데이터셋 수집 + 요약
-    if user.jira_user is not None:
-        issue_details = _collect_jira_dataset(user, target_date)
-        if issue_details:
-            _summarize_jira(user, target_date, issue_details)
+    try:
+        if user.jira_user is not None:
+            issue_details = _collect_jira_dataset(user, target_date)
+            if issue_details:
+                _summarize_jira(user, target_date, issue_details)
+            else:
+                logger.info(f"Jira 이슈 데이터 없음: user_id={user.id}, target_date={target_date}")
         else:
-            logger.info(f"Jira 이슈 데이터 없음: user_id={user.id}, target_date={target_date}")
-    else:
-        logger.info(f"JiraUser 미할당, Jira 수집 건너뜀: user_id={user.id}")
+            logger.info(f"JiraUser 미할당, Jira 수집 건너뜀: user_id={user.id}")
+    except Exception as e:
+        logger.exception(
+            f"Jira 데이터 수집/요약 실패: user_id={user.id}, target_date={target_date}, error={e}"
+        )
 
     # Slack 데이터셋 수집 + 요약
-    if user.slack_user is not None:
-        message_details = _collect_slack_dataset(user, target_date)
-        if message_details:
-            _summarize_slack(user, target_date, message_details)
+    try:
+        if user.slack_user is not None:
+            message_details = _collect_slack_dataset(user, target_date)
+            if message_details:
+                _summarize_slack(user, target_date, message_details)
+            else:
+                logger.info(
+                    f"Slack 메시지 데이터 없음: user_id={user.id}, target_date={target_date}"
+                )
         else:
-            logger.info(f"Slack 메시지 데이터 없음: user_id={user.id}, target_date={target_date}")
-    else:
-        logger.info(f"SlackUser 미할당, Slack 수집 건너뜀: user_id={user.id}")
+            logger.info(f"SlackUser 미할당, Slack 수집 건너뜀: user_id={user.id}")
+    except Exception as e:
+        logger.exception(
+            f"Slack 데이터 수집/요약 실패: user_id={user.id}, target_date={target_date}, error={e}"
+        )
 
 
 def _collect_github_dataset(user_id: int, target_date: date) -> str:
@@ -93,6 +105,12 @@ def _collect_github_dataset(user_id: int, target_date: date) -> str:
         events = service.save_github_events(user_id, target_date)
         commit_message = "\n".join(
             [e.commit_model.commit_detail_text for e in events if e.commit_model is not None]
+        )
+
+    if len(commit_message) > 50000:
+        commit_message = commit_message[:50000]
+        logger.info(
+            f"GitHub 커밋 메시지 길이 제한: user_id={user_id}, target_date={target_date}, message_length={len(commit_message)}"
         )
     return commit_message
 
@@ -104,7 +122,27 @@ def _collect_jira_dataset(user: UserWithRelated, target_date: date) -> str:
         issue_details = "\n\n".join(
             e.issue_model.issue_detail_text(target_date, user.tz_info) for e in events
         )
+
+    if len(issue_details) > 50000:
+        issue_details = issue_details[:50000]
+        logger.info(
+            f"Jira 이슈 상세 정보 길이 제한: user_id={user.id}, target_date={target_date}, details_length={len(issue_details)}"
+        )
     return issue_details
+
+
+def _collect_slack_dataset(user: UserWithRelated, target_date: date) -> str:
+    with get_db_session() as session:
+        service = SlackMessageService(session)
+        messages = service.save_slack_messages(user.id, target_date)
+        message_details = "\n".join(f"[#{m.channel_name}] {m.message_text}" for m in messages)
+
+    if len(message_details) > 50000:
+        message_details = message_details[:50000]
+        logger.info(
+            f"Slack 메시지 길이 제한: user_id={user.id}, target_date={target_date}, message_length={len(message_details)}"
+        )
+    return message_details
 
 
 def _summarize_github(user: UserWithRelated, target_date: date, commit_message: str):
@@ -130,15 +168,27 @@ def _summarize_github(user: UserWithRelated, target_date: date, commit_message: 
         )
 
 
-def _collect_slack_dataset(user: UserWithRelated, target_date: date) -> str:
+def _summarize_jira(user: UserWithRelated, target_date: date, issue_details: str):
+    llm_config = SummaryOllamaConfig()
+    prompt = JIRA_ISSUE_SUMMARY_PROMPT
+
+    try:
+        llm_agent = LLMAgent.create_with_ollama(llm_config)
+        summary_text = llm_agent.query(prompt, issue_details=issue_details)
+    except Exception:
+        logger.exception(f"LLM 요약 실패 (Jira): user_id={user.id}, target_date={target_date}")
+        raise
+
     with get_db_session() as session:
-        service = SlackMessageService(session)
-        messages = service.save_slack_messages(user.id, target_date)
-        message_details = "\n".join(f"[#{m.channel_name}] {m.message_text}" for m in messages)
-    # LLM context 초과 방지
-    if len(message_details) > 50000:
-        message_details = message_details[:50000]
-    return message_details
+        summary_service = SummaryService(session)
+        summary_service.save_platform_summary(
+            user_id=user.id,
+            target_date=target_date,
+            platform=PlatformEnum.JIRA,
+            summary=summary_text,
+            model_name=llm_config.model,
+            prompt=prompt.template,
+        )
 
 
 def _summarize_slack(user: UserWithRelated, target_date: date, message_details: str):
@@ -158,29 +208,6 @@ def _summarize_slack(user: UserWithRelated, target_date: date, message_details: 
             user_id=user.id,
             target_date=target_date,
             platform=PlatformEnum.SLACK,
-            summary=summary_text,
-            model_name=llm_config.model,
-            prompt=prompt.template,
-        )
-
-
-def _summarize_jira(user: UserWithRelated, target_date: date, issue_details: str):
-    llm_config = SummaryOllamaConfig()
-    prompt = JIRA_ISSUE_SUMMARY_PROMPT
-
-    try:
-        llm_agent = LLMAgent.create_with_ollama(llm_config)
-        summary_text = llm_agent.query(prompt, issue_details=issue_details)
-    except Exception:
-        logger.exception(f"LLM 요약 실패 (Jira): user_id={user.id}, target_date={target_date}")
-        raise
-
-    with get_db_session() as session:
-        summary_service = SummaryService(session)
-        summary_service.save_platform_summary(
-            user_id=user.id,
-            target_date=target_date,
-            platform=PlatformEnum.JIRA,
             summary=summary_text,
             model_name=llm_config.model,
             prompt=prompt.template,

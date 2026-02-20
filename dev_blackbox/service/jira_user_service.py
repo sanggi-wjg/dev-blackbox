@@ -15,6 +15,9 @@ class JiraUserService:
         self.jira_user_repository = JiraUserRepository(session)
         self.encrypt_service = get_encrypt_service()
 
+    def get_jira_users(self) -> list[JiraUser]:
+        return self.jira_user_repository.find_all()
+
     def sync_jira_users(self) -> list[JiraUser]:
         jira_client = get_jira_client()
         searched_users = jira_client.fetch_assignable_users(project="FMP")

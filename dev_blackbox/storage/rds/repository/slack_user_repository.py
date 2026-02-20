@@ -34,3 +34,7 @@ class SlackUserRepository:
     def find_by_member_ids(self, member_ids: list[str]) -> list[SlackUser]:
         stmt = select(SlackUser).where(SlackUser.member_id.in_(member_ids))
         return list(self.session.scalars(stmt).all())
+
+    def find_all(self) -> list[SlackUser]:
+        stmt = select(SlackUser).order_by(SlackUser.id)
+        return list(self.session.scalars(stmt).all())
