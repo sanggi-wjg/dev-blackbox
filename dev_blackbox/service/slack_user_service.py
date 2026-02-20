@@ -3,6 +3,7 @@ import logging
 from sqlalchemy.orm import Session
 
 from dev_blackbox.client.slack_client import get_slack_client
+from dev_blackbox.core.encrypt import get_encrypt_service
 from dev_blackbox.core.exception import SlackUserByIdNotFoundException, UserByIdNotFoundException
 from dev_blackbox.storage.rds.entity.slack_user import SlackUser
 from dev_blackbox.storage.rds.repository import SlackUserRepository, UserRepository
@@ -16,6 +17,7 @@ class SlackUserService:
         self.session = session
         self.user_repository = UserRepository(session)
         self.slack_user_repository = SlackUserRepository(session)
+        self.encrypt_service = get_encrypt_service()
 
     def sync_slack_users(self) -> list[SlackUser]:
         slack_client = get_slack_client()
@@ -27,6 +29,7 @@ class SlackUserService:
 
         new_slack_users: list[SlackUser] = []
 
+        # 새로운 사용자만 저장, 기존 사용자 없애기 X
         for user in searched_users:
             uid = user["id"]
             if uid in exists_user_ids:
@@ -37,12 +40,16 @@ class SlackUserService:
             real_name = profile.get("real_name", user.get("real_name", ""))
             email = profile.get("email")
 
+            encrypted_display_name = self.encrypt_service.encrypt(display_name)
+            encrypted_real_name = self.encrypt_service.encrypt(real_name)
+            encrypted_email = self.encrypt_service.encrypt(email) if email else None
+
             new_slack_users.append(
                 SlackUser.create(
                     member_id=uid,
-                    display_name=display_name,
-                    real_name=real_name,
-                    email=email,
+                    display_name=encrypted_display_name,
+                    real_name=encrypted_real_name,
+                    email=encrypted_email,
                 )
             )
 

@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 
 from dev_blackbox.client.jira_client import get_jira_client
+from dev_blackbox.core.encrypt import get_encrypt_service
 from dev_blackbox.core.exception import JiraUserByIdNotFoundException, UserByIdNotFoundException
 from dev_blackbox.storage.rds.entity.jira_user import JiraUser
 from dev_blackbox.storage.rds.repository import JiraUserRepository, UserRepository
@@ -12,6 +13,7 @@ class JiraUserService:
         self.session = session
         self.user_repository = UserRepository(session)
         self.jira_user_repository = JiraUserRepository(session)
+        self.encrypt_service = get_encrypt_service()
 
     def sync_jira_users(self) -> list[JiraUser]:
         jira_client = get_jira_client()
@@ -21,18 +23,24 @@ class JiraUserService:
         jira_users = self.jira_user_repository.find_by_account_ids(searched_account_ids)
         exists_account_ids = {user.account_id for user in jira_users}
 
+        new_users: list[JiraUser] = []
         # 새로운 사용자만 저장, 기존 사용자 없애기 X
-        new_users = [
-            JiraUser.create(
-                account_id=user.accountId,
-                active=user.active,
-                display_name=user.displayName,
-                email_address=user.emailAddress,
-                url=user.self,
+        for user in searched_users:
+            if user.accountId in exists_account_ids:
+                continue
+
+            encrypted_display_name = self.encrypt_service.encrypt(user.displayName)
+            encrypted_email_address = self.encrypt_service.encrypt(user.emailAddress)
+
+            new_users.append(
+                JiraUser.create(
+                    account_id=user.accountId,
+                    active=user.active,
+                    display_name=encrypted_display_name,
+                    email_address=encrypted_email_address,
+                    url=user.self,
+                )
             )
-            for user in searched_users
-            if user.accountId not in exists_account_ids
-        ]
 
         return self.jira_user_repository.save_all(new_users)
 
