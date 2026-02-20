@@ -12,7 +12,7 @@ from dev_blackbox.core.database import get_db_session
 from dev_blackbox.core.enum import PlatformEnum
 from dev_blackbox.service.github_event_service import GitHubEventService
 from dev_blackbox.service.jira_event_service import JiraEventService
-from dev_blackbox.service.model.user_model import UserWithRelated
+from dev_blackbox.service.model.user_model import UserWithRelatedModel
 from dev_blackbox.service.slack_message_service import SlackMessageService
 from dev_blackbox.service.summary_service import SummaryService
 from dev_blackbox.service.user_service import UserService
@@ -31,26 +31,25 @@ def collect_and_summary_task():
         with get_db_session() as session:
             user_service = UserService(session)
             users = user_service.get_users()  # fixme n+1
-            users_with_related = [UserWithRelated.model_validate(user) for user in users]
+            users_with_related = [UserWithRelatedModel.model_validate(user) for user in users]
 
         for user in users_with_related:
             target_date = get_yesterday(user.tz_info)
             _collect_and_summary(user, target_date)
+            _save_daily_summary(user, target_date)
             logger.info(f"요약 완료: user_id={user.id}, target_date={target_date}")
 
-            # 통합 일일 요약 저장 (고민 중)
-            # with get_db_session() as session:
-            #     summary_service = SummaryService(session)
-            #     summary_service.save_daily_summary(
-            #         user_id=user_id,
-            #         target_date=target_date,
-            #         summary=summary_text,
-            #         model_name=config.model,
-            #         prompt=prompt_text,
-            #     )
+
+def _save_daily_summary(
+    user: UserWithRelatedModel,
+    target_date: date,
+):
+    with get_db_session() as session:
+        summary_service = SummaryService(session)
+        summary_service.save_daily_summary(user_id=user.id, target_date=target_date)
 
 
-def _collect_and_summary(user: UserWithRelated, target_date: date):
+def _collect_and_summary(user: UserWithRelatedModel, target_date: date):
     # GitHub 데이터셋 수집 + 요약
     try:
         if user.github_user_secret is not None:
@@ -115,7 +114,7 @@ def _collect_github_dataset(user_id: int, target_date: date) -> str:
     return commit_message
 
 
-def _collect_jira_dataset(user: UserWithRelated, target_date: date) -> str:
+def _collect_jira_dataset(user: UserWithRelatedModel, target_date: date) -> str:
     with get_db_session() as session:
         service = JiraEventService(session)
         events = service.save_jira_events(user.id, target_date)
@@ -131,7 +130,7 @@ def _collect_jira_dataset(user: UserWithRelated, target_date: date) -> str:
     return issue_details
 
 
-def _collect_slack_dataset(user: UserWithRelated, target_date: date) -> str:
+def _collect_slack_dataset(user: UserWithRelatedModel, target_date: date) -> str:
     with get_db_session() as session:
         service = SlackMessageService(session)
         messages = service.save_slack_messages(user.id, target_date)
@@ -145,7 +144,7 @@ def _collect_slack_dataset(user: UserWithRelated, target_date: date) -> str:
     return message_details
 
 
-def _summarize_github(user: UserWithRelated, target_date: date, commit_message: str):
+def _summarize_github(user: UserWithRelatedModel, target_date: date, commit_message: str):
     llm_config = SummaryOllamaConfig()
     prompt = GITHUB_COMMIT_SUMMARY_PROMPT
 
@@ -168,7 +167,7 @@ def _summarize_github(user: UserWithRelated, target_date: date, commit_message: 
         )
 
 
-def _summarize_jira(user: UserWithRelated, target_date: date, issue_details: str):
+def _summarize_jira(user: UserWithRelatedModel, target_date: date, issue_details: str):
     llm_config = SummaryOllamaConfig()
     prompt = JIRA_ISSUE_SUMMARY_PROMPT
 
@@ -191,7 +190,7 @@ def _summarize_jira(user: UserWithRelated, target_date: date, issue_details: str
         )
 
 
-def _summarize_slack(user: UserWithRelated, target_date: date, message_details: str):
+def _summarize_slack(user: UserWithRelatedModel, target_date: date, message_details: str):
     llm_config = SummaryOllamaConfig()
     prompt = SLACK_MESSAGE_SUMMARY_PROMPT
 

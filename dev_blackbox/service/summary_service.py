@@ -54,26 +54,18 @@ class SummaryService:
         self,
         user_id: int,
         target_date: date,
-        summary: str,
-        model_name: str,
-        prompt: str,
-        error_message: str | None = None,
-        embedding: list[float] | None = None,
     ) -> DailySummary:
-        """
-        기존 일일 요약 삭제 후 새로 저장
-        """
+        platform_summaries = self.get_platform_summaries(user_id, target_date)
+        summary_text = "\n\n".join(summary.markdown_text for summary in platform_summaries)
+
+        # 기존 일일 요약 삭제 후 새로 저장
         self.daily_summary_repository.delete_by_user_id_and_target_date(
             user_id=user_id, target_date=target_date
         )
         daily_summary = DailySummary.create(
             user_id=user_id,
             target_date=target_date,
-            summary=summary,
-            model_name=model_name,
-            prompt=prompt,
-            error_message=error_message,
-            embedding=embedding,
+            summary=summary_text,
         )
         return self.daily_summary_repository.save(daily_summary)
 

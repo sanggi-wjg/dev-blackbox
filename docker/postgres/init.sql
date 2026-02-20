@@ -166,8 +166,6 @@ CREATE TABLE IF NOT EXISTS daily_summary
     target_date DATE         NOT NULL,
     summary     TEXT         NOT NULL,
     embedding   vector(1024) NULL,
-    model_name  VARCHAR(100) NOT NULL,
-    prompt      TEXT         NOT NULL,
 
     created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     updated_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
@@ -192,8 +190,6 @@ COMMENT ON COLUMN daily_summary.user_id IS '사용자 FK';
 COMMENT ON COLUMN daily_summary.target_date IS '요약 대상 날짜';
 COMMENT ON COLUMN daily_summary.summary IS '통합 요약 텍스트';
 COMMENT ON COLUMN daily_summary.embedding IS '요약 임베딩 벡터 (1024차원)';
-COMMENT ON COLUMN daily_summary.model_name IS '사용 LLM 모델명';
-COMMENT ON COLUMN daily_summary.prompt IS '요약 생성에 사용된 프롬프트';
 
 
 -- jira_user 테이블 (Jira 사용자 정보)
