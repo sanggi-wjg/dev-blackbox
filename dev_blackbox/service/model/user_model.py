@@ -4,7 +4,7 @@ from zoneinfo import ZoneInfo
 from pydantic import BaseModel
 
 
-class GitHubUserSecretInfo(BaseModel):
+class GitHubUserSecretModel(BaseModel):
     id: int
     username: str
     is_active: bool
@@ -13,7 +13,7 @@ class GitHubUserSecretInfo(BaseModel):
     model_config = {"from_attributes": True}
 
 
-class JiraUserInfo(BaseModel):
+class JiraUserModel(BaseModel):
     id: int
     account_id: str
     active: bool
@@ -24,7 +24,7 @@ class JiraUserInfo(BaseModel):
     model_config = {"from_attributes": True}
 
 
-class SlackUserInfo(BaseModel):
+class SlackUserModel(BaseModel):
     id: int
     member_id: str
     display_name: str
@@ -34,7 +34,7 @@ class SlackUserInfo(BaseModel):
     model_config = {"from_attributes": True}
 
 
-class UserWithRelated(BaseModel):
+class UserWithRelatedModel(BaseModel):
     id: int
     name: str
     email: str
@@ -42,8 +42,8 @@ class UserWithRelated(BaseModel):
     tz_info: ZoneInfo
     created_at: datetime
     updated_at: datetime
-    github_user_secret: GitHubUserSecretInfo | None = None
-    jira_user: JiraUserInfo | None = None
-    slack_user: SlackUserInfo | None = None
+    github_user_secret: GitHubUserSecretModel | None = None
+    jira_user: JiraUserModel | None = None
+    slack_user: SlackUserModel | None = None
 
     model_config = {"from_attributes": True}

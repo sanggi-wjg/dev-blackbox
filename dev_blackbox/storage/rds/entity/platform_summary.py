@@ -51,3 +51,7 @@ class PlatformSummary(Base):
             prompt=prompt,
             embedding=embedding,
         )
+
+    @property
+    def markdown_text(self) -> str:
+        return f"# {self.platform}\n\n{self.summary}"
