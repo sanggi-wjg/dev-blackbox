@@ -19,6 +19,9 @@ class SlackUserService:
         self.slack_user_repository = SlackUserRepository(session)
         self.encrypt_service = get_encrypt_service()
 
+    def get_slack_users(self) -> list[SlackUser]:
+        return self.slack_user_repository.find_all()
+
     def sync_slack_users(self) -> list[SlackUser]:
         slack_client = get_slack_client()
         searched_users = slack_client.fetch_users(filter_bot=True)

@@ -34,3 +34,7 @@ class JiraUserRepository:
     def find_by_account_ids(self, account_ids: list[str]) -> list[JiraUser]:
         stmt = select(JiraUser).where(JiraUser.account_id.in_(account_ids))
         return list(self.session.scalars(stmt).all())
+
+    def find_all(self) -> list[JiraUser]:
+        stmt = select(JiraUser).order_by(JiraUser.id)
+        return list(self.session.scalars(stmt).all())
