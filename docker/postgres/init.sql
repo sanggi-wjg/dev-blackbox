@@ -56,7 +56,9 @@ CREATE TABLE IF NOT EXISTS github_user_secret
     created_at            TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     updated_at            TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
 
-    CONSTRAINT fk_github_user_secret_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE RESTRICT
+    CONSTRAINT fk_github_user_secret_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE RESTRICT,
+
+    CONSTRAINT uq_github_user_secret_user_id UNIQUE (user_id)
 );
 
 CREATE TRIGGER tr_github_user_secret_updated_at
@@ -65,7 +67,6 @@ CREATE TRIGGER tr_github_user_secret_updated_at
     FOR EACH ROW
 EXECUTE FUNCTION update_updated_at_column();
 
-CREATE UNIQUE INDEX uq_github_user_secret_user_id_active ON github_user_secret (user_id) WHERE is_deleted = FALSE;
 CREATE INDEX idx_github_user_secret_001 ON github_user_secret (user_id);
 CREATE INDEX idx_github_user_secret_002 ON github_user_secret (created_at DESC);
 

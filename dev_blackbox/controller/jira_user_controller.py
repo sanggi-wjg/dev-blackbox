@@ -55,6 +55,7 @@ async def assign_jira_user(
         project=request.project,
     )
 
+
 @router.delete(
     "/{jira_user_id}/users/{user_id}",
     status_code=status.HTTP_204_NO_CONTENT,

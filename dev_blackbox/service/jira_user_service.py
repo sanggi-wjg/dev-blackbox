@@ -68,4 +68,3 @@ class JiraUserService:
             raise JiraUserByIdNotFoundException(jira_user_id)
 
         return jira_user.unassign_user()
-
