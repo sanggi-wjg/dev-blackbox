@@ -7,8 +7,8 @@ from sqlalchemy.orm import Mapped, mapped_column
 from dev_blackbox.storage.rds.entity.base import Base
 
 
-class DailySummary(Base):
-    __tablename__ = "daily_summary"
+class DailyWorkLog(Base):
+    __tablename__ = "daily_work_log"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     target_date: Mapped[date] = mapped_column(Date, nullable=False)
@@ -22,7 +22,7 @@ class DailySummary(Base):
     )
 
     def __repr__(self) -> str:
-        return f"<DailySummary(user_id={self.user_id}, target_date={self.target_date})>"
+        return f"<DailyWorkLog(user_id={self.user_id}, target_date={self.target_date})>"
 
     @classmethod
     def create(
@@ -31,8 +31,8 @@ class DailySummary(Base):
         target_date: date,
         summary: str,
         embedding: list[float] | None = None,
-    ) -> "DailySummary":
-        return DailySummary(
+    ) -> "DailyWorkLog":
+        return DailyWorkLog(
             user_id=user_id,
             target_date=target_date,
             summary=summary,

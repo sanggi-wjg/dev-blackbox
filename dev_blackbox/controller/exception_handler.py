@@ -1,4 +1,5 @@
 import logging
+from datetime import UTC, datetime
 
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
@@ -16,7 +17,12 @@ def register_exception_handlers(app: FastAPI) -> None:
 
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={"detail": "An unexpected error occurred."},
+            content={
+                "status": f"{status.HTTP_500_INTERNAL_SERVER_ERROR} INTERNAL_SERVER_ERROR",
+                "error": "Internal Server Error, please contact the administrator.",
+                "path": request.url.path,
+                "requestedAt": datetime.now(UTC.utc).isoformat(),
+            },
         )
 
     @app.exception_handler(ServiceException)
@@ -25,7 +31,13 @@ def register_exception_handlers(app: FastAPI) -> None:
 
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={"detail": e.message},
+            content={
+                "status": f"{status.HTTP_500_INTERNAL_SERVER_ERROR} INTERNAL_SERVER_ERROR",
+                "error": "Service Error, please contact the administrator.",
+                "message": e.message,
+                "path": request.url.path,
+                "requestedAt": datetime.now(UTC.utc).isoformat(),
+            },
         )
 
     @app.exception_handler(EntityNotFoundException)
@@ -34,5 +46,11 @@ def register_exception_handlers(app: FastAPI) -> None:
 
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
-            content={"detail": e.message},
+            content={
+                "status": f"{status.HTTP_404_NOT_FOUND} NOT_FOUND",
+                "error": "Entity Not Found",
+                "message": e.message,
+                "path": request.url.path,
+                "requestedAt": datetime.now(UTC.utc).isoformat(),
+            },
         )

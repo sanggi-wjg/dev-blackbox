@@ -19,6 +19,8 @@ CREATE TABLE IF NOT EXISTS users
     email      VARCHAR(255) NOT NULL,
     timezone   VARCHAR(50)  NOT NULL DEFAULT 'Asia/Seoul',
 
+    is_admin   BOOLEAN      NOT NULL DEFAULT FALSE,
+
     created_at TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     is_deleted BOOLEAN      NOT NULL DEFAULT FALSE,
@@ -50,15 +52,13 @@ CREATE TABLE IF NOT EXISTS github_user_secret
     user_id               BIGINT       NOT NULL,
     username              VARCHAR(50)  NOT NULL,
     personal_access_token VARCHAR(255) NOT NULL,
-    is_active             BOOLEAN      NOT NULL DEFAULT TRUE,
-    deactivate_at         TIMESTAMPTZ,
 
     created_at            TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     updated_at            TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
-    is_deleted            BOOLEAN      NOT NULL DEFAULT FALSE,
-    deleted_at            TIMESTAMPTZ  NOT NULL DEFAULT '9999-12-31 14:59:59+00',
 
-    CONSTRAINT fk_github_user_secret_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE RESTRICT
+    CONSTRAINT fk_github_user_secret_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE RESTRICT,
+
+    CONSTRAINT uq_github_user_secret_user_id UNIQUE (user_id)
 );
 
 CREATE TRIGGER tr_github_user_secret_updated_at
@@ -67,7 +67,6 @@ CREATE TRIGGER tr_github_user_secret_updated_at
     FOR EACH ROW
 EXECUTE FUNCTION update_updated_at_column();
 
-CREATE UNIQUE INDEX uq_github_user_secret_user_id_active ON github_user_secret (user_id) WHERE is_deleted = FALSE;
 CREATE INDEX idx_github_user_secret_001 ON github_user_secret (user_id);
 CREATE INDEX idx_github_user_secret_002 ON github_user_secret (created_at DESC);
 
@@ -75,8 +74,6 @@ COMMENT ON TABLE github_user_secret IS 'GitHub 인증 정보 테이블';
 COMMENT ON COLUMN github_user_secret.user_id IS '사용자 FK';
 COMMENT ON COLUMN github_user_secret.username IS 'GitHub 사용자명';
 COMMENT ON COLUMN github_user_secret.personal_access_token IS 'GitHub PAT (AES-256-GCM 암호화 저장)';
-COMMENT ON COLUMN github_user_secret.is_active IS '활성 상태';
-COMMENT ON COLUMN github_user_secret.deactivate_at IS '비활성화 시각';
 
 
 -- github_event 테이블 (GitHub 이벤트 + 커밋 수집 데이터)
@@ -118,8 +115,8 @@ COMMENT ON COLUMN github_event.event IS '이벤트 원본 데이터 (JSONB)';
 COMMENT ON COLUMN github_event.commit IS '커밋 상세 데이터 (JSONB)';
 
 
--- platform_summary 테이블 (플랫폼별 LLM 요약)
-CREATE TABLE IF NOT EXISTS platform_summary
+-- platform_work_log 테이블 (플랫폼별 업무 일지 LLM 요약)
+CREATE TABLE IF NOT EXISTS platform_work_log
 (
     id          BIGSERIAL PRIMARY KEY,
     user_id     BIGINT       NOT NULL,
@@ -133,33 +130,33 @@ CREATE TABLE IF NOT EXISTS platform_summary
     created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     updated_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
 
-    CONSTRAINT fk_platform_summary_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE RESTRICT,
+    CONSTRAINT fk_platform_work_log_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE RESTRICT,
 
-    CONSTRAINT uq_platform_summary_user_date_platform UNIQUE (user_id, target_date, platform)
+    CONSTRAINT uq_platform_work_log_user_date_platform UNIQUE (user_id, target_date, platform)
 );
 
-CREATE TRIGGER tr_platform_summary_updated_at
+CREATE TRIGGER tr_platform_work_log_updated_at
     BEFORE UPDATE
-    ON platform_summary
+    ON platform_work_log
     FOR EACH ROW
 EXECUTE FUNCTION update_updated_at_column();
 
-CREATE INDEX idx_platform_summary_001 ON platform_summary (user_id, target_date);
-CREATE INDEX idx_platform_summary_002 ON platform_summary (target_date);
-CREATE INDEX idx_platform_summary_003 ON platform_summary (created_at DESC);
+CREATE INDEX idx_platform_work_log_001 ON platform_work_log (user_id, target_date);
+CREATE INDEX idx_platform_work_log_002 ON platform_work_log (target_date);
+CREATE INDEX idx_platform_work_log_003 ON platform_work_log (created_at DESC);
 
-COMMENT ON TABLE platform_summary IS '플랫폼별 LLM 요약';
-COMMENT ON COLUMN platform_summary.user_id IS '사용자 FK';
-COMMENT ON COLUMN platform_summary.target_date IS '요약 대상 날짜';
-COMMENT ON COLUMN platform_summary.platform IS '플랫폼 구분 (GITHUB, JIRA, SLACK 등)';
-COMMENT ON COLUMN platform_summary.summary IS 'LLM 생성 요약 텍스트';
-COMMENT ON COLUMN platform_summary.embedding IS '요약 임베딩 벡터 (1024차원)';
-COMMENT ON COLUMN platform_summary.model_name IS '사용 LLM 모델명';
-COMMENT ON COLUMN platform_summary.prompt IS '요약 생성에 사용된 프롬프트';
+COMMENT ON TABLE platform_work_log IS '플랫폼별 LLM 요약';
+COMMENT ON COLUMN platform_work_log.user_id IS '사용자 FK';
+COMMENT ON COLUMN platform_work_log.target_date IS '요약 대상 날짜';
+COMMENT ON COLUMN platform_work_log.platform IS '플랫폼 구분 (GITHUB, JIRA, SLACK 등)';
+COMMENT ON COLUMN platform_work_log.summary IS 'LLM 생성 요약 텍스트';
+COMMENT ON COLUMN platform_work_log.embedding IS '요약 임베딩 벡터 (1024차원)';
+COMMENT ON COLUMN platform_work_log.model_name IS '사용 LLM 모델명';
+COMMENT ON COLUMN platform_work_log.prompt IS '요약 생성에 사용된 프롬프트';
 
 
--- daily_summary 테이블 (통합 일일 요약)
-CREATE TABLE IF NOT EXISTS daily_summary
+-- daily_work_log 테이블 (통합 일일 요약)
+CREATE TABLE IF NOT EXISTS daily_work_log
 (
     id          BIGSERIAL PRIMARY KEY,
     user_id     BIGINT       NOT NULL,
@@ -170,26 +167,26 @@ CREATE TABLE IF NOT EXISTS daily_summary
     created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     updated_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
 
-    CONSTRAINT fk_daily_summary_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE RESTRICT,
+    CONSTRAINT fk_daily_work_log_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE RESTRICT,
 
-    CONSTRAINT uq_daily_summary_user_date UNIQUE (user_id, target_date)
+    CONSTRAINT uq_daily_work_log_user_date UNIQUE (user_id, target_date)
 );
 
-CREATE TRIGGER tr_daily_summary_updated_at
+CREATE TRIGGER tr_daily_work_log_updated_at
     BEFORE UPDATE
-    ON daily_summary
+    ON daily_work_log
     FOR EACH ROW
 EXECUTE FUNCTION update_updated_at_column();
 
-CREATE INDEX idx_daily_summary_001 ON daily_summary (user_id, target_date);
-CREATE INDEX idx_daily_summary_002 ON daily_summary (target_date);
-CREATE INDEX idx_daily_summary_004 ON daily_summary (created_at DESC);
+CREATE INDEX idx_daily_work_log_001 ON daily_work_log (user_id, target_date);
+CREATE INDEX idx_daily_work_log_002 ON daily_work_log (target_date);
+CREATE INDEX idx_daily_work_log_004 ON daily_work_log (created_at DESC);
 
-COMMENT ON TABLE daily_summary IS '통합 일일 업무 요약';
-COMMENT ON COLUMN daily_summary.user_id IS '사용자 FK';
-COMMENT ON COLUMN daily_summary.target_date IS '요약 대상 날짜';
-COMMENT ON COLUMN daily_summary.summary IS '통합 요약 텍스트';
-COMMENT ON COLUMN daily_summary.embedding IS '요약 임베딩 벡터 (1024차원)';
+COMMENT ON TABLE daily_work_log IS '통합 일일 업무 요약';
+COMMENT ON COLUMN daily_work_log.user_id IS '사용자 FK';
+COMMENT ON COLUMN daily_work_log.target_date IS '요약 대상 날짜';
+COMMENT ON COLUMN daily_work_log.summary IS '통합 요약 텍스트';
+COMMENT ON COLUMN daily_work_log.embedding IS '요약 임베딩 벡터 (1024차원)';
 
 
 -- jira_user 테이블 (Jira 사용자 정보)

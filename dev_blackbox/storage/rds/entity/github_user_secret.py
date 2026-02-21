@@ -1,36 +1,26 @@
-from datetime import datetime, UTC
 from typing import TYPE_CHECKING
 
-from sqlalchemy import BigInteger, DateTime, Index, String, ForeignKey
+from sqlalchemy import BigInteger, String, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from dev_blackbox.storage.rds.entity.base import Base, SoftDeleteMixin
+from dev_blackbox.storage.rds.entity.base import Base
 
 if TYPE_CHECKING:
     from dev_blackbox.storage.rds.entity.user import User
 
 
-class GitHubUserSecret(SoftDeleteMixin, Base):
+class GitHubUserSecret(Base):
     __tablename__ = "github_user_secret"
-    __table_args__ = (
-        Index(
-            "uq_github_user_secret_user_id_active",
-            "user_id",
-            unique=True,
-            postgresql_where="is_deleted = FALSE",
-        ),
-    )
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True, autoincrement=True)
     username: Mapped[str] = mapped_column(String(50), nullable=False)
     personal_access_token: Mapped[str] = mapped_column(String(255), nullable=False)
-    is_active: Mapped[bool] = mapped_column(default=True)
-    deactivate_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     user_id: Mapped[int] = mapped_column(
         BigInteger,
         ForeignKey("users.id", ondelete="RESTRICT"),
         nullable=False,
+        unique=True,
     )
     user: Mapped["User"] = relationship("User", back_populates="github_user_secret")
 
@@ -49,7 +39,3 @@ class GitHubUserSecret(SoftDeleteMixin, Base):
             personal_access_token=personal_access_token,
             user_id=user_id,
         )
-
-    def deactivate(self):
-        self.is_active = False
-        self.deactivate_at = datetime.now(UTC)

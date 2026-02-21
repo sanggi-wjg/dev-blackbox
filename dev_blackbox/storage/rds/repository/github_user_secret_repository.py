@@ -1,4 +1,5 @@
 from datetime import date
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -16,9 +17,9 @@ class GitHubUserSecretRepository:
         return secret
 
     def find_by_user_id(self, user_id: int) -> GitHubUserSecret | None:
-        stmt = select(GitHubUserSecret).where(
-            GitHubUserSecret.user_id == user_id,
-            GitHubUserSecret.is_active,
-            GitHubUserSecret.is_deleted == False,
-        )
+        stmt = select(GitHubUserSecret).where(GitHubUserSecret.user_id == user_id)
         return self.session.scalar(stmt)
+
+    def delete(self, secret: GitHubUserSecret) -> None:
+        self.session.delete(secret)
+        self.session.flush()

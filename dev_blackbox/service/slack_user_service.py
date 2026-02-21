@@ -68,3 +68,14 @@ class SlackUserService:
             raise SlackUserByIdNotFoundException(slack_user_id)
 
         return slack_user.assign_user(user_id)
+
+    def unassign_user(self, user_id: int, slack_user_id: int) -> SlackUser:
+        user = self.user_repository.find_by_id(user_id)
+        if user is None:
+            raise UserByIdNotFoundException(user_id)
+
+        slack_user = self.slack_user_repository.find_by_id(slack_user_id)
+        if slack_user is None:
+            raise SlackUserByIdNotFoundException(slack_user_id)
+
+        return slack_user.unassign_user()

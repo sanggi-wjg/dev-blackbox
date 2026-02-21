@@ -8,8 +8,8 @@ from dev_blackbox.core.enum import PlatformEnum
 from dev_blackbox.storage.rds.entity.base import Base
 
 
-class PlatformSummary(Base):
-    __tablename__ = "platform_summary"
+class PlatformWorkLog(Base):
+    __tablename__ = "platform_work_log"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     target_date: Mapped[date] = mapped_column(Date, nullable=False)
@@ -26,10 +26,7 @@ class PlatformSummary(Base):
     )
 
     def __repr__(self) -> str:
-        return (
-            f"<PlatformSummary(user_id={self.user_id}, "
-            f"target_date={self.target_date}, platform={self.platform})>"
-        )
+        return f"<PlatformWorkLog(user_id={self.user_id}, target_date={self.target_date}, platform={self.platform})>"
 
     @classmethod
     def create(
@@ -41,7 +38,7 @@ class PlatformSummary(Base):
         model_name: str,
         prompt: str,
         embedding: list[float] | None = None,
-    ) -> "PlatformSummary":
+    ) -> "PlatformWorkLog":
         return cls(
             user_id=user_id,
             target_date=target_date,

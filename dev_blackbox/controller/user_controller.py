@@ -1,7 +1,11 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
-from dev_blackbox.controller.dto.user_dto import CreateUserRequestDto, UserResponseDto
+from dev_blackbox.controller.dto.user_dto import (
+    CreateUserRequestDto,
+    UserResponseDto,
+    UserDetailResponseDto,
+)
 from dev_blackbox.core.database import get_db
 from dev_blackbox.service.user_service import UserService
 
@@ -24,7 +28,7 @@ async def create_user(
 
 @router.get(
     "/{user_id}",
-    response_model=UserResponseDto,
+    response_model=UserDetailResponseDto,
 )
 async def get_user(
     user_id: int,

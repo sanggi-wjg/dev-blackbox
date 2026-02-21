@@ -13,6 +13,5 @@ class GitHubSecretResponseDto(BaseModel):
     id: int
     username: str
     user_id: int
-    is_active: bool
 
     model_config = {"from_attributes": True}
