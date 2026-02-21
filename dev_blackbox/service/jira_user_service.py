@@ -57,3 +57,15 @@ class JiraUserService:
             raise JiraUserByIdNotFoundException(jira_user_id)
 
         return jira_user.assign_user_and_project(user_id, project)
+
+    def unassign_user(self, user_id: int, jira_user_id: int) -> JiraUser:
+        user = self.user_repository.find_by_id(user_id)
+        if user is None:
+            raise UserByIdNotFoundException(user_id)
+
+        jira_user = self.jira_user_repository.find_by_id(jira_user_id)
+        if jira_user is None:
+            raise JiraUserByIdNotFoundException(jira_user_id)
+
+        return jira_user.unassign_user()
+

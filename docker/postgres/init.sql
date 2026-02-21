@@ -52,13 +52,9 @@ CREATE TABLE IF NOT EXISTS github_user_secret
     user_id               BIGINT       NOT NULL,
     username              VARCHAR(50)  NOT NULL,
     personal_access_token VARCHAR(255) NOT NULL,
-    is_active             BOOLEAN      NOT NULL DEFAULT TRUE,
-    deactivate_at         TIMESTAMPTZ,
 
     created_at            TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     updated_at            TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
-    is_deleted            BOOLEAN      NOT NULL DEFAULT FALSE,
-    deleted_at            TIMESTAMPTZ  NOT NULL DEFAULT '9999-12-31 14:59:59+00',
 
     CONSTRAINT fk_github_user_secret_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE RESTRICT
 );
@@ -77,8 +73,6 @@ COMMENT ON TABLE github_user_secret IS 'GitHub 인증 정보 테이블';
 COMMENT ON COLUMN github_user_secret.user_id IS '사용자 FK';
 COMMENT ON COLUMN github_user_secret.username IS 'GitHub 사용자명';
 COMMENT ON COLUMN github_user_secret.personal_access_token IS 'GitHub PAT (AES-256-GCM 암호화 저장)';
-COMMENT ON COLUMN github_user_secret.is_active IS '활성 상태';
-COMMENT ON COLUMN github_user_secret.deactivate_at IS '비활성화 시각';
 
 
 -- github_event 테이블 (GitHub 이벤트 + 커밋 수집 데이터)

@@ -25,14 +25,15 @@ async def create_github_secret(
     return user_secret
 
 
-@router.get(
+@router.delete(
     "/users/{user_id}",
-    response_model=GitHubSecretResponseDto,
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_model=None,
 )
-async def get_github_secret_by_user_id(
+async def delete_github_secret_by_user_id(
     user_id: int,
     db: Session = Depends(get_db),
 ):
     service = GitHubUserSecretService(db)
-    user_secret = service.get_secret_by_user_id(user_id)
-    return user_secret
+    service.delete_secret(user_id)
+    return None

@@ -49,3 +49,7 @@ class SlackUser(Base):
     def assign_user(self, user_id: int) -> "SlackUser":
         self.user_id = user_id
         return self
+
+    def unassign_user(self) -> "SlackUser":
+        self.user_id = None
+        return self
