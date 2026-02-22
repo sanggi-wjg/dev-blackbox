@@ -122,7 +122,7 @@ CREATE TABLE IF NOT EXISTS platform_work_log
     user_id     BIGINT       NOT NULL,
     target_date DATE         NOT NULL,
     platform    VARCHAR(20)  NOT NULL,
-    summary     TEXT         NOT NULL DEFAULT '',
+    content     TEXT         NOT NULL DEFAULT '',
     embedding   vector(1024) NULL,
     model_name  VARCHAR(100) NOT NULL,
     prompt      TEXT         NOT NULL,
@@ -149,7 +149,7 @@ COMMENT ON TABLE platform_work_log IS '플랫폼별 LLM 요약';
 COMMENT ON COLUMN platform_work_log.user_id IS '사용자 FK';
 COMMENT ON COLUMN platform_work_log.target_date IS '요약 대상 날짜';
 COMMENT ON COLUMN platform_work_log.platform IS '플랫폼 구분 (GITHUB, JIRA, SLACK 등)';
-COMMENT ON COLUMN platform_work_log.summary IS 'LLM 생성 요약 텍스트';
+COMMENT ON COLUMN platform_work_log.content IS 'LLM 생성 요약 텍스트';
 COMMENT ON COLUMN platform_work_log.embedding IS '요약 임베딩 벡터 (1024차원)';
 COMMENT ON COLUMN platform_work_log.model_name IS '사용 LLM 모델명';
 COMMENT ON COLUMN platform_work_log.prompt IS '요약 생성에 사용된 프롬프트';
@@ -161,7 +161,7 @@ CREATE TABLE IF NOT EXISTS daily_work_log
     id          BIGSERIAL PRIMARY KEY,
     user_id     BIGINT       NOT NULL,
     target_date DATE         NOT NULL,
-    summary     TEXT         NOT NULL,
+    content     TEXT         NOT NULL,
     embedding   vector(1024) NULL,
 
     created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
@@ -185,7 +185,7 @@ CREATE INDEX idx_daily_work_log_004 ON daily_work_log (created_at DESC);
 COMMENT ON TABLE daily_work_log IS '통합 일일 업무 요약';
 COMMENT ON COLUMN daily_work_log.user_id IS '사용자 FK';
 COMMENT ON COLUMN daily_work_log.target_date IS '요약 대상 날짜';
-COMMENT ON COLUMN daily_work_log.summary IS '통합 요약 텍스트';
+COMMENT ON COLUMN daily_work_log.content IS '통합 요약 텍스트';
 COMMENT ON COLUMN daily_work_log.embedding IS '요약 임베딩 벡터 (1024차원)';
 
 

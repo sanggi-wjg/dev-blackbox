@@ -23,7 +23,7 @@ class WorkLogService:
         user_id: int,
         target_date: date,
         platform: PlatformEnum,
-        summary: str,
+        content: str,
         model_name: str,
         prompt: str,
         embedding: list[float] | None = None,
@@ -38,7 +38,7 @@ class WorkLogService:
             user_id=user_id,
             target_date=target_date,
             platform=platform,
-            summary=summary,
+            content=content,
             model_name=model_name,
             prompt=prompt,
             embedding=embedding,
@@ -49,10 +49,12 @@ class WorkLogService:
         self,
         user_id: int,
         target_date: date,
+        platforms: list[PlatformEnum],
     ) -> list[PlatformWorkLog]:
-        return self.platform_work_log_repository.find_all_by_user_id_and_target_date(
+        return self.platform_work_log_repository.find_all_by_user_id_and_target_date_and_platforms(
             user_id,
             target_date,
+            platforms,
         )
 
     def save_daily_work_log(
@@ -60,7 +62,14 @@ class WorkLogService:
         user_id: int,
         target_date: date,
     ) -> DailyWorkLog:
-        platform_work_logs = self.get_platform_work_logs(user_id, target_date)
+        # user_content 제외
+        platform_work_logs = (
+            self.platform_work_log_repository.find_all_by_user_id_and_target_date_and_platforms(
+                user_id,
+                target_date,
+                PlatformEnum.platforms(),
+            )
+        )
         merged_work_log_text = "\n\n".join(
             work_log.markdown_text for work_log in platform_work_logs
         )
@@ -72,7 +81,7 @@ class WorkLogService:
         daily_work_log = DailyWorkLog.create(
             user_id=user_id,
             target_date=target_date,
-            summary=merged_work_log_text,
+            content=merged_work_log_text,
         )
         return self.daily_work_log_repository.save(daily_work_log)
 
@@ -85,3 +94,34 @@ class WorkLogService:
 
     def get_daily_work_logs(self, user_id: int) -> list[DailyWorkLog]:
         return self.daily_work_log_repository.find_all_by_user_id(user_id)
+
+    def get_user_content_or_none(self, user_id: int, target_date: date) -> PlatformWorkLog | None:
+        return self.platform_work_log_repository.find_by_user_id_and_target_date_and_platform(
+            user_id=user_id,
+            target_date=target_date,
+            platform=PlatformEnum.USER_CONTENT,
+        )
+
+    def create_or_update_user_content(
+        self,
+        user_id: int,
+        target_date: date,
+        content: str,
+    ) -> tuple[bool, PlatformWorkLog]:
+        work_log = self.platform_work_log_repository.find_by_user_id_and_target_date_and_platform(
+            user_id=user_id,
+            target_date=target_date,
+            platform=PlatformEnum.USER_CONTENT,
+        )
+        if work_log is None:
+            platform_work_log = PlatformWorkLog.create(
+                user_id=user_id,
+                target_date=target_date,
+                platform=PlatformEnum.USER_CONTENT,
+                content=content,
+                model_name="",
+                prompt="",
+            )
+            return True, self.platform_work_log_repository.save(platform_work_log)
+        else:
+            return False, work_log.update_content(content)

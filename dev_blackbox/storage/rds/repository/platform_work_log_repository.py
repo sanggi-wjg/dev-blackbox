@@ -27,14 +27,18 @@ class PlatformWorkLogRepository:
         )
         return self.session.scalar(stmt)
 
-    def find_all_by_user_id_and_target_date(
-        self, user_id: int, target_date: date
+    def find_all_by_user_id_and_target_date_and_platforms(
+        self,
+        user_id: int,
+        target_date: date,
+        platforms: list[PlatformEnum],
     ) -> list[PlatformWorkLog]:
         stmt = (
             select(PlatformWorkLog)
             .where(
                 PlatformWorkLog.user_id == user_id,
                 PlatformWorkLog.target_date == target_date,
+                PlatformWorkLog.platform.in_(platforms),
             )
             .order_by(PlatformWorkLog.platform.asc())
         )

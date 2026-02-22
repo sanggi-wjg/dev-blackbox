@@ -8,9 +8,9 @@ from dev_blackbox.agent.model.prompt import (
     JIRA_ISSUE_SUMMARY_PROMPT,
     SLACK_MESSAGE_SUMMARY_PROMPT,
 )
-from dev_blackbox.core.cache import DistributedLockName
+from dev_blackbox.core.const import EMPTY_ACTIVITY_MESSAGE
 from dev_blackbox.core.database import get_db_session
-from dev_blackbox.core.enum import PlatformEnum
+from dev_blackbox.core.enum import PlatformEnum, DistributedLockName
 from dev_blackbox.service.github_event_service import GitHubEventService
 from dev_blackbox.service.jira_event_service import JiraEventService
 from dev_blackbox.service.model.user_model import UserWithRelatedModel
@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 def collect_events_and_summarize_work_log_task():
     with distributed_lock(
-        DistributedLockName.COLLECT_EVENTS_AND_SUMMARIZE_WORK_LOG_TASK, timeout=300
+        DistributedLockName.COLLECT_EVENTS_AND_SUMMARIZE_WORK_LOG_TASK.value, timeout=300
     ) as acquired:
         if not acquired:
             logger.warning("collect_platform_task is already running, skipping...")
@@ -41,9 +41,11 @@ def collect_events_and_summarize_work_log_task():
 
 
 def collect_events_and_summarize_work_log_by_user_task(user_id: int, target_date: date):
-    with distributed_lock(
-        DistributedLockName.COLLECT_EVENTS_AND_SUMMARIZE_WORK_LOG_TASK, timeout=300
-    ) as acquired:
+    lock_name = (
+        DistributedLockName.COLLECT_EVENTS_AND_SUMMARIZE_WORK_LOG_TASK
+        + f":user_id:{user_id}:target_date:{target_date}"
+    )
+    with distributed_lock(lock_name, timeout=300) as acquired:
         if not acquired:
             logger.warning("collect_platform_task is already running, skipping...")
             return
@@ -71,6 +73,24 @@ def _save_daily_work_log(
         service.save_daily_work_log(user_id=user.id, target_date=target_date)
 
 
+def _save_empty_work_log(
+    user: UserWithRelatedModel,
+    target_date: date,
+    platform: PlatformEnum,
+    message: str = EMPTY_ACTIVITY_MESSAGE,
+):
+    with get_db_session() as session:
+        service = WorkLogService(session)
+        service.save_platform_work_log(
+            user_id=user.id,
+            target_date=target_date,
+            platform=platform,
+            content=message,
+            model_name="",
+            prompt="",
+        )
+
+
 def _collect_and_summarize(user: UserWithRelatedModel, target_date: date):
     # GitHub 데이터셋 수집 + 요약
     try:
@@ -79,9 +99,7 @@ def _collect_and_summarize(user: UserWithRelatedModel, target_date: date):
             if commit_message:
                 _summarize_github(user, target_date, commit_message)
             else:
-                logger.info(f"커밋 데이터 없음: user_id={user.id}, target_date={target_date}")
-        else:
-            logger.info(f"GitHubUser 미할당, GitHub 수집 건너뜀: user_id={user.id}")
+                _save_empty_work_log(user, target_date, PlatformEnum.GITHUB)
     except Exception as e:
         logger.exception(
             f"GitHub 데이터 수집/요약 실패: user_id={user.id}, target_date={target_date}, error={e}"
@@ -94,9 +112,7 @@ def _collect_and_summarize(user: UserWithRelatedModel, target_date: date):
             if issue_details:
                 _summarize_jira(user, target_date, issue_details)
             else:
-                logger.info(f"Jira 이슈 데이터 없음: user_id={user.id}, target_date={target_date}")
-        else:
-            logger.info(f"JiraUser 미할당, Jira 수집 건너뜀: user_id={user.id}")
+                _save_empty_work_log(user, target_date, PlatformEnum.JIRA)
     except Exception as e:
         logger.exception(
             f"Jira 데이터 수집/요약 실패: user_id={user.id}, target_date={target_date}, error={e}"
@@ -109,11 +125,7 @@ def _collect_and_summarize(user: UserWithRelatedModel, target_date: date):
             if message_details:
                 _summarize_slack(user, target_date, message_details)
             else:
-                logger.info(
-                    f"Slack 메시지 데이터 없음: user_id={user.id}, target_date={target_date}"
-                )
-        else:
-            logger.info(f"SlackUser 미할당, Slack 수집 건너뜀: user_id={user.id}")
+                _save_empty_work_log(user, target_date, PlatformEnum.SLACK)
     except Exception as e:
         logger.exception(
             f"Slack 데이터 수집/요약 실패: user_id={user.id}, target_date={target_date}, error={e}"
@@ -183,7 +195,7 @@ def _summarize_github(user: UserWithRelatedModel, target_date: date, commit_mess
             user_id=user.id,
             target_date=target_date,
             platform=PlatformEnum.GITHUB,
-            summary=summary_text,
+            content=summary_text,
             model_name=llm_config.model,
             prompt=prompt.template,
         )
@@ -206,7 +218,7 @@ def _summarize_jira(user: UserWithRelatedModel, target_date: date, issue_details
             user_id=user.id,
             target_date=target_date,
             platform=PlatformEnum.JIRA,
-            summary=summary_text,
+            content=summary_text,
             model_name=llm_config.model,
             prompt=prompt.template,
         )
@@ -229,7 +241,7 @@ def _summarize_slack(user: UserWithRelatedModel, target_date: date, message_deta
             user_id=user.id,
             target_date=target_date,
             platform=PlatformEnum.SLACK,
-            summary=summary_text,
+            content=summary_text,
             model_name=llm_config.model,
             prompt=prompt.template,
         )
