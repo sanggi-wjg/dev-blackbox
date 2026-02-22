@@ -4,7 +4,12 @@ from datetime import UTC, datetime
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 
-from dev_blackbox.core.exception import EntityNotFoundException, ServiceException
+from dev_blackbox.core.exception import (
+    CompletedRequestException,
+    ConflictRequestException,
+    EntityNotFoundException,
+    ServiceException,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +40,37 @@ def register_exception_handlers(app: FastAPI) -> None:
                 "status": f"{status.HTTP_500_INTERNAL_SERVER_ERROR} INTERNAL_SERVER_ERROR",
                 "error": "Service Error, please contact the administrator.",
                 "message": e.message,
+                "path": request.url.path,
+                "requestedAt": datetime.now(UTC.utc).isoformat(),
+            },
+        )
+
+    @app.exception_handler(ConflictRequestException)
+    async def conflict_request_handler(request: Request, e: ConflictRequestException):
+        logger.warning(e)
+
+        return JSONResponse(
+            status_code=status.HTTP_409_CONFLICT,
+            content={
+                "status": f"{status.HTTP_409_CONFLICT} CONFLICT",
+                "error": "Request In Progress",
+                "message": e.message,
+                "path": request.url.path,
+                "requestedAt": datetime.now(UTC.utc).isoformat(),
+            },
+        )
+
+    @app.exception_handler(CompletedRequestException)
+    async def completed_request_handler(request: Request, e: CompletedRequestException):
+        logger.warning(e)
+
+        return JSONResponse(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            content={
+                "status": f"{status.HTTP_422_UNPROCESSABLE_ENTITY} UNPROCESSABLE_ENTITY",
+                "error": "Request Already Completed",
+                "message": e.message,
+                "response": e.cached_response,
                 "path": request.url.path,
                 "requestedAt": datetime.now(UTC.utc).isoformat(),
             },

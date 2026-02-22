@@ -27,3 +27,7 @@ class UserService:
 
     def get_users_by_condition(self, condition: UserSearchCondition) -> list[User]:
         return self.user_repository.find_all_by_condition(condition)
+
+    def delete_user(self, user_id: int) -> None:
+        user = self.get_user(user_id)
+        user.delete()
