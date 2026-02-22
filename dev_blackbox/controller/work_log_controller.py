@@ -64,7 +64,11 @@ async def sync_work_logs(
     background_tasks: BackgroundTasks,
     idempotency_key: str = Depends(idempotent_request),
 ):
-    background_tasks.add_task(collect_events_and_summarize_work_log_by_user_task, user_id)
+    background_tasks.add_task(
+        collect_events_and_summarize_work_log_by_user_task,
+        user_id,
+        request_dto.target_date,
+    )
     response = BackgroundTaskResponseDto(
         message=f"{request_dto.target_date}에 대해 수동 동기화 작업이 시작 되었습니다."
     )

@@ -40,7 +40,7 @@ def collect_events_and_summarize_work_log_task():
             _collect_events_and_summarize(user)
 
 
-def collect_events_and_summarize_work_log_by_user_task(user_id: int):
+def collect_events_and_summarize_work_log_by_user_task(user_id: int, target_date: date):
     with distributed_lock(
         DistributedLockName.COLLECT_EVENTS_AND_SUMMARIZE_WORK_LOG_TASK, timeout=300
     ) as acquired:
@@ -52,11 +52,11 @@ def collect_events_and_summarize_work_log_by_user_task(user_id: int):
             user_service = UserService(session)
             user = user_service.get_user(user_id)
             user = UserWithRelatedModel.model_validate(user)
-            _collect_events_and_summarize(user)
+            _collect_events_and_summarize(user, target_date)
 
 
-def _collect_events_and_summarize(user: UserWithRelatedModel):
-    target_date = get_yesterday(user.tz_info)
+def _collect_events_and_summarize(user: UserWithRelatedModel, target_date: date | None = None):
+    target_date = target_date or get_yesterday(user.tz_info)
     _collect_and_summarize(user, target_date)
     _save_daily_work_log(user, target_date)
     logger.info(f"요약 완료: user_id={user.id}, target_date={target_date}")
