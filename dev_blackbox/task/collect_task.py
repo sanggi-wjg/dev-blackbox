@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 def collect_events_and_summarize_work_log_task():
     with distributed_lock(
-        DistributedLockName.COLLECT_EVENTS_AND_SUMMARIZE_WORK_LOG_TASK, timeout=300
+        DistributedLockName.COLLECT_EVENTS_AND_SUMMARIZE_WORK_LOG_TASK.value, timeout=300
     ) as acquired:
         if not acquired:
             logger.warning("collect_platform_task is already running, skipping...")
@@ -41,9 +41,11 @@ def collect_events_and_summarize_work_log_task():
 
 
 def collect_events_and_summarize_work_log_by_user_task(user_id: int, target_date: date):
-    with distributed_lock(
-        DistributedLockName.COLLECT_EVENTS_AND_SUMMARIZE_WORK_LOG_TASK, timeout=300
-    ) as acquired:
+    lock_name = (
+        DistributedLockName.COLLECT_EVENTS_AND_SUMMARIZE_WORK_LOG_TASK
+        + f":user_id:{user_id}:target_date:{target_date}"
+    )
+    with distributed_lock(lock_name, timeout=300) as acquired:
         if not acquired:
             logger.warning("collect_platform_task is already running, skipping...")
             return

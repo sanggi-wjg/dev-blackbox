@@ -49,10 +49,12 @@ class WorkLogService:
         self,
         user_id: int,
         target_date: date,
+        platforms: list[PlatformEnum],
     ) -> list[PlatformWorkLog]:
-        return self.platform_work_log_repository.find_all_by_user_id_and_target_date(
+        return self.platform_work_log_repository.find_all_by_user_id_and_target_date_and_platforms(
             user_id,
             target_date,
+            platforms,
         )
 
     def save_daily_work_log(
@@ -61,9 +63,12 @@ class WorkLogService:
         target_date: date,
     ) -> DailyWorkLog:
         # user_content 제외
-        platform_work_logs = self.platform_work_log_repository.find_all_by_user_id_and_target_date(
-            user_id,
-            target_date,
+        platform_work_logs = (
+            self.platform_work_log_repository.find_all_by_user_id_and_target_date_and_platforms(
+                user_id,
+                target_date,
+                PlatformEnum.platforms(),
+            )
         )
         merged_work_log_text = "\n\n".join(
             work_log.markdown_text for work_log in platform_work_logs

@@ -12,6 +12,7 @@ from dev_blackbox.controller.dto.work_log_dto import (
     UserContentCreateOrUpdateRequestDto,
 )
 from dev_blackbox.core.database import get_db
+from dev_blackbox.core.enum import PlatformEnum
 from dev_blackbox.service.work_log_service import WorkLogService
 from dev_blackbox.task.collect_task import collect_events_and_summarize_work_log_by_user_task
 from dev_blackbox.util.idempotent_request import idempotent_request, save_idempotent_response
@@ -33,6 +34,7 @@ async def get_platform_work_logs(
     return service.get_platform_work_logs(
         user_id=user_id,
         target_date=query.target_date,
+        platforms=PlatformEnum.platforms(),
     )
 
 

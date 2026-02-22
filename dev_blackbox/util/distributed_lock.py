@@ -3,14 +3,13 @@ from contextlib import contextmanager
 from typing import Generator
 
 from dev_blackbox.core.cache import get_redis_client
-from dev_blackbox.core.enum import DistributedLockName
 
 logger = logging.getLogger(__name__)
 
 
 @contextmanager
 def distributed_lock(
-    lock_name: DistributedLockName,
+    lock_name: str,
     timeout: int = 60,
     blocking_timeout: int = 0,
 ) -> Generator[bool, None, None]:
@@ -35,7 +34,7 @@ def distributed_lock(
             do_work()
     """
     redis_client = get_redis_client()
-    lock_key = f"lock:{lock_name.value}"
+    lock_key = f"lock:{lock_name}"
     lock = redis_client.lock(
         lock_key,
         timeout=timeout,
