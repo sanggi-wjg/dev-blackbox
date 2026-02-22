@@ -12,7 +12,7 @@ class DailyWorkLog(Base):
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     target_date: Mapped[date] = mapped_column(Date, nullable=False)
-    summary: Mapped[str] = mapped_column(Text, nullable=False)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
     embedding: Mapped[list[float] | None] = mapped_column(Vector(1024), nullable=True)
 
     user_id: Mapped[int] = mapped_column(
@@ -29,12 +29,12 @@ class DailyWorkLog(Base):
         cls,
         user_id: int,
         target_date: date,
-        summary: str,
+        content: str,
         embedding: list[float] | None = None,
     ) -> "DailyWorkLog":
         return DailyWorkLog(
             user_id=user_id,
             target_date=target_date,
-            summary=summary,
+            content=content,
             embedding=embedding,
         )

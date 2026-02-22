@@ -1,4 +1,5 @@
 import logging
+import time
 from datetime import date
 from zoneinfo import ZoneInfo
 
@@ -10,6 +11,8 @@ logger = logging.getLogger(__name__)
 
 
 class GitHubClient:
+    LIMIT_EVENTS_PAGE = 4
+    LIMIT_EVENTS_TOLERANCE = 5
 
     def __init__(self, token: str):
         self._token = token
@@ -31,7 +34,10 @@ class GitHubClient:
         이벤트 조회
         """
         endpoint = f"https://api.github.com/users/{username}/events"
-        params = {"page": page, "per_page": per_page}
+        params = {
+            "page": page,
+            "per_page": per_page,
+        }
 
         try:
             with httpx.Client() as client:
@@ -50,6 +56,7 @@ class GitHubClient:
     ) -> GithubEventModelList:
         result = []
         page = 1
+        tolerance = 0
 
         while True:
             github_events = self.fetch_events(username, page=page, per_page=100)
@@ -62,10 +69,15 @@ class GitHubClient:
                 if event_date == target_date:
                     result.append(event)
                 elif event_date < target_date:
+                    tolerance += 1
+
+                # 과거 이벤트를 한참 뒤에 처리하는 경우도 가끔 있어서 tolerance 기준을 좀 느슨하게 잡음
+                if tolerance > self.LIMIT_EVENTS_TOLERANCE:
                     return GithubEventModelList(events=result)
 
             page += 1
-            if page > 10:
+            # 일정 페이징 요청 제한
+            if page >= self.LIMIT_EVENTS_PAGE:
                 logger.warning(
                     f"Reached maximum page {page} for date {target_date} in github events."
                 )

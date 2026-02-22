@@ -11,7 +11,7 @@ class PlatformWorkLogResponseDto(BaseModel):
     id: int
     target_date: date = Field(..., description="요약 대상 날짜 (YYYY-MM-DD)")
     platform: str = Field(..., description="플랫폼 이름")
-    summary: str = Field(..., description="요약 내용")
+    content: str = Field(..., description="요약 내용")
     model_name: str = Field(..., description="사용된 모델 이름")
     prompt: str = Field(..., description="사용된 프롬프트 템플릿")
     user_id: int
@@ -24,7 +24,7 @@ class PlatformWorkLogResponseDto(BaseModel):
 class DailyWorkLogResponseDto(BaseModel):
     id: int
     target_date: date = Field(..., description="요약 대상 날짜 (YYYY-MM-DD)")
-    summary: str = Field(..., description="요약 내용")
+    content: str = Field(..., description="요약 내용")
     user_id: int
     created_at: datetime
     updated_at: datetime
@@ -34,3 +34,8 @@ class DailyWorkLogResponseDto(BaseModel):
 
 class WorkLogManualSyncReqeustDto(BaseModel):
     target_date: date = Field(..., description="수동 수집 대상 날짜 (YYYY-MM-DD)")
+
+
+class UserContentCreateOrUpdateRequestDto(BaseModel):
+    target_date: date = Field(..., description="사용자 콘텐츠의 대상 날짜 (YYYY-MM-DD)")
+    content: str = Field(..., description="사용자 콘텐츠")

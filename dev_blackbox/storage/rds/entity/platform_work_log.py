@@ -14,7 +14,7 @@ class PlatformWorkLog(Base):
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     target_date: Mapped[date] = mapped_column(Date, nullable=False)
     platform: Mapped[PlatformEnum] = mapped_column(String(20), nullable=False)
-    summary: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    content: Mapped[str] = mapped_column(Text, nullable=False, default="")
     embedding: Mapped[list[float] | None] = mapped_column(Vector(1024), nullable=True)
     model_name: Mapped[str] = mapped_column(String(100), nullable=False)
     prompt: Mapped[str] = mapped_column(Text, nullable=False)
@@ -34,7 +34,7 @@ class PlatformWorkLog(Base):
         user_id: int,
         target_date: date,
         platform: PlatformEnum,
-        summary: str,
+        content: str,
         model_name: str,
         prompt: str,
         embedding: list[float] | None = None,
@@ -43,7 +43,7 @@ class PlatformWorkLog(Base):
             user_id=user_id,
             target_date=target_date,
             platform=platform,
-            summary=summary,
+            content=content,
             model_name=model_name,
             prompt=prompt,
             embedding=embedding,
@@ -51,4 +51,8 @@ class PlatformWorkLog(Base):
 
     @property
     def markdown_text(self) -> str:
-        return f"# {self.platform}\n\n{self.summary}"
+        return f"# {self.platform}\n\n{self.content}"
+
+    def update_content(self, content: str) -> "PlatformWorkLog":
+        self.content = content
+        return self

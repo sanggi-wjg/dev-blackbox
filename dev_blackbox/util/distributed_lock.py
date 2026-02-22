@@ -2,7 +2,8 @@ import logging
 from contextlib import contextmanager
 from typing import Generator
 
-from dev_blackbox.core.cache import get_redis_client, DistributedLockName
+from dev_blackbox.core.cache import get_redis_client
+from dev_blackbox.core.enum import DistributedLockName
 
 logger = logging.getLogger(__name__)
 

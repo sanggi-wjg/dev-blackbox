@@ -1,8 +1,8 @@
 import logging
 
 from dev_blackbox.core.database import get_db_session
+from dev_blackbox.core.enum import DistributedLockName
 from dev_blackbox.service.jira_user_service import JiraUserService
-from dev_blackbox.util.distributed_lock import DistributedLockName
 from dev_blackbox.util.distributed_lock import distributed_lock
 
 logger = logging.getLogger(__name__)
