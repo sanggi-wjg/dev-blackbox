@@ -59,3 +59,8 @@ class JiraUser(Base):
         self.project = project
         self.user_id = user_id
         return self
+
+    def unassign_user(self) -> "JiraUser":
+        self.project = None
+        self.user_id = None
+        return self

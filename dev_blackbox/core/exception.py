@@ -28,7 +28,7 @@ class UserByNameNotFoundException(EntityNotFoundException):
         super().__init__(entity_name="User", identifier=username)
 
 
-class GitHubUserSecretByUserIdNotFoundException(EntityNotFoundException):
+class GitHubUserSecretNotFoundException(EntityNotFoundException):
 
     def __init__(self, user_id: int):
         super().__init__(entity_name="GitHubUserSecret", identifier=user_id)
@@ -80,6 +80,26 @@ class SlackUserNotAssignedException(ServiceException):
 
 
 #######################
+
+
+class IdempotentRequestException(ServiceException):
+
+    def __init__(self, idempotency_key: str):
+        self.idempotency_key = idempotency_key
+        super().__init__(f"Duplicate request. (Idempotency-Key: {idempotency_key})")
+
+
+class ConflictRequestException(IdempotentRequestException):
+
+    def __init__(self, idempotency_key: str):
+        super().__init__(idempotency_key)
+
+
+class CompletedRequestException(IdempotentRequestException):
+
+    def __init__(self, idempotency_key: str, cached_response: dict):
+        self.cached_response = cached_response
+        super().__init__(idempotency_key)
 
 
 class SlackClientException(ServiceException):

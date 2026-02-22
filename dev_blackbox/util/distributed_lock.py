@@ -1,21 +1,10 @@
 import logging
 from contextlib import contextmanager
-from enum import Enum
 from typing import Generator
 
-from dev_blackbox.core.cache import get_redis_client
+from dev_blackbox.core.cache import get_redis_client, DistributedLockName
 
 logger = logging.getLogger(__name__)
-
-
-class DistributedLockName(str, Enum):
-    SYNC_JIRA_USERS_TASK = "sync_jira_users_task"
-    SYNC_SLACK_USERS_TASK = "sync_slack_users_task"
-    COLLECT_PLATFORM_TASK = "collect_platform_task"
-
-
-def _get_lock_key(lock_name: DistributedLockName) -> str:
-    return f"lock:{lock_name.value}"
 
 
 @contextmanager
@@ -44,8 +33,8 @@ def distributed_lock(
             # 락 획득 성공, 작업 수행
             do_work()
     """
-    redis_client = get_redis_client(database=9)
-    lock_key = _get_lock_key(lock_name)
+    redis_client = get_redis_client()
+    lock_key = f"lock:{lock_name.value}"
     lock = redis_client.lock(
         lock_key,
         timeout=timeout,

@@ -19,6 +19,7 @@ class User(SoftDeleteMixin, Base):
     name: Mapped[str] = mapped_column(String(100), nullable=False, comment="사용자 이름")
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, comment="이메일")
     timezone: Mapped[str] = mapped_column(String(50), nullable=False, default="Asia/Seoul")
+    is_admin: Mapped[bool] = mapped_column(default=False, nullable=False)
 
     github_user_secret: Mapped["GitHubUserSecret | None"] = relationship(
         "GitHubUserSecret",
