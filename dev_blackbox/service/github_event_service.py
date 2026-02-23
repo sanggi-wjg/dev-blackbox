@@ -7,7 +7,7 @@ from dev_blackbox.client.github_client import GitHubClient
 from dev_blackbox.client.model.github_api_model import GithubEventModel, GithubCommitModel
 from dev_blackbox.core.encrypt import get_encrypt_service
 from dev_blackbox.core.exception import (
-    UserByIdNotFoundException,
+    UserNotFoundException,
     GitHubUserSecretNotSetException,
 )
 from dev_blackbox.storage.rds.entity import User
@@ -45,7 +45,7 @@ class GitHubEventService:
     ) -> list[GitHubEvent]:
         user = self.user_repository.find_by_id(user_id)
         if user is None:
-            raise UserByIdNotFoundException(user_id)
+            raise UserNotFoundException(user_id)
 
         # target_date가 없으면 유저 타임존 기준 어제 날짜로 설정
         if target_date is None:

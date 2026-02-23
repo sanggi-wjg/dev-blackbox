@@ -10,15 +10,14 @@ from dev_blackbox.client.model.jira_api_model import (
     JiraStatusGroup,
 )
 from dev_blackbox.core.exception import (
-    UserByIdNotFoundException,
+    UserNotFoundException,
     JiraUserNotAssignedException,
     JiraUserProjectNotAssignedException,
 )
-from dev_blackbox.storage.rds.entity import User, JiraUser
+from dev_blackbox.storage.rds.entity import User
 from dev_blackbox.storage.rds.entity.jira_event import JiraEvent
 from dev_blackbox.storage.rds.repository import (
     UserRepository,
-    JiraUserRepository,
     JiraEventRepository,
 )
 from dev_blackbox.util.datetime_util import get_yesterday
@@ -113,5 +112,5 @@ class JiraEventService:
     def _get_user_or_throw(self, user_id: int) -> User:
         user = self.user_repository.find_by_id(user_id)
         if user is None:
-            raise UserByIdNotFoundException(user_id)
+            raise UserNotFoundException(user_id)
         return user

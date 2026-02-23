@@ -6,12 +6,11 @@ from dev_blackbox.core.types import NotBlankStr
 class CreateGitHubSecretRequestDto(BaseModel):
     username: NotBlankStr
     personal_access_token: NotBlankStr
-    user_id: int
 
 
 class GitHubSecretResponseDto(BaseModel):
     id: int
     username: str
-    user_id: int
+    personal_access_token: str
 
     model_config = {"from_attributes": True}

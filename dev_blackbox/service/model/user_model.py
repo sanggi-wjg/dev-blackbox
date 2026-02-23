@@ -32,7 +32,20 @@ class SlackUserModel(BaseModel):
     model_config = {"from_attributes": True}
 
 
-class UserWithRelatedModel(BaseModel):
+class UserModel(BaseModel):
+    id: int
+    name: str
+    email: str
+    timezone: str
+    tz_info: ZoneInfo
+    is_admin: bool
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class UserWithPlatformInfoModel(BaseModel):
     id: int
     name: str
     email: str
