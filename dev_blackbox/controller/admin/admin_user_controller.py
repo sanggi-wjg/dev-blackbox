@@ -5,13 +5,12 @@ from starlette import status
 from dev_blackbox.controller.admin.dto.user_dto import CreateUserRequestDto
 from dev_blackbox.controller.api.dto.user_dto import UserResponseDto
 from dev_blackbox.controller.security_config import (
-    AuthToken,
     CurrentAdminUser,
 )
 from dev_blackbox.core.database import get_db
 from dev_blackbox.service.user_service import UserService
 
-router = APIRouter(prefix="/admin-api/v1/users", tags=["User Admin"])
+router = APIRouter(prefix="/admin-api/v1/users", tags=["Admin User Management"])
 
 
 @router.get(
@@ -20,7 +19,6 @@ router = APIRouter(prefix="/admin-api/v1/users", tags=["User Admin"])
     response_model=list[UserResponseDto],
 )
 async def get_users(
-    token: AuthToken,
     current_admin_user: CurrentAdminUser,
     db: Session = Depends(get_db),
 ):
@@ -36,7 +34,6 @@ async def get_users(
 )
 async def create_user(
     request: CreateUserRequestDto,
-    token: AuthToken,
     current_admin_user: CurrentAdminUser,
     db: Session = Depends(get_db),
 ):
@@ -52,7 +49,6 @@ async def create_user(
 )
 async def delete_user(
     user_id: int,
-    token: AuthToken,
     current_admin_user: CurrentAdminUser,
     db: Session = Depends(get_db),
 ):

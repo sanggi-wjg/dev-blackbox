@@ -26,17 +26,18 @@ async def get_current_user(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={
-            "WWW-Authenticate": f"Bearer",
+            "WWW-Authenticate": "Bearer",
         },
     )
     jwt_service = get_jwt_service()
 
     try:
         payload = jwt_service.decode_token(token)
-        user_email = payload.get("sub")
-        if user_email is None:
-            raise authenticate_exception
     except InvalidTokenError, ValidationError:
+        raise authenticate_exception
+
+    user_email = payload.get("sub")
+    if user_email is None:
         raise authenticate_exception
 
     with get_db_session() as db:
@@ -44,9 +45,7 @@ async def get_current_user(
         user = service.get_user_by_email_or_none(user_email)
         if user is None:
             raise authenticate_exception
-        user = UserModel.model_validate(user)
-
-    return user
+        return UserModel.model_validate(user)
 
 
 async def get_current_admin_user(
