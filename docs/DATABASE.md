@@ -31,16 +31,19 @@ PostgreSQL 데이터 모델, ORM 엔티티, 세션 관리.
 
 테이블: `users`
 
-| 컬럼       | 타입           | 제약 조건                          | 설명     |
-|----------|--------------|--------------------------------|--------|
-| id       | BIGSERIAL    | PK, AUTO_INCREMENT             | 사용자 ID |
-| name     | VARCHAR(100) | NOT NULL                       | 이름     |
-| email    | VARCHAR(255) | NOT NULL, UNIQUE               | 이메일    |
-| timezone | VARCHAR(50)  | NOT NULL, DEFAULT 'Asia/Seoul' | 타임존    |
+| 컬럼       | 타입           | 제약 조건                          | 설명               |
+|----------|--------------|--------------------------------|------------------|
+| id       | BIGSERIAL    | PK, AUTO_INCREMENT             | 사용자 ID           |
+| name     | VARCHAR(100) | NOT NULL                       | 이름               |
+| email    | VARCHAR(255) | NOT NULL, UNIQUE               | 이메일              |
+| password | VARCHAR(255) | NOT NULL                       | 비밀번호 (Argon2 해시) |
+| timezone | VARCHAR(50)  | NOT NULL, DEFAULT 'Asia/Seoul' | 타임존              |
+| is_admin | BOOLEAN      | NOT NULL, DEFAULT FALSE        | 관리자 여부           |
 
 - Mixin: `SoftDeleteMixin`
-- Relationship: `github_user_secrets` (1:N → GitHubUserSecret), `jira_user` (1:1 → JiraUser)
+- Relationship: `github_user_secret` (1:1 → GitHubUserSecret), `jira_user` (1:1 → JiraUser), `slack_user` (1:1 → SlackUser)
 - Property: `tz_info` → `ZoneInfo(self.timezone)`
+- Factory: `User.create(name, email, hashed_password)` — 해싱된 비밀번호를 받음
 
 ### GitHubUserSecret
 
@@ -80,15 +83,15 @@ PostgreSQL 데이터 모델, ORM 엔티티, 세션 관리.
 
 테이블: `jira_user`
 
-| 컬럼            | 타입           | 제약 조건                         | 설명          |
-|---------------|--------------|-------------------------------|-------------|
-| id            | BIGSERIAL    | PK, AUTO_INCREMENT            | Jira 사용자 ID |
-| account_id    | VARCHAR(128) | NOT NULL, UNIQUE              | Jira 계정 ID  |
-| active        | BOOLEAN      | NOT NULL, DEFAULT TRUE        | 활성 상태       |
-| display_name  | VARCHAR(255) | NOT NULL                      | 표시 이름       |
-| email_address | VARCHAR(255) | NOT NULL                      | Jira 이메일    |
-| url           | VARCHAR(512) | NOT NULL                      | 프로필 URL     |
-| project       | VARCHAR(100) | NULLABLE                      | Jira 프로젝트명  |
+| 컬럼            | 타입           | 제약 조건                           | 설명          |
+|---------------|--------------|---------------------------------|-------------|
+| id            | BIGSERIAL    | PK, AUTO_INCREMENT              | Jira 사용자 ID |
+| account_id    | VARCHAR(128) | NOT NULL, UNIQUE                | Jira 계정 ID  |
+| active        | BOOLEAN      | NOT NULL, DEFAULT TRUE          | 활성 상태       |
+| display_name  | VARCHAR(255) | NOT NULL                        | 표시 이름       |
+| email_address | VARCHAR(255) | NOT NULL                        | Jira 이메일    |
+| url           | VARCHAR(512) | NOT NULL                        | 프로필 URL     |
+| project       | VARCHAR(100) | NULLABLE                        | Jira 프로젝트명  |
 | user_id       | BIGINT       | FK → users.id, NULLABLE, UNIQUE | 사용자 FK (선택) |
 
 - Mixin: 없음 (Base만 상속)
@@ -99,16 +102,16 @@ PostgreSQL 데이터 모델, ORM 엔티티, 세션 관리.
 
 테이블: `jira_event`
 
-| 컬럼          | 타입           | 제약 조건                      | 설명            |
-|-------------|--------------|----------------------------|---------------|
-| id          | BIGSERIAL    | PK, AUTO_INCREMENT         | 이벤트 ID        |
-| user_id     | BIGINT       | FK → users.id              | 사용자 FK        |
-| jira_user_id | BIGINT      | FK → jira_user.id          | Jira 사용자 FK   |
-| issue_id    | VARCHAR(100) | NOT NULL, UNIQUE           | Jira 이슈 ID    |
-| issue_key   | VARCHAR(100) | NOT NULL                   | Jira 이슈 키 (e.g., FMP-123) |
-| target_date | DATE         | NOT NULL                   | 수집 대상 날짜      |
-| issue       | JSONB        | NOT NULL                   | 이슈 원본 데이터     |
-| changelog   | JSONB        | NULLABLE                   | 변경 이력 데이터 (target_date 기준 필터링) |
+| 컬럼           | 타입           | 제약 조건              | 설명                             |
+|--------------|--------------|--------------------|--------------------------------|
+| id           | BIGSERIAL    | PK, AUTO_INCREMENT | 이벤트 ID                         |
+| user_id      | BIGINT       | FK → users.id      | 사용자 FK                         |
+| jira_user_id | BIGINT       | FK → jira_user.id  | Jira 사용자 FK                    |
+| issue_id     | VARCHAR(100) | NOT NULL, UNIQUE   | Jira 이슈 ID                     |
+| issue_key    | VARCHAR(100) | NOT NULL           | Jira 이슈 키 (e.g., FMP-123)      |
+| target_date  | DATE         | NOT NULL           | 수집 대상 날짜                       |
+| issue        | JSONB        | NOT NULL           | 이슈 원본 데이터                      |
+| changelog    | JSONB        | NULLABLE           | 변경 이력 데이터 (target_date 기준 필터링) |
 
 - Mixin: 없음 (Base만 상속)
 - Property: `issue_model` → `JiraIssueModel` (cached_property, JSONB에서 변환)
@@ -117,16 +120,16 @@ PostgreSQL 데이터 모델, ORM 엔티티, 세션 관리.
 
 테이블: `platform_summary`
 
-| 컬럼          | 타입            | 제약 조건                                          | 설명           |
-|-------------|---------------|-------------------------------------------------|--------------|
-| id          | BIGSERIAL     | PK, AUTO_INCREMENT                              | 요약 ID        |
-| user_id     | BIGINT        | FK → users.id, NOT NULL                         | 사용자 FK       |
-| target_date | DATE          | NOT NULL                                        | 요약 대상 날짜     |
-| platform    | VARCHAR(20)   | NOT NULL                                        | 플랫폼 구분       |
-| summary     | TEXT          | NOT NULL, DEFAULT ''                            | LLM 요약 텍스트   |
-| embedding   | vector(1024)  | NULLABLE                                        | 임베딩 벡터       |
-| model_name  | VARCHAR(100)  | NOT NULL                                        | 사용 LLM 모델명   |
-| prompt      | TEXT          | NOT NULL                                        | 요약에 사용된 프롬프트 |
+| 컬럼          | 타입           | 제약 조건                   | 설명           |
+|-------------|--------------|-------------------------|--------------|
+| id          | BIGSERIAL    | PK, AUTO_INCREMENT      | 요약 ID        |
+| user_id     | BIGINT       | FK → users.id, NOT NULL | 사용자 FK       |
+| target_date | DATE         | NOT NULL                | 요약 대상 날짜     |
+| platform    | VARCHAR(20)  | NOT NULL                | 플랫폼 구분       |
+| summary     | TEXT         | NOT NULL, DEFAULT ''    | LLM 요약 텍스트   |
+| embedding   | vector(1024) | NULLABLE                | 임베딩 벡터       |
+| model_name  | VARCHAR(100) | NOT NULL                | 사용 LLM 모델명   |
+| prompt      | TEXT         | NOT NULL                | 요약에 사용된 프롬프트 |
 
 - Mixin: 없음 (Base만 상속)
 - UNIQUE: `(user_id, target_date, platform)`
@@ -135,16 +138,16 @@ PostgreSQL 데이터 모델, ORM 엔티티, 세션 관리.
 
 테이블: `daily_summary`
 
-| 컬럼            | 타입            | 제약 조건                          | 설명           |
-|---------------|---------------|---------------------------------|--------------|
-| id            | BIGSERIAL     | PK, AUTO_INCREMENT              | 요약 ID        |
-| user_id       | BIGINT        | FK → users.id, NOT NULL         | 사용자 FK       |
-| target_date   | DATE          | NOT NULL                        | 요약 대상 날짜     |
-| summary       | TEXT          | NOT NULL                        | 통합 요약 텍스트    |
-| embedding     | vector(1024)  | NULLABLE                        | 임베딩 벡터       |
-| model_name    | VARCHAR(100)  | NOT NULL                        | 사용 LLM 모델명   |
-| prompt        | TEXT          | NOT NULL                        | 요약에 사용된 프롬프트 |
-| error_message | TEXT          | NULLABLE                        | 에러 메시지       |
+| 컬럼            | 타입           | 제약 조건                   | 설명           |
+|---------------|--------------|-------------------------|--------------|
+| id            | BIGSERIAL    | PK, AUTO_INCREMENT      | 요약 ID        |
+| user_id       | BIGINT       | FK → users.id, NOT NULL | 사용자 FK       |
+| target_date   | DATE         | NOT NULL                | 요약 대상 날짜     |
+| summary       | TEXT         | NOT NULL                | 통합 요약 텍스트    |
+| embedding     | vector(1024) | NULLABLE                | 임베딩 벡터       |
+| model_name    | VARCHAR(100) | NOT NULL                | 사용 LLM 모델명   |
+| prompt        | TEXT         | NOT NULL                | 요약에 사용된 프롬프트 |
+| error_message | TEXT         | NULLABLE                | 에러 메시지       |
 
 - Mixin: 없음 (Base만 상속)
 - UNIQUE: `(user_id, target_date)`
@@ -159,12 +162,15 @@ Repository는 `Session`을 주입받아 데이터 접근을 캡슐화.
 
 ### UserRepository
 
-| 메서드                 | 반환 타입        | 설명             |
-|---------------------|--------------|----------------|
-| save(user)          | User         | 사용자 저장         |
-| find_by_id(user_id) | User \| None | ID로 조회 (삭제 제외) |
-| find_all()          | list[User]   | 전체 조회 (삭제 제외)  |
-| is_exist(user_id)   | bool         | 존재 여부 확인       |
+| 메서드                              | 반환 타입        | 설명                   |
+|----------------------------------|--------------|----------------------|
+| save(user)                       | User         | 사용자 저장               |
+| find_by_id(user_id)              | User \| None | ID로 조회 (삭제 제외)       |
+| find_by_name(name)               | User \| None | 이름으로 조회 (삭제 제외)      |
+| find_by_email(email)             | User \| None | 이메일로 조회 (삭제 제외, 인증용) |
+| find_all()                       | list[User]   | 전체 조회 (삭제 제외)        |
+| find_all_by_condition(condition) | list[User]   | 조건별 조회               |
+| is_exist(user_id)                | bool         | 존재 여부 확인             |
 
 ### GitHubUserSecretRepository
 
@@ -186,40 +192,40 @@ Repository는 `Session`을 주입받아 데이터 접근을 캡슐화.
 
 ### JiraUserRepository
 
-| 메서드                              | 반환 타입            | 설명              |
-|----------------------------------|------------------|-----------------|
-| save(jira_user)                  | JiraUser         | Jira 사용자 저장     |
-| save_all(jira_users)             | list[JiraUser]   | 벌크 저장           |
-| find_by_id(jira_user_id)        | JiraUser \| None | ID로 조회          |
-| find_by_user_id(user_id)        | list[JiraUser]   | 사용자별 Jira 사용자   |
-| find_by_account_id(account_id)  | JiraUser \| None | Jira 계정 ID로 조회  |
-| find_by_account_ids(account_ids) | list[JiraUser]   | 다중 계정 ID 조회     |
+| 메서드                              | 반환 타입            | 설명             |
+|----------------------------------|------------------|----------------|
+| save(jira_user)                  | JiraUser         | Jira 사용자 저장    |
+| save_all(jira_users)             | list[JiraUser]   | 벌크 저장          |
+| find_by_id(jira_user_id)         | JiraUser \| None | ID로 조회         |
+| find_by_user_id(user_id)         | list[JiraUser]   | 사용자별 Jira 사용자  |
+| find_by_account_id(account_id)   | JiraUser \| None | Jira 계정 ID로 조회 |
+| find_by_account_ids(account_ids) | list[JiraUser]   | 다중 계정 ID 조회    |
 
 ### JiraEventRepository
 
-| 메서드                                            | 반환 타입            | 설명                |
-|------------------------------------------------|-------------------|-------------------|
-| save_all(jira_events)                          | list[JiraEvent]   | 벌크 저장             |
-| find_all_by_user_id_and_target_date(uid, date) | list[JiraEvent]   | 사용자+날짜별 이벤트 조회    |
-| delete_by_user_id_and_target_date(uid, date)   | None              | 사용자+날짜별 삭제 (재수집용) |
+| 메서드                                            | 반환 타입           | 설명                |
+|------------------------------------------------|-----------------|-------------------|
+| save_all(jira_events)                          | list[JiraEvent] | 벌크 저장             |
+| find_all_by_user_id_and_target_date(uid, date) | list[JiraEvent] | 사용자+날짜별 이벤트 조회    |
+| delete_by_user_id_and_target_date(uid, date)   | None            | 사용자+날짜별 삭제 (재수집용) |
 
 ### PlatformSummaryRepository
 
-| 메서드                                                              | 반환 타입                  | 설명                  |
-|------------------------------------------------------------------|------------------------|---------------------|
-| save(platform_summary)                                           | PlatformSummary        | 플랫폼 요약 저장           |
-| find_by_user_id_and_target_date_and_platform(uid, date, platform) | PlatformSummary \| None | 사용자+날짜+플랫폼별 조회     |
-| find_all_by_user_id_and_target_date(uid, date)                   | list[PlatformSummary]  | 사용자+날짜별 전체 플랫폼 조회  |
-| delete_by_user_id_and_target_date_and_platform(uid, date, platform) | None                   | 사용자+날짜+플랫폼별 삭제     |
+| 메서드                                                                 | 반환 타입                   | 설명                |
+|---------------------------------------------------------------------|-------------------------|-------------------|
+| save(platform_summary)                                              | PlatformSummary         | 플랫폼 요약 저장         |
+| find_by_user_id_and_target_date_and_platform(uid, date, platform)   | PlatformSummary \| None | 사용자+날짜+플랫폼별 조회    |
+| find_all_by_user_id_and_target_date(uid, date)                      | list[PlatformSummary]   | 사용자+날짜별 전체 플랫폼 조회 |
+| delete_by_user_id_and_target_date_and_platform(uid, date, platform) | None                    | 사용자+날짜+플랫폼별 삭제    |
 
 ### DailySummaryRepository
 
-| 메서드                                          | 반환 타입                | 설명            |
-|----------------------------------------------|----------------------|---------------|
-| save(daily_summary)                          | DailySummary         | 일일 요약 저장      |
-| find_by_user_id_and_target_date(uid, date)   | DailySummary \| None | 사용자+날짜별 조회    |
-| find_all_by_user_id(uid)                     | list[DailySummary]   | 사용자별 전체 조회    |
-| delete_by_user_id_and_target_date(uid, date) | None                 | 사용자+날짜별 삭제    |
+| 메서드                                          | 반환 타입                | 설명         |
+|----------------------------------------------|----------------------|------------|
+| save(daily_summary)                          | DailySummary         | 일일 요약 저장   |
+| find_by_user_id_and_target_date(uid, date)   | DailySummary \| None | 사용자+날짜별 조회 |
+| find_all_by_user_id(uid)                     | list[DailySummary]   | 사용자별 전체 조회 |
+| delete_by_user_id_and_target_date(uid, date) | None                 | 사용자+날짜별 삭제 |
 
 ## DB 세션 관리
 
@@ -259,24 +265,24 @@ with get_db_session() as db:
 
 ### 인덱스
 
-| 테이블                | 인덱스                        | 컬럼                              |
-|--------------------|----------------------------|---------------------------------|
-| users              | idx_users_001              | email                           |
-| users              | idx_users_002              | created_at DESC                 |
-| github_user_secret | idx_github_user_secret_001 | user_id                         |
-| github_user_secret | idx_github_user_secret_002 | created_at DESC                 |
-| github_event       | idx_github_event_001       | (user_id, target_date)          |
-| github_event       | idx_github_event_002       | target_date                     |
-| github_event       | idx_github_event_003       | created_at DESC                 |
-| jira_user          | idx_jira_user_001          | user_id                         |
-| jira_user          | idx_jira_user_002          | account_id                      |
-| jira_user          | idx_jira_user_003          | created_at DESC                 |
-| jira_event         | idx_jira_event_001         | (user_id, target_date)          |
-| jira_event         | idx_jira_event_002         | target_date                     |
-| jira_event         | idx_jira_event_003         | created_at DESC                 |
-| platform_summary   | idx_platform_summary_001   | (user_id, target_date)          |
-| platform_summary   | idx_platform_summary_002   | target_date                     |
-| platform_summary   | idx_platform_summary_003   | created_at DESC                 |
-| daily_summary      | idx_daily_summary_001      | (user_id, target_date)          |
-| daily_summary      | idx_daily_summary_002      | target_date                     |
-| daily_summary      | idx_daily_summary_004      | created_at DESC                 |
+| 테이블                | 인덱스                        | 컬럼                     |
+|--------------------|----------------------------|------------------------|
+| users              | idx_users_001              | email                  |
+| users              | idx_users_002              | created_at DESC        |
+| github_user_secret | idx_github_user_secret_001 | user_id                |
+| github_user_secret | idx_github_user_secret_002 | created_at DESC        |
+| github_event       | idx_github_event_001       | (user_id, target_date) |
+| github_event       | idx_github_event_002       | target_date            |
+| github_event       | idx_github_event_003       | created_at DESC        |
+| jira_user          | idx_jira_user_001          | user_id                |
+| jira_user          | idx_jira_user_002          | account_id             |
+| jira_user          | idx_jira_user_003          | created_at DESC        |
+| jira_event         | idx_jira_event_001         | (user_id, target_date) |
+| jira_event         | idx_jira_event_002         | target_date            |
+| jira_event         | idx_jira_event_003         | created_at DESC        |
+| platform_summary   | idx_platform_summary_001   | (user_id, target_date) |
+| platform_summary   | idx_platform_summary_002   | target_date            |
+| platform_summary   | idx_platform_summary_003   | created_at DESC        |
+| daily_summary      | idx_daily_summary_001      | (user_id, target_date) |
+| daily_summary      | idx_daily_summary_002      | target_date            |
+| daily_summary      | idx_daily_summary_004      | created_at DESC        |

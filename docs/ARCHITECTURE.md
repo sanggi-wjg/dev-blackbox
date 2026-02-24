@@ -8,41 +8,44 @@ LLM을 통해 일일 업무 일지를 자동 생성하는 시스템이다.
 ## 레이어 구조
 
 ```
-┌─────────────────────────────────────────────────────┐
-│                  Controller Layer                    │
-│  REST API 엔드포인트, DTO 변환, 예외 핸들러 등록       │
-│  UserController, GitHubSecretController,             │
-│  GitHubEventController                               │
+┌───────────────────────────────────────────────────────┐
+│                  Controller Layer                     │
+│  REST API 엔드포인트, DTO 변환, 예외 핸들러, 보안 설정         │
+│  api/ — AuthController, UserController,               │
+│         GitHubSecretController, GitHubEventController │
+│  admin/ — AdminUserController                         │
+│  security_config — OAuth2, JWT 인증/인가                │
+└──────────────────────┬────────────────────────────────┘
+                       │
+┌──────────────────────▼──────────────────────────────┐
+│                   Service Layer                     │
+│  비즈니스 로직, 트랜잭션 조율                              │
+│  UserService, GitHubUserSecretService,              │
+│  GitHubEventService, JiraUserService,               │
+│  JiraEventService, SummaryService                   │
 └──────────────────────┬──────────────────────────────┘
                        │
 ┌──────────────────────▼──────────────────────────────┐
-│                   Service Layer                      │
-│  비즈니스 로직, 트랜잭션 조율                          │
-│  UserService, GitHubUserSecretService,               │
-│  GitHubEventService, JiraUserService,                │
-│  JiraEventService, SummaryService                    │
+│                 Repository Layer                    │
+│  데이터 접근 추상화                                     │
+│  UserRepository, GitHubUserSecretRepository,        │
+│  GitHubEventRepository, JiraUserRepository,         │
+│  JiraEventRepository, PlatformSummaryRepository,    │
+│  DailySummaryRepository                             │
 └──────────────────────┬──────────────────────────────┘
                        │
 ┌──────────────────────▼──────────────────────────────┐
-│                 Repository Layer                     │
-│  데이터 접근 추상화                                    │
-│  UserRepository, GitHubUserSecretRepository,         │
-│  GitHubEventRepository, JiraUserRepository,          │
-│  JiraEventRepository, PlatformSummaryRepository,     │
-│  DailySummaryRepository                              │
-└──────────────────────┬──────────────────────────────┘
-                       │
-┌──────────────────────▼──────────────────────────────┐
-│               Entity / ORM Layer                     │
+│               Entity / ORM Layer                    │
 │  SQLAlchemy ORM 모델                                 │
-│  User, GitHubUserSecret, GitHubEvent,                │
-│  JiraUser, JiraEvent, PlatformSummary, DailySummary  │
+│  User, GitHubUserSecret, GitHubEvent,               │
+│  JiraUser, JiraEvent, PlatformSummary, DailySummary │
 └──────────────────────┬──────────────────────────────┘
                        │
 ┌──────────────────────▼──────────────────────────────┐
-│               Infrastructure Layer                   │
-│  Database, Redis, HTTP Client, LLM Agent,            │
-│  EncryptService, BackgroundScheduler                 │
+│               Infrastructure Layer                  │
+│  Database, Redis, HTTP Client, LLM Agent,           │
+│  EncryptService, JwtService, PasswordService,       │
+│  BackgroundScheduler                                │
 └─────────────────────────────────────────────────────┘
 ```
 
@@ -51,7 +54,18 @@ LLM을 통해 일일 업무 일지를 자동 생성하는 시스템이다.
 ### `controller/`
 
 - FastAPI Router 기반 엔드포인트 정의
-- `dto/` — Request/Response Pydantic 모델
+- `api/` — 사용자 API 엔드포인트 (`/api/v1/*`, 인증 필요)
+    - `dto/` — API Request/Response Pydantic 모델
+    - `AuthController` — JWT 토큰 발급 (`/api/v1/auth/token`)
+    - `UserController` — 내 정보 조회 (`/api/v1/users/me`)
+    - `GitHubSecretController`, `GitHubEventController`, `JiraUserController`, `SlackUserController`, `WorkLogController`
+- `admin/` — 관리자 API 엔드포인트 (`/admin-api/v1/*`, 관리자 권한 필요)
+    - `dto/` — Admin Request/Response Pydantic 모델
+    - `AdminUserController` — 사용자 CRUD (관리자 전용)
+- `security_config.py` — OAuth2 보안 설정
+    - `AuthToken` — Bearer 토큰 의존성
+    - `CurrentUser` — 인증된 사용자 의존성 (JWT 디코딩 → DB 조회)
+    - `CurrentAdminUser` — 관리자 권한 의존성 (`is_admin` 검증)
 - `exception_handler.py` — 전역 예외 핸들러 (`register_exception_handlers()`)
 - 라우터는 `main.py`에서 `app.include_router()`로 등록
 - 상세: [API 문서](API.md)
@@ -62,7 +76,7 @@ LLM을 통해 일일 업무 일지를 자동 생성하는 시스템이다.
 - Repository를 호출하여 데이터 조작
 - `get_db_session()` context manager로 자동 트랜잭션 관리
 - `model/` — 서비스 계층 Pydantic 모델 (`UserWithRelated` 등)
-- `UserService` — 사용자 CRUD
+- `UserService` — 사용자 CRUD, 인증 (비밀번호 검증), JWT 토큰 생성
 - `GitHubUserSecretService` — GitHub 인증 정보 관리 (암호화/복호화 포함)
 - `GitHubEventService` — GitHub 이벤트 조회 및 수집 (이벤트/커밋 수집, DB 저장 포함)
 - `JiraUserService` — Jira 사용자 동기화 및 User 할당
@@ -109,6 +123,8 @@ LLM을 통해 일일 업무 일지를 자동 생성하는 시스템이다.
 - `config.py` — Pydantic Settings 기반 환경 설정 (싱글턴 `@lru_cache`)
 - `database.py` — SQLAlchemy Engine, Session 설정
 - `encrypt.py` — AES-256-GCM 암호화 서비스 (HKDF-SHA256 키 파생)
+- `jwt_handler.py` — JWT 토큰 생성/검증 (`JwtService`, HS256, `@lru_cache` 싱글턴)
+- `password.py` — 비밀번호 해싱/검증 (`PasswordService`, Argon2 기반 pwdlib, `@lru_cache` 싱글턴)
 - `exception.py` — 커스텀 예외 계층 구조
 - `enum.py` — PlatformEnum (GITHUB, JIRA, CONFLUENCE, SLACK)
 - `types.py` — 커스텀 Pydantic 타입 (NotBlankStr)
@@ -212,10 +228,28 @@ LLM을 통해 일일 업무 일지를 자동 생성하는 시스템이다.
   JiraUserRepository.save_all()                  ← DB 저장
 ```
 
+## 인증 플로우
+
+```
+POST /api/v1/auth/token  (email + password)
+       │
+       ▼
+  UserService.authenticate()                 ← 비밀번호 검증 (Argon2)
+       │
+       ▼
+  UserService.create_jwt_token()             ← JWT 생성 (HS256)
+       │
+       ▼
+  TokenResponseDto                           ← {access_token, token_type: "bearer"}
+```
+
 ## 이벤트 조회 플로우
 
 ```
-GET /github-events/users/{user_id}
+GET /api/v1/github-events  (Authorization: Bearer <token>)
+       │
+       ▼
+  security_config.get_current_user()         ← JWT 검증 + 사용자 조회
        │
        ▼
   GitHubEventService.get_events_by_user_id()
