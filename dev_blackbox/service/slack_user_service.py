@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from dev_blackbox.client.slack_client import get_slack_client
 from dev_blackbox.core.encrypt import get_encrypt_service
-from dev_blackbox.core.exception import SlackUserByIdNotFoundException, UserByIdNotFoundException
+from dev_blackbox.core.exception import SlackUserByIdNotFoundException, UserNotFoundException
 from dev_blackbox.storage.rds.entity.slack_user import SlackUser
 from dev_blackbox.storage.rds.repository import SlackUserRepository, UserRepository
 
@@ -61,7 +61,7 @@ class SlackUserService:
     def assign_user(self, user_id: int, slack_user_id: int) -> SlackUser:
         user = self.user_repository.find_by_id(user_id)
         if user is None:
-            raise UserByIdNotFoundException(user_id)
+            raise UserNotFoundException(user_id)
 
         slack_user = self.slack_user_repository.find_by_id(slack_user_id)
         if slack_user is None:
@@ -72,7 +72,7 @@ class SlackUserService:
     def unassign_user(self, user_id: int, slack_user_id: int) -> SlackUser:
         user = self.user_repository.find_by_id(user_id)
         if user is None:
-            raise UserByIdNotFoundException(user_id)
+            raise UserNotFoundException(user_id)
 
         slack_user = self.slack_user_repository.find_by_id(slack_user_id)
         if slack_user is None:

@@ -18,6 +18,7 @@ class User(SoftDeleteMixin, Base):
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(100), nullable=False, comment="사용자 이름")
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, comment="이메일")
+    password: Mapped[str] = mapped_column(String(255), nullable=False, comment="비밀번호")
     timezone: Mapped[str] = mapped_column(String(50), nullable=False, default="Asia/Seoul")
     is_admin: Mapped[bool] = mapped_column(default=False, nullable=False)
 
@@ -41,8 +42,12 @@ class User(SoftDeleteMixin, Base):
         return f"<User(name={self.name}, email={self.email})>"
 
     @classmethod
-    def create(cls, name: str, email: str) -> "User":
-        return cls(name=name, email=email)
+    def create(cls, name: str, email: str, hashed_password: str) -> "User":
+        return cls(
+            name=name,
+            email=email,
+            password=hashed_password,
+        )
 
     @property
     def tz_info(self):

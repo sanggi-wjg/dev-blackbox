@@ -19,12 +19,26 @@ class UserRepository:
         stmt = select(User).where(User.id == user_id, User.is_deleted == False)
         return self.session.scalar(stmt)
 
+    def find_by_name(self, name: str) -> User | None:
+        stmt = select(User).where(User.name == name, User.is_deleted == False)
+        return self.session.scalar(stmt)
+
+    def find_by_email(self, email: str) -> User | None:
+        stmt = select(User).where(User.email == email, User.is_deleted == False)
+        return self.session.scalar(stmt)
+
     def find_all(self) -> list[User]:
         stmt = select(User).where(User.is_deleted == False).order_by(User.id)
         return list(self.session.scalars(stmt).all())
 
     def find_all_by_condition(self, condition: UserSearchCondition) -> list[User]:
-        stmt = select(User).where(**condition.model_dump()).order_by(User.id)
+        stmt = select(User)
+        if condition.name is not None:
+            stmt = stmt.where(User.name == condition.name)
+        if condition.is_deleted is not None:
+            stmt = stmt.where(User.is_deleted == condition.is_deleted)
+
+        stmt = stmt.order_by(User.id)
         return list(self.session.scalars(stmt).all())
 
     def is_exist(self, user_id: int) -> bool:

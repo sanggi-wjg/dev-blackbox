@@ -66,27 +66,28 @@ APScheduler `BackgroundScheduler` 기반 태스크 스케줄링.
 
 ### 설정
 
-| 설정                 | 값                       | 설명            |
-|--------------------|-------------------------|---------------|
-| JobStore           | RedisJobStore           | Redis 기반 저장소  |
-| Executor (default) | ThreadPoolExecutor(20)  | 스레드 풀         |
-| Executor (process) | ProcessPoolExecutor(5)  | 프로세스 풀        |
-| misfire_grace_time | 3600 (1시간)              | 미실행 허용 시간     |
-| max_instances      | 1                       | 동일 작업 중복 방지   |
-| coalesce           | False                   | 밀린 작업 병합 안함   |
-| timezone           | UTC                     | 스케줄러 타임존      |
+| 설정                 | 값                      | 설명           |
+|--------------------|------------------------|--------------|
+| JobStore           | RedisJobStore          | Redis 기반 저장소 |
+| Executor (default) | ThreadPoolExecutor(20) | 스레드 풀        |
+| Executor (process) | ProcessPoolExecutor(5) | 프로세스 풀       |
+| misfire_grace_time | 3600 (1시간)             | 미실행 허용 시간    |
+| max_instances      | 1                      | 동일 작업 중복 방지  |
+| coalesce           | False                  | 밀린 작업 병합 안함  |
+| timezone           | UTC                    | 스케줄러 타임존     |
 
 ### 등록된 태스크
 
-| 태스크                      | 스케줄                  | 설명                |
-|--------------------------|----------------------|-------------------|
-| `health_check_task()`    | 매 1분 (interval)      | 헬스 체크             |
-| `collect_platform_task()` | 매일 00:00 UTC (cron)  | 플랫폼별 데이터 수집 + 요약 |
-| `sync_jira_users_task()` | 매일 15:00 UTC (cron)  | Jira 사용자 동기화      |
+| 태스크                       | 스케줄                 | 설명               |
+|---------------------------|---------------------|------------------|
+| `health_check_task()`     | 매 1분 (interval)     | 헬스 체크            |
+| `collect_platform_task()` | 매일 00:00 UTC (cron) | 플랫폼별 데이터 수집 + 요약 |
+| `sync_jira_users_task()`  | 매일 15:00 UTC (cron) | Jira 사용자 동기화     |
 
 ### Lifespan
 
 `main.py`에서 FastAPI lifespan으로 관리:
+
 - 시작: `scheduler.start()`
 - 종료: `scheduler.shutdown(wait=True)` → `engine.dispose()`
 
@@ -101,13 +102,14 @@ with distributed_lock(DistributedLockName.COLLECT_PLATFORM_TASK, timeout=300) as
     do_work()
 ```
 
-| 파라미터             | 기본값 | 설명                              |
-|------------------|-----|---------------------------------|
+| 파라미터             | 기본값 | 설명                                |
+|------------------|-----|-----------------------------------|
 | lock_name        | -   | 락 이름 (`DistributedLockName` Enum) |
-| timeout          | 60  | 락 자동 해제 시간 (초, 데드락 방지)          |
-| blocking_timeout | 0   | 락 획득 대기 시간 (0: non-blocking)    |
+| timeout          | 60  | 락 자동 해제 시간 (초, 데드락 방지)            |
+| blocking_timeout | 0   | 락 획득 대기 시간 (0: non-blocking)      |
 
 **DistributedLockName:**
+
 - `SYNC_JIRA_USERS_TASK`
 - `COLLECT_PLATFORM_TASK`
 
@@ -150,6 +152,8 @@ Pydantic Settings 기반, `.env` 파일에서 로드.
 ### `.env` 예시
 
 ```
+ENV=local
+
 DATABASE__DEBUG=True
 DATABASE__HOST=localhost
 DATABASE__PORT=7400
@@ -157,17 +161,23 @@ DATABASE__DATABASE=dev_blackbox
 DATABASE__USER=blackbox
 DATABASE__PASSWORD=passw0rd
 
-ENCRYPTION__KEY=...
-ENCRYPTION__PEPPER=...
-
 REDIS__HOST=localhost
 REDIS__PORT=7410
+
+ENCRYPTION__KEY=your-base64-key-here
+ENCRYPTION__PEPPER=your-pepper-secret-here
+
+AUTH__SECRET_KEY=your-secret-key-here
+AUTH__ALGORITHM=HS256
+AUTH__ACCESS_TOKEN_EXPIRE_MINUTES=30
 
 JIRA__URL=your-jira-base-url-here
 JIRA__USERNAME=your-jira-username-here
 JIRA__API_TOKEN=your-jira-api-token-here
 
-CONFLUENCE__SPACES='["target-space-1", "target-space-2"]'
+CONFLUENCES__SPACES='["target-space-1", "target-space-2"]'
+
+SLACK__BOT_TOKEN=xoxb-your-slack-bot-token-here
 ```
 
 ### 설정 클래스 계층
@@ -176,7 +186,9 @@ CONFLUENCE__SPACES='["target-space-1", "target-space-2"]'
     - `PostgresDatabaseSecrets` — DB 연결 정보 + 커넥션 풀 설정
     - `RedisSecrets` — Redis 연결 정보 (host, port)
     - `EncryptionSecrets` — 암호화 키/페퍼
+    - `AuthSecrets` — JWT 인증 설정 (secret_key, algorithm, access_token_expire_minutes)
     - `JiraSecrets` — Jira 연결 정보 (url, username, api_token)
+    - `SlackSecrets` — Slack 봇 토큰 (bot_token)
     - `ConfluenceSecrets` — Confluence 대상 스페이스 목록
     - `LoggingConfig` — 로깅 설정 (레벨, 포맷)
 
@@ -190,6 +202,32 @@ CONFLUENCE__SPACES='["target-space-1", "target-space-2"]'
 | pool_recycle    | 1800초 (30분)     | 연결 재생성 주기            |
 | pool_pre_ping   | True            | 사용 전 연결 검증           |
 | isolation_level | REPEATABLE READ | 트랜잭션 격리 수준           |
+
+## 인증 (JWT + OAuth2)
+
+JWT Bearer Token 기반 인증 시스템.
+
+- 알고리즘: HS256 (설정 가능)
+- 토큰 만료: 30분 (설정 가능)
+- 토큰 페이로드: `{sub: email, is_admin: bool, exp: timestamp}`
+- `JwtService.create_token(data)` / `decode_token(token)` — `@lru_cache` 싱글턴
+- OAuth2 Password Grant 플로우 (`/api/v1/auth/token`)
+
+### AuthSecrets 설정
+
+| 설정                          | 기본값   | 설명           |
+|-----------------------------|-------|--------------|
+| secret_key                  | -     | JWT 서명 시크릿 키 |
+| algorithm                   | HS256 | JWT 알고리즘     |
+| access_token_expire_minutes | 30    | 토큰 만료 시간 (분) |
+
+## 비밀번호 해싱
+
+사용자 비밀번호를 안전하게 해싱하여 DB에 저장.
+
+- 라이브러리: `pwdlib` (Argon2 기본, PBKDF2 fallback)
+- `PasswordService.hash_password(password)` / `verify_password(password, hashed_password)`
+- `@lru_cache` 싱글턴
 
 ## 암호화 (AES-256-GCM)
 

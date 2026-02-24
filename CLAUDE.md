@@ -74,6 +74,8 @@
 - **DB**: PostgreSQL 17 + pgvector (port 7400)
 - **Cache**: Redis (port 7410)
 - **ORM**: SQLAlchemy (psycopg2-binary)
+- **인증**: JWT (PyJWT, HS256) + OAuth2 Bearer Token
+- **비밀번호**: pwdlib (Argon2)
 - **LLM**: Ollama + LlamaIndex
 - **스케줄러**: APScheduler (Redis JobStore)
 - **외부 API**: GitHub (httpx), Jira (jira 라이브러리)
@@ -117,13 +119,19 @@ Layered Architecture (Controller → Service → Repository → Entity)
 ```
 main.py                          # FastAPI 앱 진입점
 dev_blackbox/
-├── controller/                  # REST API 엔드포인트 + DTO
+├── controller/
+│   ├── api/                     # 사용자 API 엔드포인트 (/api/v1/*, 인증 필요)
+│   │   └── dto/                 # API Request/Response DTO
+│   ├── admin/                   # 관리자 API 엔드포인트 (/admin-api/v1/*, 관리자 권한 필요)
+│   │   └── dto/                 # Admin Request/Response DTO
+│   ├── security_config.py       # OAuth2 보안 설정 (AuthToken, CurrentUser, CurrentAdminUser)
+│   └── exception_handler.py     # 전역 예외 핸들러
 ├── service/                     # 비즈니스 로직
 ├── storage/rds/                 # Repository + Entity (SQLAlchemy)
 ├── client/                      # 외부 API 클라이언트 (GitHub, Jira) + Model
 ├── agent/                       # LLM 에이전트 + Prompt
 ├── task/                        # APScheduler 백그라운드 태스크
-├── core/                        # 설정, DB, Redis, 예외, Enum, 스케줄러
+├── core/                        # 설정, DB, Redis, 예외, Enum, 스케줄러, JWT, Password
 └── util/                        # 분산 락, 날짜 유틸리티
 ```
 
@@ -150,7 +158,7 @@ dev_blackbox/
 
 ### DTO
 
-- Request/Response DTO는 `controller/dto/` 에 정의
+- API DTO는 `controller/api/dto/`에, Admin DTO는 `controller/admin/dto/`에 정의
 - Pydantic v2 BaseModel 사용
 
 ### 외부 클라이언트
@@ -159,9 +167,16 @@ dev_blackbox/
 - `GithubClient` — `httpx` 비동기 HTTP, `create()` 팩토리 메서드
 - `JiraClient` — `jira` 라이브러리 (Basic Auth), `get_jira_client()` `@lru_cache` 팩토리
 
+### 인증/인가
+
+- JWT Bearer Token 기반 인증 (OAuth2PasswordBearer)
+- `CurrentUser` — 인증된 사용자 의존성 (API 엔드포인트용)
+- `CurrentAdminUser` — 관리자 권한 의존성 (Admin 엔드포인트용)
+- 비밀번호는 `PasswordService` (Argon2)로 해싱 후 DB 저장
+
 ### 예외 처리
 
-- `ServiceException` → `EntityNotFoundException` → 구체 예외 (e.g., `UserByIdNotFoundException`)
+- `ServiceException` → `EntityNotFoundException` → 구체 예외 (e.g., `UserNotFoundException`)
 - `ServiceException` → `JiraUserNotAssignedException`, `JiraUserProjectNotAssignedException`
 - `controller/exception_handler.py`에서 FastAPI 핸들러 등록
 
@@ -172,6 +187,7 @@ dev_blackbox/
 
 ## Gotchas
 
+- **비밀번호 해싱 필수**: 사용자 비밀번호는 반드시 `PasswordService.hash_password()`로 해싱 후 DB 저장. `User.create()`는 `hashed_password`를 받음
 - **PAT 암호화 필수**: GitHub Personal Access Token은 반드시 `EncryptService`로 암호화 후 DB 저장. 평문 저장 금지
 - **타임존 검증**: 사용자 timezone 값은 `ZoneInfo`로 검증 필수 — 잘못된 값 입력 시 런타임 에러 발생
 - **REPEATABLE READ**: DB 격리 수준이 `REPEATABLE READ`이므로 동일 트랜잭션 내에서 다른 트랜잭션의 커밋을 볼 수 없음

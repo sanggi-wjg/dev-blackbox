@@ -1,38 +1,34 @@
+from __future__ import annotations
+
 from datetime import datetime
+from typing import TYPE_CHECKING
 from zoneinfo import ZoneInfo
 
 from pydantic import BaseModel
 
+from dev_blackbox.service.model.github_user_secret_model import GitHubUserSecretModel
+from dev_blackbox.service.model.jira_user_model import JiraUserModel
+from dev_blackbox.service.model.slack_user_model import SlackUserModel
 
-class GitHubUserSecretModel(BaseModel):
+if TYPE_CHECKING:
+    from dev_blackbox.core.encrypt import EncryptService
+    from dev_blackbox.storage.rds.entity.user import User
+
+
+class UserModel(BaseModel):
     id: int
-    username: str
+    name: str
+    email: str
+    timezone: str
+    tz_info: ZoneInfo
+    is_admin: bool
+    created_at: datetime
+    updated_at: datetime
 
     model_config = {"from_attributes": True}
 
 
-class JiraUserModel(BaseModel):
-    id: int
-    account_id: str
-    active: bool
-    display_name: str
-    email_address: str
-    url: str
-
-    model_config = {"from_attributes": True}
-
-
-class SlackUserModel(BaseModel):
-    id: int
-    member_id: str
-    display_name: str
-    real_name: str
-    email: str | None
-
-    model_config = {"from_attributes": True}
-
-
-class UserWithRelatedModel(BaseModel):
+class UserDetailModel(BaseModel):
     id: int
     name: str
     email: str
@@ -45,3 +41,30 @@ class UserWithRelatedModel(BaseModel):
     slack_user: SlackUserModel | None = None
 
     model_config = {"from_attributes": True}
+
+    @classmethod
+    def from_entity(cls, user: User, encrypt_service: EncryptService) -> UserDetailModel:
+        return cls(
+            id=user.id,
+            name=user.name,
+            email=user.email,
+            timezone=user.timezone,
+            tz_info=user.tz_info,
+            created_at=user.created_at,
+            updated_at=user.updated_at,
+            github_user_secret=(
+                GitHubUserSecretModel.model_validate(user.github_user_secret)
+                if user.github_user_secret
+                else None
+            ),
+            jira_user=(
+                JiraUserModel.from_entity(user.jira_user, encrypt_service)
+                if user.jira_user
+                else None
+            ),
+            slack_user=(
+                SlackUserModel.from_entity(user.slack_user, encrypt_service)
+                if user.slack_user
+                else None
+            ),
+        )

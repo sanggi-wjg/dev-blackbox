@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from dev_blackbox.client.model.slack_api_model import SlackMessageModel
 from dev_blackbox.client.slack_client import get_slack_client
 from dev_blackbox.core.exception import (
-    UserByIdNotFoundException,
+    UserNotFoundException,
     SlackUserNotAssignedException,
     NoSlackChannelsFound,
 )
@@ -134,7 +134,7 @@ class SlackMessageService:
     def _get_user_or_throw(self, user_id: int) -> User:
         user = self.user_repository.find_by_id(user_id)
         if user is None:
-            raise UserByIdNotFoundException(user_id)
+            raise UserNotFoundException(user_id)
         return user
 
     def _filter_message_no_thread(

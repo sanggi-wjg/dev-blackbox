@@ -1,3 +1,6 @@
+from typing import Any
+
+
 class ServiceException(Exception):
 
     def __init__(self, message: str = "Service error occurred"):
@@ -7,7 +10,7 @@ class ServiceException(Exception):
 
 class EntityNotFoundException(ServiceException):
 
-    def __init__(self, entity_name: str, identifier: int | str):
+    def __init__(self, entity_name: str, identifier: Any):
         self.entity_name = entity_name
         self.identifier = identifier
         super().__init__(f"{entity_name} not found by {identifier}")
@@ -16,28 +19,22 @@ class EntityNotFoundException(ServiceException):
 ###############################
 # NotFoundException
 ###############################
-class UserByIdNotFoundException(EntityNotFoundException):
+class UserNotFoundException(EntityNotFoundException):
 
-    def __init__(self, user_id: int):
-        super().__init__(entity_name="User", identifier=user_id)
-
-
-class UserByNameNotFoundException(EntityNotFoundException):
-
-    def __init__(self, username: str):
-        super().__init__(entity_name="User", identifier=username)
+    def __init__(self, identifier: Any):
+        super().__init__(entity_name="User", identifier=identifier)
 
 
 class GitHubUserSecretNotFoundException(EntityNotFoundException):
 
-    def __init__(self, user_id: int):
-        super().__init__(entity_name="GitHubUserSecret", identifier=user_id)
+    def __init__(self, identifier: Any):
+        super().__init__(entity_name="GitHubUserSecret", identifier=identifier)
 
 
-class JiraUserByIdNotFoundException(EntityNotFoundException):
+class JiraUserNotFoundException(EntityNotFoundException):
 
-    def __init__(self, jira_user_id: int):
-        super().__init__(entity_name="JiraUser", identifier=jira_user_id)
+    def __init__(self, identifier: Any):
+        super().__init__(entity_name="JiraUser", identifier=identifier)
 
 
 ###############################

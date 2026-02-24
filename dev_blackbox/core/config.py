@@ -37,6 +37,12 @@ class EncryptionSecrets(BaseModel):
     pepper: str
 
 
+class AuthSecrets(BaseModel):
+    secret_key: str
+    algorithm: str
+    access_token_expire_minutes: int = 30
+
+
 class JiraSecrets(BaseModel):
     url: str
     username: str
@@ -75,6 +81,7 @@ class Settings(BaseSettings):
     database: PostgresDatabaseSecrets
     redis: RedisSecrets
     encryption: EncryptionSecrets
+    auth: AuthSecrets
     jira: JiraSecrets
     slack: SlackSecrets
     confluence: ConfluenceSecrets

@@ -2,12 +2,13 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from starlette import status
 
-from dev_blackbox.controller.dto.slack_user_dto import SlackUserResponseDto
+from dev_blackbox.controller.api.dto.slack_user_dto import SlackUserResponseDto
+from dev_blackbox.controller.security_config import CurrentUser, AuthToken
 from dev_blackbox.core.database import get_db
 from dev_blackbox.core.encrypt import get_encrypt_service
 from dev_blackbox.service.slack_user_service import SlackUserService
 
-router = APIRouter(prefix="/slack-users", tags=["SlackUser"])
+router = APIRouter(prefix="/api/v1/slack-users", tags=["SlackUser"])
 
 
 @router.get(
@@ -15,6 +16,8 @@ router = APIRouter(prefix="/slack-users", tags=["SlackUser"])
     response_model=list[SlackUserResponseDto],
 )
 async def get_slack_users(
+    token: AuthToken,
+    current_user: CurrentUser,
     db: Session = Depends(get_db),
 ):
     service = SlackUserService(db)
@@ -37,34 +40,36 @@ async def get_slack_users(
 
 
 @router.patch(
-    "/{slack_user_id}/users/{user_id}",
+    "/{slack_user_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     response_model=None,
 )
 async def assign_slack_user_to_user(
     slack_user_id: int,
-    user_id: int,
+    token: AuthToken,
+    current_user: CurrentUser,
     db: Session = Depends(get_db),
 ):
     service = SlackUserService(db)
     service.assign_user(
-        user_id,
+        current_user.id,
         slack_user_id,
     )
 
 
 @router.delete(
-    "/{slack_user_id}/users/{user_id}",
+    "/{slack_user_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     response_model=None,
 )
 async def unassign_slack_user_from_user(
     slack_user_id: int,
-    user_id: int,
+    token: AuthToken,
+    current_user: CurrentUser,
     db: Session = Depends(get_db),
 ):
     service = SlackUserService(db)
     service.unassign_user(
-        user_id,
+        current_user.id,
         slack_user_id,
     )

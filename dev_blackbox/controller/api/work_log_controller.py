@@ -3,55 +3,58 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query, Request, status, BackgroundTasks, Response
 from sqlalchemy.orm import Session
 
-from dev_blackbox.controller.dto.common_dto import BackgroundTaskResponseDto
-from dev_blackbox.controller.dto.work_log_dto import (
+from dev_blackbox.controller.api.dto.common_dto import BackgroundTaskResponseDto
+from dev_blackbox.controller.api.dto.work_log_dto import (
     DailyWorkLogResponseDto,
     PlatformWorkLogResponseDto,
     WorkLogQuery,
     WorkLogManualSyncReqeustDto,
     UserContentCreateOrUpdateRequestDto,
 )
+from dev_blackbox.controller.security_config import AuthToken, CurrentUser
 from dev_blackbox.core.database import get_db
 from dev_blackbox.core.enum import PlatformEnum
 from dev_blackbox.service.work_log_service import WorkLogService
 from dev_blackbox.task.collect_task import collect_events_and_summarize_work_log_by_user_task
 from dev_blackbox.util.idempotent_request import idempotent_request, save_idempotent_response
 
-router = APIRouter(prefix="/work-logs", tags=["WorkLog"])
+router = APIRouter(prefix="/api/v1/work-logs", tags=["WorkLog"])
 
 
 @router.get(
-    "/users/{user_id}/platforms",
+    "/platforms",
     status_code=status.HTTP_200_OK,
     response_model=list[PlatformWorkLogResponseDto],
 )
 async def get_platform_work_logs(
-    user_id: int,
+    token: AuthToken,
+    current_user: CurrentUser,
     query: Annotated[WorkLogQuery, Query()],
     db: Session = Depends(get_db),
 ):
     service = WorkLogService(db)
     return service.get_platform_work_logs(
-        user_id=user_id,
+        user_id=current_user.id,
         target_date=query.target_date,
         platforms=PlatformEnum.platforms(),
     )
 
 
 @router.get(
-    "/users/{user_id}/user-content",
+    "/user-content",
     status_code=status.HTTP_200_OK,
     response_model=PlatformWorkLogResponseDto | None,
 )
 async def get_user_content(
-    user_id: int,
+    token: AuthToken,
+    current_user: CurrentUser,
     query: Annotated[WorkLogQuery, Query()],
     response: Response,
     db: Session = Depends(get_db),
 ):
     service = WorkLogService(db)
     work_log = service.get_user_content_or_none(
-        user_id=user_id,
+        user_id=current_user.id,
         target_date=query.target_date,
     )
     if work_log is None:
@@ -60,19 +63,20 @@ async def get_user_content(
 
 
 @router.put(
-    "/users/{user_id}/user-content",
+    "/user-content",
     status_code=status.HTTP_200_OK,
     response_model=PlatformWorkLogResponseDto,
 )
 async def create_or_update_user_content(
-    user_id: int,
     request_dto: UserContentCreateOrUpdateRequestDto,
     response: Response,
+    token: AuthToken,
+    current_user: CurrentUser,
     db: Session = Depends(get_db),
 ):
     service = WorkLogService(db)
     is_created, work_log = service.create_or_update_user_content(
-        user_id=user_id,
+        user_id=current_user.id,
         target_date=request_dto.target_date,
         content=request_dto.content,
     )
@@ -82,37 +86,39 @@ async def create_or_update_user_content(
 
 
 @router.get(
-    "/users/{user_id}/daily",
+    "/daily",
     status_code=status.HTTP_200_OK,
     response_model=DailyWorkLogResponseDto | None,
 )
 async def get_daily_work_log(
-    user_id: int,
+    token: AuthToken,
+    current_user: CurrentUser,
     query: Annotated[WorkLogQuery, Query()],
     db: Session = Depends(get_db),
 ):
     service = WorkLogService(db)
     return service.get_daily_work_log(
-        user_id=user_id,
+        user_id=current_user.id,
         target_date=query.target_date,
     )
 
 
 @router.post(
-    "/{user_id}/manual-sync",
+    "/manual-sync",
     status_code=status.HTTP_202_ACCEPTED,
     response_model=BackgroundTaskResponseDto,
 )
 async def sync_work_logs(
-    user_id: int,
     request_dto: WorkLogManualSyncReqeustDto,
     request: Request,
     background_tasks: BackgroundTasks,
+    token: AuthToken,
+    current_user: CurrentUser,
     idempotency_key: str = Depends(idempotent_request),
 ):
     background_tasks.add_task(
         collect_events_and_summarize_work_log_by_user_task,
-        user_id,
+        current_user.id,
         request_dto.target_date,
     )
     response = BackgroundTaskResponseDto(

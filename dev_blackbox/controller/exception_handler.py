@@ -2,6 +2,7 @@ import logging
 from datetime import UTC, datetime
 
 from fastapi import FastAPI, Request, status
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from dev_blackbox.core.exception import (
@@ -89,4 +90,21 @@ def register_exception_handlers(app: FastAPI) -> None:
                 "path": request.url.path,
                 "requestedAt": datetime.now(UTC.utc).isoformat(),
             },
+        )
+
+    @app.exception_handler(RequestValidationError)
+    async def entity_request_validation_error(request: Request, e: RequestValidationError):
+        logger.warning(e)
+        body = {
+            "status": f"{status.HTTP_400_BAD_REQUEST} BAD_REQUEST",
+            "error": "Request Validation Error",
+            "message": "Request validation failed, please check the request parameters.",
+            "details": e.errors(),
+            "path": request.url.path,
+            "requestedAt": datetime.now(UTC.utc).isoformat(),
+        }
+
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content=body,
         )

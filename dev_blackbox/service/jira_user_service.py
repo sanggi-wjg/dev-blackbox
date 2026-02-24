@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 
 from dev_blackbox.client.jira_client import get_jira_client
 from dev_blackbox.core.encrypt import get_encrypt_service
-from dev_blackbox.core.exception import JiraUserByIdNotFoundException, UserByIdNotFoundException
+from dev_blackbox.core.exception import JiraUserNotFoundException, UserNotFoundException
 from dev_blackbox.storage.rds.entity.jira_user import JiraUser
 from dev_blackbox.storage.rds.repository import JiraUserRepository, UserRepository
 
@@ -50,21 +50,21 @@ class JiraUserService:
     def assign_user(self, user_id: int, jira_user_id: int, project: str) -> JiraUser:
         user = self.user_repository.find_by_id(user_id)
         if user is None:
-            raise UserByIdNotFoundException(user_id)
+            raise UserNotFoundException(user_id)
 
         jira_user = self.jira_user_repository.find_by_id(jira_user_id)
         if jira_user is None:
-            raise JiraUserByIdNotFoundException(jira_user_id)
+            raise JiraUserNotFoundException(jira_user_id)
 
         return jira_user.assign_user_and_project(user_id, project)
 
     def unassign_user(self, user_id: int, jira_user_id: int) -> JiraUser:
         user = self.user_repository.find_by_id(user_id)
         if user is None:
-            raise UserByIdNotFoundException(user_id)
+            raise UserNotFoundException(user_id)
 
         jira_user = self.jira_user_repository.find_by_id(jira_user_id)
         if jira_user is None:
-            raise JiraUserByIdNotFoundException(jira_user_id)
+            raise JiraUserNotFoundException(jira_user_id)
 
         return jira_user.unassign_user()

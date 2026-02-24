@@ -1,5 +1,9 @@
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from zoneinfo import ZoneInfo
+
+
+def get_datetime_utc_now() -> datetime:
+    return datetime.now(UTC)
 
 
 def get_date_from_iso_format(iso_datetime: str, tz_info: ZoneInfo) -> date:

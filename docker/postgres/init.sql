@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS users
     id         BIGSERIAL PRIMARY KEY,
     name       VARCHAR(100) NOT NULL,
     email      VARCHAR(255) NOT NULL,
+    password   VARCHAR(255) NOT NULL,
     timezone   VARCHAR(50)  NOT NULL DEFAULT 'Asia/Seoul',
 
     is_admin   BOOLEAN      NOT NULL DEFAULT FALSE,
@@ -247,8 +248,6 @@ CREATE TABLE IF NOT EXISTS jira_event
 
     CONSTRAINT fk_jira_event_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE RESTRICT,
     CONSTRAINT fk_jira_event_jira_user FOREIGN KEY (jira_user_id) REFERENCES jira_user (id) ON DELETE RESTRICT,
-
-    CONSTRAINT uq_jira_event_issue_issue_id UNIQUE (issue_id)
 );
 
 CREATE TRIGGER tr_jira_event_updated_at

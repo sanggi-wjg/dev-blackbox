@@ -53,7 +53,7 @@ def user_fixture(
 ) -> Callable[[str], User]:
 
     def _create(email: str) -> User:
-        user = User.create(name=email, email=email)
+        user = User.create(name=email, email=email, hashed_password="password")
         db_session.add(user)
         db_session.flush()
         return user

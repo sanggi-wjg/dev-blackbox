@@ -26,6 +26,9 @@ dependencies = [
     "pytest (>=9.0.2,<10.0.0)",
     "jira (>=3.10.5,<4.0.0)",
     "slack-sdk (>=3.40.0,<4.0.0)",
+    "pyjwt (>=2.11.0,<3.0.0)",
+    "pwdlib[argon2] (>=0.3.0,<0.4.0)",
+    "python-multipart (>=0.0.22,<0.0.23)",
 ]
 
 [dependency-groups]
