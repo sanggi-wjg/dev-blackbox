@@ -1,10 +1,9 @@
-import json
 import logging
 from typing import Annotated
 
 from fastapi import Header, Request
 
-from dev_blackbox.core.cache import get_redis_client
+from dev_blackbox.core.cache import CacheService
 from dev_blackbox.core.const import IDEMPOTENCY_PROCESSING_VALUE, IDEMPOTENCY_TTL_SECONDS
 from dev_blackbox.core.exception import CompletedRequestException, ConflictRequestException
 
@@ -35,21 +34,23 @@ def idempotent_request(
     cache_key = _build_cache_key(request, idempotency_key)
 
     try:
-        redis_client = get_redis_client()
-        is_acquired = redis_client.set(
-            cache_key, IDEMPOTENCY_PROCESSING_VALUE, nx=True, ex=IDEMPOTENCY_TTL_SECONDS
+        cache_service = CacheService()
+        is_acquired = cache_service.set(
+            cache_key,
+            IDEMPOTENCY_PROCESSING_VALUE,
+            nx=True,
+            ex=IDEMPOTENCY_TTL_SECONDS,
         )
 
         if not is_acquired:
-            cached_value: bytes = redis_client.get(cache_key)  # pyright: ignore
+            cached_value = cache_service.get(cache_key)
             if cached_value is not None:
-                value = cached_value.decode()
-                if value == IDEMPOTENCY_PROCESSING_VALUE:
+                if cached_value == IDEMPOTENCY_PROCESSING_VALUE:
                     raise ConflictRequestException(idempotency_key)
 
                 raise CompletedRequestException(
                     idempotency_key=idempotency_key,
-                    cached_response=json.loads(value),
+                    cached_response=cached_value,
                 )
     except ConflictRequestException, CompletedRequestException:
         raise
@@ -67,10 +68,10 @@ def save_idempotent_response(
     cache_key = _build_cache_key(request, idempotency_key)
 
     try:
-        redis_client = get_redis_client()
-        redis_client.set(
+        cache_service = CacheService()
+        cache_service.set(
             cache_key,
-            json.dumps(response_data, ensure_ascii=False),
+            response_data,
             ex=IDEMPOTENCY_TTL_SECONDS,
         )
     except Exception as e:

@@ -53,7 +53,7 @@ class UserDetailModel(BaseModel):
             created_at=user.created_at,
             updated_at=user.updated_at,
             github_user_secret=(
-                GitHubUserSecretModel.model_validate(user.github_user_secret)
+                GitHubUserSecretModel.from_entity(user.github_user_secret, encrypt_service)
                 if user.github_user_secret
                 else None
             ),
