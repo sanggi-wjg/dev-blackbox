@@ -19,7 +19,7 @@
 - 한 번만 쓰이는 코드에 추상화를 만들지 말 것.
 - 요청되지 않은 "유연성"이나 "설정 가능성"은 넣지 말 것.
 - 발생할 수 없는 시나리오에 대한 에러 처리를 하지 말 것.
-- 200줄로 짰는데 50줄로 가능하다면, 다시 작성할 것. (단 50줄로 줄였을 때, 가독성과 유지보수성이 떨어진다면 진행하지 말 것)
+- 200줄로 짰는데 50줄로 가능하다면, 다시 작성할 것. (단, 라인을 줄일 때 가독성과 유지보수성이 떨어진다면 진행하지 말 것)
 
 자문할 것: "시니어 엔지니어가 보면 과하게 복잡하다고 할까?" 그렇다면 단순화할 것.
 
@@ -59,8 +59,6 @@
 3. [단계] → 검증: [확인 사항]
 ```
 
-명확한 성공 기준이 있으면 독립적으로 반복 가능하다. 약한 기준("동작하게 만들기")은 지속적인 확인이 필요하다.
-
 ---
 
 # Dev-Blackbox
@@ -70,7 +68,7 @@
 ## Quick Reference
 
 - **언어/런타임**: Python 3.14, Poetry
-- **프레임워크**: FastAPI + Uvicorn (3 workers)
+- **프레임워크**: FastAPI + Uvicorn
 - **DB**: PostgreSQL 17 + pgvector (port 7400)
 - **Cache**: Redis (port 7410)
 - **ORM**: SQLAlchemy (psycopg2-binary)
@@ -78,8 +76,6 @@
 - **비밀번호**: pwdlib (Argon2)
 - **LLM**: Ollama + LlamaIndex
 - **스케줄러**: APScheduler (Redis JobStore)
-- **외부 API**: GitHub (httpx), Jira (jira 라이브러리)
-- **타임존**: Asia/Seoul (ZoneInfo)
 
 ## Commands
 
@@ -108,9 +104,10 @@ poetry run pyright
 - **Formatter**: Black (line-length=100, skip-string-normalization)
 - **Type Checker**: Pyright (standard mode)
 - **Python Target**: 3.14
-- 문자열은 작은따옴표(`'`) 사용 (Black skip-string-normalization)
+- 문자열은 큰따옴표(`"`) 사용, f-string 허용, 작은따옴표(`'`) 금지
 - 타입 힌트 필수 (Mapped, Annotated 등 SQLAlchemy/Pydantic 스타일)
 - 한국어 주석 사용
+- `except A, B:`는 Python 3.14에서 `except (A, B):`와 동일하게 유효한 문법 (PEP 758)
 
 ## Architecture
 
@@ -131,15 +128,16 @@ dev_blackbox/
 ├── client/                      # 외부 API 클라이언트 (GitHub, Jira) + Model
 ├── agent/                       # LLM 에이전트 + Prompt
 ├── task/                        # APScheduler 백그라운드 태스크
-├── core/                        # 설정, DB, Redis, 예외, Enum, 스케줄러, JWT, Password
-└── util/                        # 분산 락, 날짜 유틸리티
+├── core/                        # 설정, DB, Redis, 캐시(CacheService), 예외, Enum, 스케줄러, JWT, Password
+└── util/                        # 분산 락, 날짜 유틸리티, 마스킹, 멱등성 처리
 ```
 
-상세 문서:
+## 상세 문서:
 
 - @docs/ARCHITECTURE.md — 시스템 구조, 레이어, 파이프라인
 - @docs/API.md — 엔드포인트, DTO, 예외 처리
 - @docs/DATABASE.md — Entity, Repository, 세션 관리
+- @docs/PIPELINE.md — 데이터 수집, LLM 요약, 동기화 파이프라인
 - @docs/INFRASTRUCTURE.md — Docker, PostgreSQL, Redis, APScheduler, Ollama, 환경 설정
 - @docs/TEST.md — 테스트 구성, 작성 가이드, 컨벤션
 
@@ -177,6 +175,7 @@ dev_blackbox/
 ### 예외 처리
 
 - `ServiceException` → `EntityNotFoundException` → 구체 예외 (e.g., `UserNotFoundException`)
+- `ServiceException` → `IdempotentRequestException` → `ConflictRequestException`(409), `CompletedRequestException`(422)
 - `ServiceException` → `JiraUserNotAssignedException`, `JiraUserProjectNotAssignedException`
 - `controller/exception_handler.py`에서 FastAPI 핸들러 등록
 

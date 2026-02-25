@@ -3,6 +3,8 @@ from datetime import date
 
 from sqlalchemy.orm import Session
 
+from dev_blackbox.core.cache import cache_evict, cacheable
+from dev_blackbox.core.const import CacheKey
 from dev_blackbox.core.enum import PlatformEnum
 from dev_blackbox.storage.rds.entity.daily_work_log import DailyWorkLog
 from dev_blackbox.storage.rds.entity.platform_work_log import PlatformWorkLog
@@ -45,6 +47,7 @@ class WorkLogService:
         )
         return self.platform_work_log_repository.save(platform_work_log)
 
+    @cacheable(key=CacheKey.WORK_LOG_PLATFORM)
     def get_platform_work_logs(
         self,
         user_id: int,
@@ -95,6 +98,7 @@ class WorkLogService:
     def get_daily_work_logs(self, user_id: int) -> list[DailyWorkLog]:
         return self.daily_work_log_repository.find_all_by_user_id(user_id)
 
+    @cacheable(key=CacheKey.WORK_LOG_USER_CONTENT)
     def get_user_content_or_none(self, user_id: int, target_date: date) -> PlatformWorkLog | None:
         return self.platform_work_log_repository.find_by_user_id_and_target_date_and_platform(
             user_id=user_id,
@@ -102,6 +106,7 @@ class WorkLogService:
             platform=PlatformEnum.USER_CONTENT,
         )
 
+    @cache_evict(key=CacheKey.WORK_LOG_USER_CONTENT)
     def create_or_update_user_content(
         self,
         user_id: int,

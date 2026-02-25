@@ -2,7 +2,7 @@ import logging
 from contextlib import contextmanager
 from typing import Generator
 
-from dev_blackbox.core.cache import get_redis_client
+from dev_blackbox.core.cache import CacheService, LockService
 
 logger = logging.getLogger(__name__)
 
@@ -33,10 +33,9 @@ def distributed_lock(
             # 락 획득 성공, 작업 수행
             do_work()
     """
-    redis_client = get_redis_client()
-    lock_key = f"lock:{lock_name}"
-    lock = redis_client.lock(
-        lock_key,
+    lock_service = LockService()
+    lock = lock_service.lock(
+        lock_name,
         timeout=timeout,
         blocking_timeout=blocking_timeout,
     )
@@ -46,14 +45,14 @@ def distributed_lock(
     try:
         acquired = lock.acquire(blocking=blocking_timeout > 0)
     except Exception as e:
-        logger.exception(f"Error acquiring lock {lock_key}: {e}")
+        logger.exception(f"Error acquiring lock {lock_name}: {e}")
         yield False
         return
 
     if acquired:
-        logger.debug(f"Lock acquired: {lock_key}")
+        logger.debug(f"Lock acquired: {lock_name}")
     else:
-        logger.info(f"Failed to acquire lock (already held): {lock_key}")
+        logger.info(f"Failed to acquire lock (already held): {lock_name}")
 
     try:
         yield acquired
@@ -61,7 +60,7 @@ def distributed_lock(
         if acquired:
             try:
                 lock.release()
-                logger.debug(f"Lock released: {lock_key}")
+                logger.debug(f"Lock released: {lock_name}")
             except Exception as e:
                 # 이미 만료되었거나 다른 이유로 해제 실패
-                logger.warning(f"Failed to release lock {lock_key}: {e}")
+                logger.warning(f"Failed to release lock {lock_name}: {e}")
