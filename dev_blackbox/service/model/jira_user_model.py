@@ -11,9 +11,12 @@ if TYPE_CHECKING:
 
 
 class JiraUserModel(BaseModel):
+    model_config = {"from_attributes": True}
+
     id: int
+    jira_secret_id: int
     account_id: str
-    active: bool
+    is_active: bool
     display_name: str
     email_address: str
     url: str
@@ -21,8 +24,6 @@ class JiraUserModel(BaseModel):
     user_id: int | None
     created_at: datetime
     updated_at: datetime
-
-    model_config = {"from_attributes": True}
 
     @classmethod
     def from_entity(
@@ -32,8 +33,9 @@ class JiraUserModel(BaseModel):
     ) -> JiraUserModel:
         return cls(
             id=entity.id,
+            jira_secret_id=entity.jira_secret_id,
             account_id=entity.account_id,
-            active=entity.active,
+            is_active=entity.is_active,
             display_name=encrypt_service.decrypt(entity.display_name),
             email_address=encrypt_service.decrypt(entity.email_address),
             url=entity.url,

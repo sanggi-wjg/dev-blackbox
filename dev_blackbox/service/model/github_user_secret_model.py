@@ -10,11 +10,11 @@ if TYPE_CHECKING:
 
 
 class GitHubUserSecretModel(BaseModel):
+    model_config = {"from_attributes": True}
+
     id: int
     username: str
     personal_access_token: str
-
-    model_config = {"from_attributes": True}
 
     @classmethod
     def from_entity(

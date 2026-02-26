@@ -38,6 +38,7 @@ class SlackUserService:
             if uid in exists_user_ids:
                 continue
 
+            is_active = not user.get("deleted", False)
             profile = user.get("profile", {})
             display_name = profile.get("display_name", "")
             real_name = profile.get("real_name", user.get("real_name", ""))
@@ -50,6 +51,7 @@ class SlackUserService:
             new_slack_users.append(
                 SlackUser.create(
                     member_id=uid,
+                    is_active=is_active,
                     display_name=encrypted_display_name,
                     real_name=encrypted_real_name,
                     email=encrypted_email,

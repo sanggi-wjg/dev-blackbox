@@ -9,6 +9,7 @@ from dev_blackbox.core.exception import (
     CompletedRequestException,
     ConflictRequestException,
     EntityNotFoundException,
+    JiraUserSecretMismatchException,
     ServiceException,
 )
 
@@ -72,6 +73,23 @@ def register_exception_handlers(app: FastAPI) -> None:
                 "error": "Request Already Completed",
                 "message": e.message,
                 "response": e.cached_response,
+                "path": request.url.path,
+                "requestedAt": datetime.now(UTC.utc).isoformat(),
+            },
+        )
+
+    @app.exception_handler(JiraUserSecretMismatchException)
+    async def jira_user_secret_mismatch_handler(
+        request: Request, e: JiraUserSecretMismatchException
+    ):
+        logger.warning(e)
+
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={
+                "status": f"{status.HTTP_400_BAD_REQUEST} BAD_REQUEST",
+                "error": "Jira User Secret Mismatch",
+                "message": e.message,
                 "path": request.url.path,
                 "requestedAt": datetime.now(UTC.utc).isoformat(),
             },

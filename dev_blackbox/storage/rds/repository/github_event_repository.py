@@ -55,6 +55,20 @@ class GitHubEventRepository:
         self.session.execute(stmt)
         self.session.flush()
 
+    def find_all_by_user_id_and_target_date_and_event_types(
+        self, user_id: int, target_date: date, event_types: list[str]
+    ) -> list[GitHubEvent]:
+        stmt = (
+            select(GitHubEvent)
+            .where(
+                GitHubEvent.user_id == user_id,
+                GitHubEvent.target_date == target_date,
+                GitHubEvent.event_type.in_(event_types),
+            )
+            .order_by(GitHubEvent.id.asc())
+        )
+        return list(self.session.scalars(stmt).all())
+
     def exists_by_event_id(self, event_id: str) -> bool:
         stmt = select(GitHubEvent.id).where(GitHubEvent.event_id == event_id)
         return self.session.scalar(stmt) is not None

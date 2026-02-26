@@ -43,18 +43,8 @@ class AuthSecrets(BaseModel):
     access_token_expire_minutes: int = 30
 
 
-class JiraSecrets(BaseModel):
-    url: str
-    username: str
-    api_token: str
-
-
 class SlackSecrets(BaseModel):
     bot_token: str
-
-
-class ConfluenceSecrets(BaseModel):
-    spaces: list[str]
 
 
 class LoggingConfig(BaseModel):
@@ -77,14 +67,12 @@ class Settings(BaseSettings):
         nested_model_default_partial_update=False,
     )
 
-    env: Literal["local", "dev", "stage", "prod"]
+    env: Literal["test", "local", "dev", "stage", "prod"]
     database: PostgresDatabaseSecrets
     redis: RedisSecrets
     encryption: EncryptionSecrets
     auth: AuthSecrets
-    jira: JiraSecrets
     slack: SlackSecrets
-    confluence: ConfluenceSecrets
     logging: LoggingConfig = LoggingConfig()
 
     @property
@@ -93,7 +81,7 @@ class Settings(BaseSettings):
 
     @property
     def cors_allow_origins(self) -> list[str]:
-        if self.env == "local":
+        if self.env in ["test", "local"]:
             return ["*"]
         return ["*"]
 

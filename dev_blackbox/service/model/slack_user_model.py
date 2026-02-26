@@ -11,16 +11,17 @@ if TYPE_CHECKING:
 
 
 class SlackUserModel(BaseModel):
+    model_config = {"from_attributes": True}
+
     id: int
     member_id: str
+    is_active: bool
     display_name: str
     real_name: str
     email: str | None
     user_id: int | None
     created_at: datetime
     updated_at: datetime
-
-    model_config = {"from_attributes": True}
 
     @classmethod
     def from_entity(
@@ -31,6 +32,7 @@ class SlackUserModel(BaseModel):
         return cls(
             id=entity.id,
             member_id=entity.member_id,
+            is_active=entity.is_active,
             display_name=encrypt_service.decrypt(entity.display_name),
             real_name=encrypt_service.decrypt(entity.real_name),
             email=encrypt_service.decrypt(entity.email) if entity.email else None,

@@ -10,11 +10,11 @@ class CreateGitHubSecretRequestDto(BaseModel):
 
 
 class GitHubSecretResponseDto(BaseModel):
+    model_config = {"from_attributes": True}
+
     id: int
     username: str
     personal_access_token: str
-
-    model_config = {"from_attributes": True}
 
     @field_validator("personal_access_token")
     @classmethod

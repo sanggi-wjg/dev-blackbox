@@ -133,19 +133,31 @@ def _collect_and_summarize(user: UserDetailModel, target_date: date):
 
 
 def _collect_github_events(user_id: int, target_date: date) -> str:
+    # 모든 이벤트 저장
     with get_db_session() as session:
         service = GitHubEventService(session)
-        events = service.save_github_events(user_id, target_date)
-        commit_message = "\n".join(
-            [e.commit_model.commit_detail_text for e in events if e.commit_model is not None]
-        )
+        service.save_github_events(user_id, target_date)
 
-    if len(commit_message) > 50000:
-        commit_message = commit_message[:50000]
-        logger.info(
-            f"GitHub 커밋 메시지 길이 제한: user_id={user_id}, target_date={target_date}, message_length={len(commit_message)}"
+    # 요약 대상 이벤트만 조회
+    with get_db_session() as session:
+        service = GitHubEventService(session)
+        summary_events = service.get_github_events_by_event_types(
+            user_id, target_date, GitHubEventService.SUMMARY_EVENT_TYPES
         )
-    return commit_message
+        texts = []
+        for event in summary_events:
+            if event.commit_model is not None:
+                texts.append(event.commit_model.commit_detail_text)
+            elif event.event_type == "PullRequestEvent":
+                texts.append(event.event_model.pull_request_summary_text)
+        summary_text = "\n".join(texts)
+
+    if len(summary_text) > 50000:
+        summary_text = summary_text[:50000]
+        logger.info(
+            f"GitHub 요약 텍스트 길이 제한: user_id={user_id}, target_date={target_date}, text_length={len(summary_text)}"
+        )
+    return summary_text
 
 
 def _collect_jira_events(user: UserDetailModel, target_date: date) -> str:

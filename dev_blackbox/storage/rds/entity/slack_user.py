@@ -14,6 +14,7 @@ class SlackUser(Base):
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, index=True, autoincrement=True)
     member_id: Mapped[str] = mapped_column(String(128), nullable=False, unique=True)
+    is_active: Mapped[bool] = mapped_column(default=True)
     display_name: Mapped[str] = mapped_column(String(255), nullable=False)
     real_name: Mapped[str] = mapped_column(String(255), nullable=False)
     email: Mapped[str | None] = mapped_column(String(255), nullable=True)
@@ -33,6 +34,7 @@ class SlackUser(Base):
     def create(
         cls,
         member_id: str,
+        is_active: bool,
         display_name: str,
         real_name: str,
         email: str | None = None,
@@ -40,6 +42,7 @@ class SlackUser(Base):
     ) -> "SlackUser":
         return cls(
             member_id=member_id,
+            is_active=is_active,
             display_name=display_name,
             real_name=real_name,
             email=email,

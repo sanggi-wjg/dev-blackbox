@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from dev_blackbox.controller.api.dto.jira_user_dto import (
@@ -20,17 +20,19 @@ router = APIRouter(prefix="/api/v1/jira-users", tags=["JiraUser"])
 async def get_jira_users(
     token: AuthToken,
     current_user: CurrentUser,
+    jira_secret_id: int | None = Query(default=None),
     db: Session = Depends(get_db),
 ):
     service = JiraUserService(db)
     encrypt_service = get_encrypt_service()
-    jira_users = service.get_jira_users()
+    jira_users = service.get_jira_users(jira_secret_id)
 
     return [
         JiraUserResponseDto(
             id=jira_user.id,
+            jira_secret_id=jira_user.jira_secret_id,
             account_id=jira_user.account_id,
-            active=jira_user.active,
+            is_active=jira_user.is_active,
             display_name=encrypt_service.decrypt(jira_user.display_name),
             email_address=encrypt_service.decrypt(jira_user.email_address),
             url=jira_user.url,
@@ -44,12 +46,11 @@ async def get_jira_users(
 
 
 @router.patch(
-    "/{jira_user_id}",
+    "",
     status_code=status.HTTP_204_NO_CONTENT,
     response_model=None,
 )
 async def assign_jira_user(
-    jira_user_id: int,
     token: AuthToken,
     current_user: CurrentUser,
     request: AssignJiraUserRequestDto,
@@ -58,7 +59,8 @@ async def assign_jira_user(
     service = JiraUserService(db)
     service.assign_user(
         user_id=current_user.id,
-        jira_user_id=jira_user_id,
+        jira_secret_id=request.jira_secret_id,
+        jira_user_id=request.jira_user_id,
         project=request.project,
     )
 

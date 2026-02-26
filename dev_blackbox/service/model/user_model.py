@@ -16,6 +16,8 @@ if TYPE_CHECKING:
 
 
 class UserModel(BaseModel):
+    model_config = {"from_attributes": True}
+
     id: int
     name: str
     email: str
@@ -25,10 +27,10 @@ class UserModel(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    model_config = {"from_attributes": True}
-
 
 class UserDetailModel(BaseModel):
+    model_config = {"from_attributes": True}
+
     id: int
     name: str
     email: str
@@ -39,8 +41,6 @@ class UserDetailModel(BaseModel):
     github_user_secret: GitHubUserSecretModel | None = None
     jira_user: JiraUserModel | None = None
     slack_user: SlackUserModel | None = None
-
-    model_config = {"from_attributes": True}
 
     @classmethod
     def from_entity(cls, user: User, encrypt_service: EncryptService) -> UserDetailModel:

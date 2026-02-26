@@ -17,7 +17,6 @@ def sync_jira_users_task():
         logger.info("sync_jira_users_task started...")
 
         with get_db_session() as session:
-            service = JiraUserService(session)
-            service.sync_jira_users()
+            JiraUserService(session).sync_all_jira_users()
 
         logger.info("sync_jira_users_task completed.")

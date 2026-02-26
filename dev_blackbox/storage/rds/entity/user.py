@@ -49,6 +49,15 @@ class User(SoftDeleteMixin, Base):
             password=hashed_password,
         )
 
+    @classmethod
+    def create_admin(cls, name: str, email: str, hashed_password: str) -> "User":
+        return cls(
+            name=name,
+            email=email,
+            password=hashed_password,
+            is_admin=True,
+        )
+
     @property
     def tz_info(self):
         return ZoneInfo(self.timezone)

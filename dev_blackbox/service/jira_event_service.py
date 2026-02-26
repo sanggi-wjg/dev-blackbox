@@ -3,7 +3,6 @@ from datetime import date, timedelta
 
 from sqlalchemy.orm import Session
 
-from dev_blackbox.client.jira_client import get_jira_client
 from dev_blackbox.client.model.jira_api_model import (
     IssueJQL,
     JiraIssueModel,
@@ -14,6 +13,7 @@ from dev_blackbox.core.exception import (
     JiraUserNotAssignedException,
     JiraUserProjectNotAssignedException,
 )
+from dev_blackbox.service.jira_secret_service import JiraSecretService
 from dev_blackbox.storage.rds.entity import User
 from dev_blackbox.storage.rds.entity.jira_event import JiraEvent
 from dev_blackbox.storage.rds.repository import (
@@ -31,6 +31,7 @@ class JiraEventService:
         self.session = session
         self.user_repository = UserRepository(session)
         self.jira_event_repository = JiraEventRepository(session)
+        self.jira_secret_service = JiraSecretService(session)
 
     def get_jira_events(
         self,
@@ -70,7 +71,7 @@ class JiraEventService:
             updated_before=next_date.isoformat(),
         )
 
-        jira_client = get_jira_client()
+        jira_client = self.jira_secret_service.get_jira_client(jira_user.jira_secret)
         issues: list[JiraIssueModel] = []
 
         # Jira API 호출 (페이지네이션 하지 않음, 하루 50개 이상 이슈 업데이트 되는 경우는 드물다고 가정)

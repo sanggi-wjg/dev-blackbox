@@ -4,8 +4,12 @@ from fastapi import APIRouter, Depends, Query, Request, status, BackgroundTasks,
 from sqlalchemy.orm import Session
 
 from dev_blackbox.controller.api.dto.common_dto import BackgroundTaskResponseDto
+from dev_blackbox.controller.api.dto.github_event_dto import GitHubEventResponseDto
+from dev_blackbox.controller.api.dto.jira_event_dto import JiraEventResponseDto
+from dev_blackbox.controller.api.dto.slack_message_dto import SlackMessageResponseDto
 from dev_blackbox.controller.api.dto.work_log_dto import (
     DailyWorkLogResponseDto,
+    PlatformWorkLogDetailResponseDto,
     PlatformWorkLogResponseDto,
     WorkLogQuery,
     WorkLogManualSyncReqeustDto,
@@ -24,7 +28,7 @@ router = APIRouter(prefix="/api/v1/work-logs", tags=["WorkLog"])
 @router.get(
     "/platforms",
     status_code=status.HTTP_200_OK,
-    response_model=list[PlatformWorkLogResponseDto],
+    response_model=list[PlatformWorkLogDetailResponseDto],
 )
 async def get_platform_work_logs(
     token: AuthToken,
@@ -33,11 +37,33 @@ async def get_platform_work_logs(
     db: Session = Depends(get_db),
 ):
     service = WorkLogService(db)
-    return service.get_platform_work_logs(
+    sources = service.get_platform_work_logs_with_sources(
         user_id=current_user.id,
         target_date=query.target_date,
         platforms=PlatformEnum.platforms(),
     )
+
+    result = []
+    for wl in sources.work_logs:
+        dto = PlatformWorkLogDetailResponseDto.model_validate(wl, from_attributes=True)
+        match wl.platform:
+            case PlatformEnum.GITHUB:
+                dto.github_events = [
+                    GitHubEventResponseDto.model_validate(e, from_attributes=True)
+                    for e in sources.github_events
+                ]
+            case PlatformEnum.JIRA:
+                dto.jira_events = [
+                    JiraEventResponseDto.model_validate(e, from_attributes=True)
+                    for e in sources.jira_events
+                ]
+            case PlatformEnum.SLACK:
+                dto.slack_messages = [
+                    SlackMessageResponseDto.model_validate(e, from_attributes=True)
+                    for e in sources.slack_messages
+                ]
+        result.append(dto)
+    return result
 
 
 @router.get(
