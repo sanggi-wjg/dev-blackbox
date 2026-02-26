@@ -16,7 +16,7 @@ class JiraUserModel(BaseModel):
     id: int
     jira_secret_id: int
     account_id: str
-    active: bool
+    is_active: bool
     display_name: str
     email_address: str
     url: str
@@ -35,7 +35,7 @@ class JiraUserModel(BaseModel):
             id=entity.id,
             jira_secret_id=entity.jira_secret_id,
             account_id=entity.account_id,
-            active=entity.active,
+            is_active=entity.is_active,
             display_name=encrypt_service.decrypt(entity.display_name),
             email_address=encrypt_service.decrypt(entity.email_address),
             url=entity.url,

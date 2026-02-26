@@ -32,7 +32,7 @@ async def get_jira_users(
             id=jira_user.id,
             jira_secret_id=jira_user.jira_secret_id,
             account_id=jira_user.account_id,
-            active=jira_user.active,
+            is_active=jira_user.is_active,
             display_name=encrypt_service.decrypt(jira_user.display_name),
             email_address=encrypt_service.decrypt(jira_user.email_address),
             url=jira_user.url,

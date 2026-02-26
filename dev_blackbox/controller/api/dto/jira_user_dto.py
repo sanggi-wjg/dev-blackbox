@@ -7,7 +7,7 @@ class JiraUserResponseDto(BaseModel):
     id: int
     jira_secret_id: int
     account_id: str
-    active: bool
+    is_active: bool
     display_name: str
     email_address: str
     url: str
