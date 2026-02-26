@@ -5,6 +5,7 @@ from sqlalchemy import create_engine, text, Engine
 from sqlalchemy.orm import sessionmaker, Session
 from testcontainers.postgres import PostgresContainer
 
+from dev_blackbox.core.password import get_password_service
 from dev_blackbox.storage.rds.entity import *  # noqa: F403,F401
 from dev_blackbox.storage.rds.entity.base import Base
 
@@ -52,8 +53,11 @@ def user_fixture(
     db_session: Session,
 ) -> Callable[[str], User]:
 
-    def _create(email: str) -> User:
-        user = User.create(name=email, email=email, hashed_password="password")
+    def _create(email: str, password: str | None = None) -> User:
+        hashed_password = (
+            get_password_service().hash_password(password) if password else "password"
+        )
+        user = User.create(name=email, email=email, hashed_password=hashed_password)
         db_session.add(user)
         db_session.flush()
         return user
