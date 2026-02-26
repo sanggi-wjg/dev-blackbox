@@ -13,7 +13,7 @@ class GithubEventModel(BaseModel):
     type: Literal["PushEvent", "PullRequestEvent"] | str
     actor: dict
     repo: GithubRepositoryModel
-    payload: dict  # 자동으로 변환까지는 필요 없을 듯
+    payload: dict
     public: bool
     created_at: str
     org: dict | None = None
@@ -21,23 +21,42 @@ class GithubEventModel(BaseModel):
     def get_created_date(self, tz_info: ZoneInfo) -> date:
         return get_date_from_iso_format(self.created_at, tz_info=tz_info)
 
-    def is_type_push_event(self) -> bool:
-        return self.type == "PushEvent"
+    @cached_property
+    def typed_payload(self) -> GithubPushEventPayloadModel | GithubPullRequestEventPayload | dict:
+        match self.type:
+            case "PushEvent":
+                return GithubPushEventPayloadModel.model_validate(self.payload)
+            case "PullRequestEvent":
+                return GithubPullRequestEventPayload.model_validate(self.payload)
+            case _:
+                return self.payload
 
-    def is_type_pull_request_event(self) -> bool:
-        return self.type == "PullRequestEvent"
-
-    def get_push_event_payload(self) -> GithubPushEventPayloadModel:
-        if not self.is_type_push_event():
+    @property
+    def push_event_payload(self) -> GithubPushEventPayloadModel:
+        if not isinstance(self.typed_payload, GithubPushEventPayloadModel):
             raise ValueError("This event is not PushEvent.")
+        return self.typed_payload
 
-        return GithubPushEventPayloadModel.model_validate(self.payload)
-
-    def get_pull_request_event_payload(self) -> GithubPullRequestEventPayload:
-        if not self.is_type_pull_request_event():
+    @property
+    def pull_request_event_payload(self) -> GithubPullRequestEventPayload:
+        if not isinstance(self.typed_payload, GithubPullRequestEventPayload):
             raise ValueError("This event is not PullRequestEvent.")
+        return self.typed_payload
 
-        return GithubPullRequestEventPayload.model_validate(self.payload)
+    @cached_property
+    def pull_request_summary_text(self) -> str:
+        if self.type != "PullRequestEvent":
+            return ""
+
+        payload = self.pull_request_event_payload
+        pr = payload.pull_request
+        lines = [
+            f"PR #{payload.number} ({payload.action}): {pr.title}",
+            f"{pr.base.ref} ← {pr.head.ref}",
+        ]
+        if pr.body:
+            lines.append(pr.body)
+        return "\n".join(lines)
 
 
 class GithubEventModelList(BaseModel):
@@ -61,13 +80,19 @@ class GithubRepositoryModel(BaseModel):
 class GithubPullRequestInfoModel(BaseModel):
     ref: str
     sha: str
-    repo: GithubRepositoryModel
+    repo: GithubRepositoryModel | None = None  # fork 삭제 시 null
 
 
 class GithubPullRequestModel(BaseModel):
     id: int
     url: str
     number: int
+    html_url: str | None = None
+    title: str | None = None
+    body: str | None = None
+    state: str | None = None  # "open" | "closed"
+    draft: bool | None = None
+    merged: bool | None = None
     head: GithubPullRequestInfoModel
     base: GithubPullRequestInfoModel
 

@@ -124,6 +124,7 @@ dev_blackbox/
 │   ├── security_config.py       # OAuth2 보안 설정 (AuthToken, CurrentUser, CurrentAdminUser)
 │   └── exception_handler.py     # 전역 예외 핸들러
 ├── service/                     # 비즈니스 로직
+│   └── model/                   # Service Model (Entity → Model 변환, from_entity 팩토리)
 ├── storage/rds/                 # Repository + Entity (SQLAlchemy)
 ├── client/                      # 외부 API 클라이언트 (GitHub, Jira) + Model
 ├── agent/                       # LLM 에이전트 + Prompt
@@ -154,10 +155,23 @@ dev_blackbox/
 - **Controller 레벨**: `get_db()` — 수동 commit/rollback
 - **Service 레벨**: `get_db_session()` — 자동 commit/rollback (context manager)
 
+### 레이어 의존 방향
+
+Controller(DTO) → Service(Model/Entity) → Repository(Entity). 역방향 참조 금지.
+
 ### DTO
 
 - API DTO는 `controller/api/dto/`에, Admin DTO는 `controller/admin/dto/`에 정의
 - Pydantic v2 BaseModel 사용
+- DTO는 같은 레이어의 다른 DTO만 참조 가능. `service/model/`을 import하지 말 것
+- DTO 조립(Entity → DTO 변환, 여러 데이터 매핑)은 Controller 책임
+
+### Service Model
+
+- `service/model/`에 Pydantic 모델로 정의. `from_entity()` 팩토리 메서드 사용
+- **실질적 변환 로직이 있을 때만 사용** (암호화/복호화, 관계 엔티티 조합 등)
+- 필드 단순 복사만 하는 경우 Service Model을 만들지 말 것 — Entity를 직접 반환
+- Service Model은 Entity, 다른 Service Model만 참조 가능. `controller/`의 DTO를 import하지 말 것
 
 ### 외부 클라이언트
 

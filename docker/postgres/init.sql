@@ -84,6 +84,7 @@ CREATE TABLE IF NOT EXISTS github_event
     user_id               BIGINT       NOT NULL,
     github_user_secret_id INT          NOT NULL,
     event_id              VARCHAR(100) NOT NULL,
+    event_type            VARCHAR(50)  NOT NULL,
     target_date           DATE         NOT NULL,
     event                 JSONB        NOT NULL,
     commit                JSONB        NULL,
@@ -103,7 +104,7 @@ CREATE TRIGGER tr_github_event_updated_at
     FOR EACH ROW
 EXECUTE FUNCTION update_updated_at_column();
 
-CREATE INDEX idx_github_event_001 ON github_event (user_id, target_date);
+CREATE INDEX idx_github_event_001 ON github_event (user_id, target_date, event_type);
 CREATE INDEX idx_github_event_002 ON github_event (target_date);
 CREATE INDEX idx_github_event_003 ON github_event (created_at DESC);
 
@@ -111,6 +112,7 @@ COMMENT ON TABLE github_event IS 'GitHub 이벤트 + 커밋 수집 데이터';
 COMMENT ON COLUMN github_event.user_id IS '사용자 FK';
 COMMENT ON COLUMN github_event.github_user_secret_id IS 'GitHub 인증 정보 FK';
 COMMENT ON COLUMN github_event.event_id IS 'GitHub 이벤트 ID (UNIQUE)';
+COMMENT ON COLUMN github_event.event_type IS 'GitHub 이벤트 타입 (PushEvent, PullRequestEvent 등)';
 COMMENT ON COLUMN github_event.target_date IS '수집 대상 날짜';
 COMMENT ON COLUMN github_event.event IS '이벤트 원본 데이터 (JSONB)';
 COMMENT ON COLUMN github_event.commit IS '커밋 상세 데이터 (JSONB)';

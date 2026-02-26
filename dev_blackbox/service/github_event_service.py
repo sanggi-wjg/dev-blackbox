@@ -4,7 +4,11 @@ from datetime import date
 from sqlalchemy.orm import Session
 
 from dev_blackbox.client.github_client import GitHubClient
-from dev_blackbox.client.model.github_api_model import GithubEventModel, GithubCommitModel
+from dev_blackbox.client.model.github_api_model import (
+    GithubCommitModel,
+    GithubEventModel,
+    GithubPushEventPayloadModel,
+)
 from dev_blackbox.core.encrypt import get_encrypt_service
 from dev_blackbox.core.exception import (
     UserNotFoundException,
@@ -23,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 
 class GitHubEventService:
-    COLLECT_EVENT_TYPES = ["PushEvent"]
+    SUMMARY_EVENT_TYPES = ["PushEvent"]
 
     def __init__(self, session: Session):
         self.session = session
@@ -71,7 +75,7 @@ class GitHubEventService:
             github_username=github_user_secret.username,
             target_date=target_date,
         )
-        # 저장 ㄱ
+        # 저장 ㄱㄱ
         for github_event in github_events:
             github_commit = self.fetch_github_commit_by_event(github_client, github_event)
             events.append(
@@ -92,51 +96,40 @@ class GitHubEventService:
         github_username: str,
         target_date: date,
     ) -> list[GithubEventModel]:
-        """
-        GitHub API를 통해 특정 사용자의 이벤트 조회.
-
-        지정된 날짜의 이벤트만 조회하며, COLLECT_TYPES에 정의된 타입의 이벤트만 필터링합니다.
-        """
+        """GitHub API를 통해 특정 사용자의 이벤트 조회. 모든 이벤트 타입을 반환한다."""
         github_events = github_client.fetch_events_by_date(
             username=github_username,
             target_date=target_date,
             tz_info=user.tz_info,
         )
-        # 나중에 타입 추가 된다면 상위 메소드에서 filter 메소드로 필터링해서 commit 정보 가져오도록 하는게 좋아보임, 우선은 여기서 필터 처리
-        github_events = [
-            event for event in github_events.events if event.type in self.COLLECT_EVENT_TYPES
-        ]
-        if not github_events:
+        events = github_events.events
+        if not events:
             logger.warning(f"No events found for {github_username}. (user_id: {user.id})")
 
-        logger.info(
-            f"Collected {len(github_events)} events for {github_username}. (user_id: {user.id})"
-        )
-        return github_events
+        logger.info(f"Collected {len(events)} events for {github_username}. (user_id: {user.id})")
+        return events
 
     def fetch_github_commit_by_event(
         self,
         github_client: GitHubClient,
         github_event: GithubEventModel,
     ) -> GithubCommitModel | None:
-        """
-        GitHub API를 통해 특정 이벤트의 커밋 정보 조회.
-
-        [편지]
-        event_type 추가시 별도 parse 로직 구현 필요
-        현재는 우선 PushEvent만 진행
-        """
-        if github_event.type not in self.COLLECT_EVENT_TYPES:
-            logger.info(f"Event type {github_event.type} is not supported. Skipping.")
+        """GitHub API를 통해 PushEvent의 커밋 정보 조회. 다른 이벤트 타입은 None 반환."""
+        typed = github_event.typed_payload
+        if not isinstance(typed, GithubPushEventPayloadModel):
             return None
 
-        if github_event.is_type_push_event():
-            payload = github_event.get_push_event_payload()
-            commit = github_client.fetch_commit(
-                repository_url=github_event.repo.url,
-                sha=payload.head,
-            )
-            logger.info(f"Collected commit info for {github_event.id}.")
-            return commit
+        payload = typed
+        commit = github_client.fetch_commit(
+            repository_url=github_event.repo.url,
+            sha=payload.head,
+        )
+        logger.info(f"Collected commit info for {github_event.id}.")
+        return commit
 
-        raise NotImplementedError(f"Event type {github_event.type} is not supported.")
+    def get_github_events_by_event_types(
+        self, user_id: int, target_date: date, event_types: list[str]
+    ) -> list[GitHubEvent]:
+        return self.github_event_repository.find_all_by_user_id_and_target_date_and_event_types(
+            user_id, target_date, event_types
+        )

@@ -1,4 +1,3 @@
-import logging
 from datetime import date
 
 from sqlalchemy.orm import Session
@@ -6,11 +5,16 @@ from sqlalchemy.orm import Session
 from dev_blackbox.core.cache import cache_evict, cacheable
 from dev_blackbox.core.const import CacheKey
 from dev_blackbox.core.enum import PlatformEnum
+from dev_blackbox.service.model.platform_work_log_model import PlatformWorkLogsWithSources
 from dev_blackbox.storage.rds.entity.daily_work_log import DailyWorkLog
 from dev_blackbox.storage.rds.entity.platform_work_log import PlatformWorkLog
-from dev_blackbox.storage.rds.repository import PlatformWorkLogRepository, DailyWorkLogRepository
-
-logger = logging.getLogger(__name__)
+from dev_blackbox.storage.rds.repository import (
+    DailyWorkLogRepository,
+    GitHubEventRepository,
+    JiraEventRepository,
+    PlatformWorkLogRepository,
+    SlackMessageRepository,
+)
 
 
 class WorkLogService:
@@ -19,7 +23,39 @@ class WorkLogService:
         self.session = session
         self.platform_work_log_repository = PlatformWorkLogRepository(session)
         self.daily_work_log_repository = DailyWorkLogRepository(session)
+        self.github_event_repository = GitHubEventRepository(session)
+        self.jira_event_repository = JiraEventRepository(session)
+        self.slack_message_repository = SlackMessageRepository(session)
 
+    @cacheable(key=CacheKey.WORK_LOG_PLATFORM)
+    def get_platform_work_logs_with_sources(
+        self,
+        user_id: int,
+        target_date: date,
+        platforms: list[PlatformEnum],
+    ) -> PlatformWorkLogsWithSources:
+        work_logs = (
+            self.platform_work_log_repository.find_all_by_user_id_and_target_date_and_platforms(
+                user_id, target_date, platforms
+            )
+        )
+        github_events = self.github_event_repository.find_all_by_user_id_and_target_date(
+            user_id, target_date
+        )
+        jira_events = self.jira_event_repository.find_all_by_user_id_and_target_date(
+            user_id, target_date
+        )
+        slack_messages = self.slack_message_repository.find_all_by_user_id_and_target_date(
+            user_id, target_date
+        )
+        return PlatformWorkLogsWithSources(
+            work_logs=work_logs,
+            github_events=github_events,
+            jira_events=jira_events,
+            slack_messages=slack_messages,
+        )
+
+    @cache_evict(key=CacheKey.WORK_LOG_PLATFORM)
     def save_platform_work_log(
         self,
         user_id: int,
@@ -47,7 +83,6 @@ class WorkLogService:
         )
         return self.platform_work_log_repository.save(platform_work_log)
 
-    @cacheable(key=CacheKey.WORK_LOG_PLATFORM)
     def get_platform_work_logs(
         self,
         user_id: int,
@@ -59,6 +94,16 @@ class WorkLogService:
             target_date,
             platforms,
         )
+
+    def get_daily_work_log(
+        self,
+        user_id: int,
+        target_date: date,
+    ) -> DailyWorkLog | None:
+        return self.daily_work_log_repository.find_by_user_id_and_target_date(user_id, target_date)
+
+    def get_daily_work_logs(self, user_id: int) -> list[DailyWorkLog]:
+        return self.daily_work_log_repository.find_all_by_user_id(user_id)
 
     def save_daily_work_log(
         self,
@@ -87,16 +132,6 @@ class WorkLogService:
             content=merged_work_log_text,
         )
         return self.daily_work_log_repository.save(daily_work_log)
-
-    def get_daily_work_log(
-        self,
-        user_id: int,
-        target_date: date,
-    ) -> DailyWorkLog | None:
-        return self.daily_work_log_repository.find_by_user_id_and_target_date(user_id, target_date)
-
-    def get_daily_work_logs(self, user_id: int) -> list[DailyWorkLog]:
-        return self.daily_work_log_repository.find_all_by_user_id(user_id)
 
     @cacheable(key=CacheKey.WORK_LOG_USER_CONTENT)
     def get_user_content_or_none(self, user_id: int, target_date: date) -> PlatformWorkLog | None:

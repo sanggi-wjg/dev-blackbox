@@ -14,6 +14,7 @@ class GitHubEvent(Base):
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     event_id: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
+    event_type: Mapped[str] = mapped_column(String(50), nullable=False)
     target_date: Mapped[date] = mapped_column(Date, nullable=False)
     event: Mapped[dict] = mapped_column(JSONB, nullable=False)
     commit: Mapped[dict] = mapped_column(JSONB, nullable=True)
@@ -46,6 +47,7 @@ class GitHubEvent(Base):
             github_user_secret_id=github_user_secret_id,
             target_date=target_date,
             event_id=event.id,
+            event_type=event.type,
             event=event.model_dump(mode="json"),
             commit=commit.model_dump(mode="json") if commit else None,
         )

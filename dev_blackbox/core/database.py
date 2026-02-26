@@ -1,14 +1,33 @@
 import logging
+import sys
 from contextlib import contextmanager
 from typing import Generator
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker, Session
 
 from dev_blackbox.core.config import get_settings
 
 settings = get_settings()
 logger = logging.getLogger(__name__)
+
+_REPOSITORY_SUFFIX = "Repository"
+_MAX_FRAME_DEPTH = 30
+
+
+def _extract_repository_comment() -> str | None:
+    """호출 스택에서 Repository 클래스와 메서드명을 추출한다."""
+    frame = sys._getframe(1)  # noqa: SLF001
+    for _ in range(_MAX_FRAME_DEPTH):
+        if frame is None:
+            break
+        local_self = frame.f_locals.get("self")
+        if local_self is not None:
+            cls_name = type(local_self).__name__
+            if cls_name.endswith(_REPOSITORY_SUFFIX):
+                return f"{cls_name}.{frame.f_code.co_name}"
+        frame = frame.f_back
+    return None
 
 
 engine = create_engine(
@@ -22,6 +41,17 @@ engine = create_engine(
     echo=settings.database.debug,
     echo_pool=settings.database.debug,
 )
+
+
+@event.listens_for(engine, "before_cursor_execute", retval=True)
+def _add_query_comment(_conn, _cursor, statement, parameters, _context, _executemany):
+    """실행되는 SQL에 Repository 출처를 코멘트로 추가한다."""
+    comment = _extract_repository_comment()
+    if comment:
+        statement = f"/* {comment} */ {statement}"
+    return statement, parameters
+
+
 session_factory = sessionmaker(
     bind=engine,
     autocommit=False,
