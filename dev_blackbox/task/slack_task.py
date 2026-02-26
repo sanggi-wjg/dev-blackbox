@@ -18,6 +18,6 @@ def sync_slack_users_task():
 
         with get_db_session() as session:
             service = SlackUserService(session)
-            service.sync_slack_users()
+            service.sync_all_slack_users()
 
         logger.info("sync_slack_users_task completed.")

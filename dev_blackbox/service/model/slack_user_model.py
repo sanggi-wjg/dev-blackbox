@@ -14,6 +14,7 @@ class SlackUserModel(BaseModel):
     model_config = {"from_attributes": True}
 
     id: int
+    slack_secret_id: int
     member_id: str
     is_active: bool
     display_name: str
@@ -31,6 +32,7 @@ class SlackUserModel(BaseModel):
     ) -> SlackUserModel:
         return cls(
             id=entity.id,
+            slack_secret_id=entity.slack_secret_id,
             member_id=entity.member_id,
             is_active=entity.is_active,
             display_name=encrypt_service.decrypt(entity.display_name),

@@ -7,7 +7,6 @@ from zoneinfo import ZoneInfo
 from slack_sdk import WebClient
 
 from dev_blackbox.client.model.slack_api_model import SlackChannelModel, SlackMessageModel
-from dev_blackbox.core.config import get_settings
 from dev_blackbox.core.exception import SlackClientException
 from dev_blackbox.util.datetime_util import get_daily_timestamp_range
 
@@ -168,7 +167,6 @@ class SlackClient:
         return replies
 
 
-@lru_cache
-def get_slack_client() -> SlackClient:
-    slack_secrets = get_settings().slack
-    return SlackClient.create(bot_token=slack_secrets.bot_token)
+@lru_cache(maxsize=10)
+def get_slack_client(bot_token: str) -> SlackClient:
+    return SlackClient.create(bot_token=bot_token)
