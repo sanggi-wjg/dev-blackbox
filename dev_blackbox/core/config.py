@@ -67,7 +67,7 @@ class Settings(BaseSettings):
         nested_model_default_partial_update=False,
     )
 
-    env: Literal["local", "dev", "stage", "prod"]
+    env: Literal["test", "local", "dev", "stage", "prod"]
     database: PostgresDatabaseSecrets
     redis: RedisSecrets
     encryption: EncryptionSecrets
@@ -81,7 +81,7 @@ class Settings(BaseSettings):
 
     @property
     def cors_allow_origins(self) -> list[str]:
-        if self.env == "local":
+        if self.env in ["test", "local"]:
             return ["*"]
         return ["*"]
 

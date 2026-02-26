@@ -38,6 +38,7 @@ dev = [
     "pre-commit (>=4.5.1,<5.0.0)",
     "pytest (>=9.0.2,<10.0.0)",
     "testcontainers[postgres] (>=4.14.1,<5.0.0)",
+    "pytest-env (>=1.5.0,<2.0.0)",
 ]
 
 [build-system]
@@ -52,6 +53,23 @@ target-version = ['py314']
 testpaths = ['tests']
 pythonpath = ['.']
 python_classes = ['*Test']
+
+[tool.pytest_env]
+ENV = "test"
+DATABASE__DEBUG = "True"
+DATABASE__HOST = "localhost"
+DATABASE__PORT = "7400"
+DATABASE__DATABASE = "dev_blackbox"
+DATABASE__USER = "blackbox"
+DATABASE__PASSWORD = "passw0rd"
+REDIS__HOST = "localhost"
+REDIS__PORT = "7410"
+ENCRYPTION__KEY = "test-encryption-key-base64-abcdefghijklmnopqrstuvwxyz"
+ENCRYPTION__PEPPER = "test-pepper-secret"
+AUTH__SECRET_KEY = "test-jwt-secret-key-abcdefghijklmnopqrstuvwxyz"
+AUTH__ALGORITHM = "HS256"
+AUTH__ACCESS_TOKEN_EXPIRE_MINUTES = "30"
+SLACK__BOT_TOKEN = "xoxb-test-token"
 
 [tool.pyright]
 pythonVersion = "3.14"
