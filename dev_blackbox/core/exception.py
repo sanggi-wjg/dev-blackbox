@@ -31,6 +31,12 @@ class GitHubUserSecretNotFoundException(EntityNotFoundException):
         super().__init__(entity_name="GitHubUserSecret", identifier=identifier)
 
 
+class JiraSecretNotFoundException(EntityNotFoundException):
+
+    def __init__(self, identifier: Any):
+        super().__init__(entity_name="JiraSecret", identifier=identifier)
+
+
 class JiraUserNotFoundException(EntityNotFoundException):
 
     def __init__(self, identifier: Any):
@@ -49,6 +55,14 @@ class GitHubUserSecretNotSetException(ServiceException):
     def __init__(self, user_id: int):
         super().__init__(
             f"Set GitHub personal access token before executing events. (UserId: {user_id})"
+        )
+
+
+class JiraUserSecretMismatchException(ServiceException):
+
+    def __init__(self, jira_user_id: int, jira_secret_id: int):
+        super().__init__(
+            f"JiraUser(id={jira_user_id}) does not belong to JiraSecret(id={jira_secret_id})"
         )
 
 

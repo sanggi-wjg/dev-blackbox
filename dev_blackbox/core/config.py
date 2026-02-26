@@ -43,12 +43,6 @@ class AuthSecrets(BaseModel):
     access_token_expire_minutes: int = 30
 
 
-class JiraSecrets(BaseModel):
-    url: str
-    username: str
-    api_token: str
-
-
 class SlackSecrets(BaseModel):
     bot_token: str
 
@@ -82,7 +76,6 @@ class Settings(BaseSettings):
     redis: RedisSecrets
     encryption: EncryptionSecrets
     auth: AuthSecrets
-    jira: JiraSecrets
     slack: SlackSecrets
     confluence: ConfluenceSecrets
     logging: LoggingConfig = LoggingConfig()

@@ -4,6 +4,8 @@ from pydantic import BaseModel
 
 
 class SlackMessageResponseDto(BaseModel):
+    model_config = {"from_attributes": True}
+
     id: int
     target_date: date
     channel_id: str
@@ -11,5 +13,3 @@ class SlackMessageResponseDto(BaseModel):
     message_ts: str
     message_text: str
     thread_ts: str | None
-
-    model_config = {"from_attributes": True}

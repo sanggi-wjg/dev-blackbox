@@ -192,24 +192,56 @@ COMMENT ON COLUMN daily_work_log.content IS '통합 요약 텍스트';
 COMMENT ON COLUMN daily_work_log.embedding IS '요약 임베딩 벡터 (1024차원)';
 
 
+-- jira_secret 테이블 (Jira 인증 정보)
+CREATE TABLE IF NOT EXISTS jira_secret
+(
+    id         BIGSERIAL PRIMARY KEY,
+    name       VARCHAR(100) NOT NULL,
+    url        VARCHAR(512) NOT NULL,
+    username   VARCHAR(255) NOT NULL,
+    api_token  VARCHAR(512) NOT NULL,
+
+    created_at TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    is_deleted BOOLEAN      NOT NULL DEFAULT FALSE,
+    deleted_at TIMESTAMPTZ  NOT NULL DEFAULT '9999-12-31 14:59:59+00'
+);
+
+CREATE TRIGGER tr_jira_secret_updated_at
+    BEFORE UPDATE
+    ON jira_secret
+    FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+CREATE INDEX idx_jira_secret_001 ON jira_secret (created_at DESC);
+
+COMMENT ON TABLE jira_secret IS 'Jira 인증 정보 테이블';
+COMMENT ON COLUMN jira_secret.name IS '관리용 이름';
+COMMENT ON COLUMN jira_secret.url IS 'Jira 서버 URL';
+COMMENT ON COLUMN jira_secret.username IS 'Jira 사용자명 (AES-256-GCM 암호화 저장)';
+COMMENT ON COLUMN jira_secret.api_token IS 'Jira API 토큰 (AES-256-GCM 암호화 저장)';
+
+
 -- jira_user 테이블 (Jira 사용자 정보)
 CREATE TABLE IF NOT EXISTS jira_user
 (
-    id            BIGSERIAL PRIMARY KEY,
-    user_id       BIGINT       NULL,
-    account_id    VARCHAR(128) NOT NULL,
-    active        BOOLEAN      NOT NULL DEFAULT TRUE,
-    display_name  VARCHAR(255) NOT NULL,
-    email_address VARCHAR(255) NOT NULL,
-    url           VARCHAR(512) NOT NULL,
-    project       VARCHAR(100) NULL,
+    id             BIGSERIAL PRIMARY KEY,
+    jira_secret_id BIGINT       NOT NULL,
+    user_id        BIGINT       NULL,
+    account_id     VARCHAR(128) NOT NULL,
+    active         BOOLEAN      NOT NULL DEFAULT TRUE,
+    display_name   VARCHAR(255) NOT NULL,
+    email_address  VARCHAR(255) NOT NULL,
+    url            VARCHAR(512) NOT NULL,
+    project        VARCHAR(100) NULL,
 
-    created_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
-    updated_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    created_at     TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at     TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
 
+    CONSTRAINT fk_jira_user_jira_secret FOREIGN KEY (jira_secret_id) REFERENCES jira_secret (id) ON DELETE RESTRICT,
     CONSTRAINT fk_jira_user_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE RESTRICT,
 
-    CONSTRAINT uq_jira_user_account_id UNIQUE (account_id),
+    CONSTRAINT uq_jira_user_secret_account_id UNIQUE (jira_secret_id, account_id),
     CONSTRAINT uq_jira_user_user_id UNIQUE (user_id)
 );
 
@@ -220,11 +252,12 @@ CREATE TRIGGER tr_jira_user_updated_at
 EXECUTE FUNCTION update_updated_at_column();
 
 CREATE INDEX idx_jira_user_001 ON jira_user (user_id);
-CREATE INDEX idx_jira_user_002 ON jira_user (account_id);
+CREATE INDEX idx_jira_user_002 ON jira_user (jira_secret_id, account_id);
 CREATE INDEX idx_jira_user_003 ON jira_user (created_at DESC);
 
 COMMENT ON TABLE jira_user IS 'Jira 사용자 정보 테이블';
-COMMENT ON COLUMN jira_user.account_id IS 'Jira 계정 ID (UNIQUE)';
+COMMENT ON COLUMN jira_user.jira_secret_id IS 'Jira 인증 정보 FK';
+COMMENT ON COLUMN jira_user.account_id IS 'Jira 계정 ID (jira_secret_id와 복합 UNIQUE)';
 COMMENT ON COLUMN jira_user.active IS '활성 상태';
 COMMENT ON COLUMN jira_user.display_name IS 'Jira 표시 이름';
 COMMENT ON COLUMN jira_user.email_address IS 'Jira 이메일';

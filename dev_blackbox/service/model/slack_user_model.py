@@ -11,6 +11,8 @@ if TYPE_CHECKING:
 
 
 class SlackUserModel(BaseModel):
+    model_config = {"from_attributes": True}
+
     id: int
     member_id: str
     display_name: str
@@ -19,8 +21,6 @@ class SlackUserModel(BaseModel):
     user_id: int | None
     created_at: datetime
     updated_at: datetime
-
-    model_config = {"from_attributes": True}
 
     @classmethod
     def from_entity(

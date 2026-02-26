@@ -1,24 +1,35 @@
 from typing import TYPE_CHECKING
 
-from sqlalchemy import BigInteger, String, ForeignKey
+from sqlalchemy import BigInteger, String, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from dev_blackbox.storage.rds.entity.base import Base
 
 if TYPE_CHECKING:
+    from dev_blackbox.storage.rds.entity.jira_secret import JiraSecret
     from dev_blackbox.storage.rds.entity.user import User
 
 
 class JiraUser(Base):
     __tablename__ = "jira_user"
+    __table_args__ = (
+        UniqueConstraint("jira_secret_id", "account_id", name="uq_jira_user_secret_account_id"),
+    )
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, index=True, autoincrement=True)
-    account_id: Mapped[str] = mapped_column(String(128), nullable=False, unique=True)
+    account_id: Mapped[str] = mapped_column(String(128), nullable=False)
     active: Mapped[bool] = mapped_column(default=True)
     display_name: Mapped[str] = mapped_column(String(255), nullable=False)
     email_address: Mapped[str] = mapped_column(String(255), nullable=False)
     url: Mapped[str] = mapped_column(String(512), nullable=False)
     project: Mapped[str | None] = mapped_column(String(100), nullable=True)
+
+    jira_secret_id: Mapped[int] = mapped_column(
+        BigInteger,
+        ForeignKey("jira_secret.id", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    jira_secret: Mapped["JiraSecret"] = relationship("JiraSecret", back_populates="jira_users")
 
     user_id: Mapped[int | None] = mapped_column(
         BigInteger,
@@ -34,6 +45,7 @@ class JiraUser(Base):
     @classmethod
     def create(
         cls,
+        jira_secret_id: int,
         account_id: str,
         active: bool,
         display_name: str,
@@ -43,6 +55,7 @@ class JiraUser(Base):
         user_id: int | None = None,
     ) -> "JiraUser":
         return cls(
+            jira_secret_id=jira_secret_id,
             account_id=account_id,
             active=active,
             display_name=display_name,

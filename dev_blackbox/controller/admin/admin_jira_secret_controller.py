@@ -26,18 +26,11 @@ async def create_jira_secret(
     db: Session = Depends(get_db),
 ):
     service = JiraSecretService(db)
-    secret = service.create_secret(
+    return service.create_secret(
         name=request.name,
         url=request.url,
         username=request.username,
         api_token=request.api_token,
-    )
-    return JiraSecretResponseDto(
-        id=secret.id,
-        name=secret.name,
-        url=secret.url,
-        created_at=secret.created_at,
-        updated_at=secret.updated_at,
     )
 
 
@@ -51,17 +44,7 @@ async def get_jira_secrets(
     db: Session = Depends(get_db),
 ):
     service = JiraSecretService(db)
-    secrets = service.get_secrets()
-    return [
-        JiraSecretResponseDto(
-            id=secret.id,
-            name=secret.name,
-            url=secret.url,
-            created_at=secret.created_at,
-            updated_at=secret.updated_at,
-        )
-        for secret in secrets
-    ]
+    return service.get_secrets()
 
 
 @router.delete(

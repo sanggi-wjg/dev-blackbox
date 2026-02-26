@@ -9,6 +9,8 @@ from dev_blackbox.controller.api.dto.slack_user_dto import SlackUserResponseDto
 
 
 class UserResponseDto(BaseModel):
+    model_config = {"from_attributes": True}
+
     id: int
     name: str
     email: str
@@ -16,10 +18,10 @@ class UserResponseDto(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    model_config = {"from_attributes": True}
-
 
 class UserDetailResponseDto(BaseModel):
+    model_config = {"from_attributes": True}
+
     id: int
     name: str
     email: str
@@ -30,5 +32,3 @@ class UserDetailResponseDto(BaseModel):
     github_user_secret: GitHubSecretResponseDto | None
     jira_user: JiraUserResponseDto | None
     slack_user: SlackUserResponseDto | None
-
-    model_config = {"from_attributes": True}

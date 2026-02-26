@@ -12,6 +12,8 @@ class WorkLogQuery(BaseModel):
 
 
 class PlatformWorkLogResponseDto(BaseModel):
+    model_config = {"from_attributes": True}
+
     id: int
     target_date: date = Field(..., description="요약 대상 날짜 (YYYY-MM-DD)")
     platform: str = Field(..., description="플랫폼 이름")
@@ -22,10 +24,10 @@ class PlatformWorkLogResponseDto(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    model_config = {"from_attributes": True}
-
 
 class DailyWorkLogResponseDto(BaseModel):
+    model_config = {"from_attributes": True}
+
     id: int
     target_date: date = Field(..., description="요약 대상 날짜 (YYYY-MM-DD)")
     content: str = Field(..., description="요약 내용")
@@ -33,14 +35,14 @@ class DailyWorkLogResponseDto(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    model_config = {"from_attributes": True}
-
 
 class WorkLogManualSyncReqeustDto(BaseModel):
     target_date: date = Field(..., description="수동 수집 대상 날짜 (YYYY-MM-DD)")
 
 
 class PlatformWorkLogDetailResponseDto(BaseModel):
+    model_config = {"from_attributes": True}
+
     id: int
     target_date: date = Field(..., description="요약 대상 날짜 (YYYY-MM-DD)")
     platform: str = Field(..., description="플랫폼 이름")
@@ -53,8 +55,6 @@ class PlatformWorkLogDetailResponseDto(BaseModel):
     github_events: list[GitHubEventResponseDto] = []
     jira_events: list[JiraEventResponseDto] = []
     slack_messages: list[SlackMessageResponseDto] = []
-
-    model_config = {"from_attributes": True}
 
 
 class UserContentCreateOrUpdateRequestDto(BaseModel):

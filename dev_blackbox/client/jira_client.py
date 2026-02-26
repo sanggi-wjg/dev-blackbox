@@ -5,16 +5,11 @@ from jira import JIRA, Issue, User
 from jira.client import ResultList
 
 from dev_blackbox.client.model.jira_api_model import IssueJQL
-from dev_blackbox.core.config import get_settings
 
 logger = logging.getLogger(__name__)
 
 
 class JiraClient:
-    """
-    TODO
-     - Jira jql db 등으로 옮기자
-    """
 
     def __init__(
         self,
@@ -29,7 +24,7 @@ class JiraClient:
         logger.debug(f"Creating JiraClient for server: {server}")
         return cls(server, username, api_token)
 
-    def fetch_assignable_users(self, project: str = "FMP") -> ResultList[User]:
+    def fetch_assignable_users(self, project: str) -> ResultList[User]:
         logger.info(f"Fetching assignable users for project: {project}")
         return self.jira.search_assignable_users_for_projects("", projectKeys=project)
 
@@ -54,11 +49,6 @@ class JiraClient:
         return self.jira.issue(issue_key)
 
 
-@lru_cache
-def get_jira_client():
-    jira_secrets = get_settings().jira
-    return JiraClient.create(
-        server=jira_secrets.url,
-        username=jira_secrets.username,
-        api_token=jira_secrets.api_token,
-    )
+@lru_cache(maxsize=10)
+def get_jira_client(server: str, username: str, api_token: str) -> JiraClient:
+    return JiraClient.create(server, username, api_token)
