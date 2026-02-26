@@ -28,6 +28,7 @@ async def get_slack_users(
         SlackUserResponseDto(
             id=slack_user.id,
             member_id=slack_user.member_id,
+            is_active=slack_user.is_active,
             display_name=encrypt_service.decrypt(slack_user.display_name),
             real_name=encrypt_service.decrypt(slack_user.real_name),
             email=encrypt_service.decrypt(slack_user.email) if slack_user.email else None,

@@ -47,10 +47,6 @@ class SlackSecrets(BaseModel):
     bot_token: str
 
 
-class ConfluenceSecrets(BaseModel):
-    spaces: list[str]
-
-
 class LoggingConfig(BaseModel):
     level: str = "INFO"  # 루트 로거 레벨
     uvicorn_level: str = "INFO"
@@ -77,7 +73,6 @@ class Settings(BaseSettings):
     encryption: EncryptionSecrets
     auth: AuthSecrets
     slack: SlackSecrets
-    confluence: ConfluenceSecrets
     logging: LoggingConfig = LoggingConfig()
 
     @property

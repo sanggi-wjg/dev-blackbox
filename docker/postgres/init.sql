@@ -229,7 +229,7 @@ CREATE TABLE IF NOT EXISTS jira_user
     jira_secret_id BIGINT       NOT NULL,
     user_id        BIGINT       NULL,
     account_id     VARCHAR(128) NOT NULL,
-    active         BOOLEAN      NOT NULL DEFAULT TRUE,
+    is_active      BOOLEAN      NOT NULL DEFAULT TRUE,
     display_name   VARCHAR(255) NOT NULL,
     email_address  VARCHAR(255) NOT NULL,
     url            VARCHAR(512) NOT NULL,
@@ -258,7 +258,7 @@ CREATE INDEX idx_jira_user_003 ON jira_user (created_at DESC);
 COMMENT ON TABLE jira_user IS 'Jira 사용자 정보 테이블';
 COMMENT ON COLUMN jira_user.jira_secret_id IS 'Jira 인증 정보 FK';
 COMMENT ON COLUMN jira_user.account_id IS 'Jira 계정 ID (jira_secret_id와 복합 UNIQUE)';
-COMMENT ON COLUMN jira_user.active IS '활성 상태';
+COMMENT ON COLUMN jira_user.is_active IS '활성 상태';
 COMMENT ON COLUMN jira_user.display_name IS 'Jira 표시 이름';
 COMMENT ON COLUMN jira_user.email_address IS 'Jira 이메일';
 COMMENT ON COLUMN jira_user.url IS 'Jira 프로필 URL';
@@ -310,6 +310,7 @@ CREATE TABLE IF NOT EXISTS slack_user
     id           BIGSERIAL PRIMARY KEY,
     user_id      BIGINT       NULL,
     member_id    VARCHAR(128) NOT NULL,
+    is_active    BOOLEAN      NOT NULL DEFAULT TRUE,
     display_name VARCHAR(255) NOT NULL,
     real_name    VARCHAR(255) NOT NULL,
     email        VARCHAR(255) NULL,
@@ -335,6 +336,7 @@ CREATE INDEX idx_slack_user_003 ON slack_user (created_at DESC);
 
 COMMENT ON TABLE slack_user IS 'Slack 사용자 정보 테이블';
 COMMENT ON COLUMN slack_user.member_id IS 'Slack 멤버 ID (UNIQUE)';
+COMMENT ON COLUMN slack_user.is_active IS '활성상태';
 COMMENT ON COLUMN slack_user.display_name IS 'Slack 표시 이름';
 COMMENT ON COLUMN slack_user.real_name IS 'Slack 실제 이름';
 COMMENT ON COLUMN slack_user.email IS 'Slack 이메일';

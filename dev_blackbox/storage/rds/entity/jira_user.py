@@ -18,7 +18,7 @@ class JiraUser(Base):
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, index=True, autoincrement=True)
     account_id: Mapped[str] = mapped_column(String(128), nullable=False)
-    active: Mapped[bool] = mapped_column(default=True)
+    is_active: Mapped[bool] = mapped_column(default=True)
     display_name: Mapped[str] = mapped_column(String(255), nullable=False)
     email_address: Mapped[str] = mapped_column(String(255), nullable=False)
     url: Mapped[str] = mapped_column(String(512), nullable=False)
@@ -47,7 +47,7 @@ class JiraUser(Base):
         cls,
         jira_secret_id: int,
         account_id: str,
-        active: bool,
+        is_active: bool,
         display_name: str,
         email_address: str,
         url: str,
@@ -57,7 +57,7 @@ class JiraUser(Base):
         return cls(
             jira_secret_id=jira_secret_id,
             account_id=account_id,
-            active=active,
+            is_active=is_active,
             display_name=display_name,
             email_address=email_address,
             url=url,

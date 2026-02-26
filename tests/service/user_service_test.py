@@ -22,9 +22,28 @@ class UserServiceTest:
 
         # then
         assert user.id is not None
-        assert user.name == "테스트유저"
-        assert user.email == "test@dev.com"
-        assert user.password != "password123"  # 해싱되어 저장
+        assert user.name == request.name
+        assert user.email == request.email
+        assert user.password != request.password
+
+    def test_create_admin_user(self, db_session):
+        # given
+        service = UserService(db_session)
+        request = CreateUserRequestDto(
+            name="관리자",
+            email="admin@dev.com",
+            password="password123",
+        )
+
+        # when
+        user = service.create_admin_user(request)
+
+        # then
+        assert user.id is not None
+        assert user.name == request.name
+        assert user.email == request.email
+        assert user.password != request.password
+        assert user.is_admin is True
 
     def test_get_user_by_id_or_throw(self, db_session, user_fixture):
         # given

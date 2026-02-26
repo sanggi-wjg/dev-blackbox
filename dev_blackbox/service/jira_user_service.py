@@ -71,7 +71,7 @@ class JiraUserService:
                 JiraUser.create(
                     jira_secret_id=jira_secret_id,
                     account_id=user.accountId,
-                    active=user.active,
+                    is_active=user.active,
                     display_name=encrypted_display_name,
                     email_address=encrypted_email_address,
                     url=user.self,

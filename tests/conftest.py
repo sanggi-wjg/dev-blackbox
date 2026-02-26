@@ -54,9 +54,7 @@ def user_fixture(
 ) -> Callable[[str], User]:
 
     def _create(email: str, password: str | None = None) -> User:
-        hashed_password = (
-            get_password_service().hash_password(password) if password else "password"
-        )
+        hashed_password = get_password_service().hash_password(password) if password else "password"
         user = User.create(name=email, email=email, hashed_password=hashed_password)
         db_session.add(user)
         db_session.flush()

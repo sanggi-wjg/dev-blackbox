@@ -25,6 +25,15 @@ class UserService:
         )
         return self.user_repository.save(user)
 
+    def create_admin_user(self, request: CreateUserRequestDto) -> User:
+        hashed_password = self.password_service.hash_password(request.password)
+        user = User.create_admin(
+            name=request.name,
+            email=request.email,
+            hashed_password=hashed_password,
+        )
+        return self.user_repository.save(user)
+
     def get_user_by_id_or_throw(self, user_id: int) -> User:
         user = self.user_repository.find_by_id(user_id)
         if user is None:
