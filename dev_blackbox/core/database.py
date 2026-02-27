@@ -16,7 +16,6 @@ _MAX_FRAME_DEPTH = 30
 
 
 def _extract_repository_comment() -> str | None:
-    """호출 스택에서 Repository 클래스와 메서드명을 추출한다."""
     frame = sys._getframe(1)  # noqa: SLF001
     for _ in range(_MAX_FRAME_DEPTH):
         if frame is None:

@@ -7,7 +7,7 @@ from dev_blackbox.controller.admin.dto.jira_secret_dto import (
     JiraSecretResponseDto,
     SyncJiraUsersRequestDto,
 )
-from dev_blackbox.controller.security_config import CurrentAdminUser
+from dev_blackbox.controller.config.security_config import CurrentAdminUser
 from dev_blackbox.core.database import get_db
 from dev_blackbox.service.jira_secret_service import JiraSecretService
 from dev_blackbox.service.jira_user_service import JiraUserService
@@ -26,12 +26,13 @@ async def create_jira_secret(
     db: Session = Depends(get_db),
 ):
     service = JiraSecretService(db)
-    return service.create_secret(
+    secret = service.create_secret(
         name=request.name,
         url=request.url,
         username=request.username,
         api_token=request.api_token,
     )
+    return JiraSecretResponseDto.from_entity(secret)
 
 
 @router.get(
@@ -44,7 +45,8 @@ async def get_jira_secrets(
     db: Session = Depends(get_db),
 ):
     service = JiraSecretService(db)
-    return service.get_secrets()
+    secrets = service.get_secrets()
+    return [JiraSecretResponseDto.from_entity(s) for s in secrets]
 
 
 @router.delete(

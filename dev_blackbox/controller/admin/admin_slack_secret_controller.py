@@ -6,7 +6,7 @@ from dev_blackbox.controller.admin.dto.slack_secret_dto import (
     CreateSlackSecretRequestDto,
     SlackSecretResponseDto,
 )
-from dev_blackbox.controller.security_config import CurrentAdminUser
+from dev_blackbox.controller.config.security_config import CurrentAdminUser
 from dev_blackbox.core.database import get_db
 from dev_blackbox.service.slack_secret_service import SlackSecretService
 from dev_blackbox.service.slack_user_service import SlackUserService
@@ -25,10 +25,11 @@ async def create_slack_secret(
     db: Session = Depends(get_db),
 ):
     service = SlackSecretService(db)
-    return service.create_secret(
+    secret = service.create_secret(
         name=request.name,
         bot_token=request.bot_token,
     )
+    return SlackSecretResponseDto.from_entity(secret)
 
 
 @router.get(
@@ -41,7 +42,8 @@ async def get_slack_secrets(
     db: Session = Depends(get_db),
 ):
     service = SlackSecretService(db)
-    return service.get_secrets()
+    secrets = service.get_secrets()
+    return [SlackSecretResponseDto.from_entity(s) for s in secrets]
 
 
 @router.delete(

@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.gzip import GZipMiddleware
 
-from dev_blackbox.controller.exception_handler import register_exception_handlers
+from dev_blackbox.controller.config.exception_handler import register_exception_handlers
 from dev_blackbox.controller.api.github_event_controller import router as github_event_router
 from dev_blackbox.controller.api.github_user_secret_controller import router as github_secret_router
 from dev_blackbox.controller.health_controller import router as health_router

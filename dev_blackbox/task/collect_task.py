@@ -13,10 +13,10 @@ from dev_blackbox.core.database import get_db_session
 from dev_blackbox.core.enum import PlatformEnum
 from dev_blackbox.service.github_event_service import GitHubEventService
 from dev_blackbox.service.jira_event_service import JiraEventService
-from dev_blackbox.service.model.user_model import UserDetailModel
 from dev_blackbox.service.slack_message_service import SlackMessageService
 from dev_blackbox.service.user_service import UserService
 from dev_blackbox.service.work_log_service import WorkLogService
+from dev_blackbox.task.context.user_context import UserContext
 from dev_blackbox.util.datetime_util import get_yesterday
 from dev_blackbox.util.distributed_lock import distributed_lock
 
@@ -34,7 +34,7 @@ def collect_events_and_summarize_work_log_task():
         with get_db_session() as session:
             user_service = UserService(session)
             users = user_service.get_users()  # fixme n+1
-            users_with_related = [UserDetailModel.model_validate(user) for user in users]
+            users_with_related = [UserContext.from_entity(user) for user in users]
 
         for user in users_with_related:
             _collect_events_and_summarize(user)
@@ -53,11 +53,11 @@ def collect_events_and_summarize_work_log_by_user_task(user_id: int, target_date
         with get_db_session() as session:
             user_service = UserService(session)
             user = user_service.get_user_by_id_or_throw(user_id)
-            user = UserDetailModel.model_validate(user)
-            _collect_events_and_summarize(user, target_date)
+            user_model = UserContext.from_entity(user)
+        _collect_events_and_summarize(user_model, target_date)
 
 
-def _collect_events_and_summarize(user: UserDetailModel, target_date: date | None = None):
+def _collect_events_and_summarize(user: UserContext, target_date: date | None = None):
     target_date = target_date or get_yesterday(user.tz_info)
     _collect_and_summarize(user, target_date)
     _save_daily_work_log(user, target_date)
@@ -65,7 +65,7 @@ def _collect_events_and_summarize(user: UserDetailModel, target_date: date | Non
 
 
 def _save_daily_work_log(
-    user: UserDetailModel,
+    user: UserContext,
     target_date: date,
 ):
     with get_db_session() as session:
@@ -74,7 +74,7 @@ def _save_daily_work_log(
 
 
 def _save_empty_work_log(
-    user: UserDetailModel,
+    user: UserContext,
     target_date: date,
     platform: PlatformEnum,
     message: str = EMPTY_ACTIVITY_MESSAGE,
@@ -91,10 +91,10 @@ def _save_empty_work_log(
         )
 
 
-def _collect_and_summarize(user: UserDetailModel, target_date: date):
+def _collect_and_summarize(user: UserContext, target_date: date):
     # GitHub 데이터셋 수집 + 요약
     try:
-        if user.github_user_secret is not None:
+        if user.has_github_user_secret:
             commit_message = _collect_github_events(user.id, target_date)
             if commit_message:
                 _summarize_github(user, target_date, commit_message)
@@ -107,7 +107,7 @@ def _collect_and_summarize(user: UserDetailModel, target_date: date):
 
     # Jira 데이터셋 수집 + 요약
     try:
-        if user.jira_user is not None:
+        if user.has_jira_user:
             issue_details = _collect_jira_events(user, target_date)
             if issue_details:
                 _summarize_jira(user, target_date, issue_details)
@@ -120,7 +120,7 @@ def _collect_and_summarize(user: UserDetailModel, target_date: date):
 
     # Slack 데이터셋 수집 + 요약
     try:
-        if user.slack_user is not None:
+        if user.has_slack_user:
             message_details = _collect_slack_events(user, target_date)
             if message_details:
                 _summarize_slack(user, target_date, message_details)
@@ -160,7 +160,7 @@ def _collect_github_events(user_id: int, target_date: date) -> str:
     return summary_text
 
 
-def _collect_jira_events(user: UserDetailModel, target_date: date) -> str:
+def _collect_jira_events(user: UserContext, target_date: date) -> str:
     with get_db_session() as session:
         service = JiraEventService(session)
         events = service.save_jira_events(user.id, target_date)
@@ -176,7 +176,7 @@ def _collect_jira_events(user: UserDetailModel, target_date: date) -> str:
     return issue_details
 
 
-def _collect_slack_events(user: UserDetailModel, target_date: date) -> str:
+def _collect_slack_events(user: UserContext, target_date: date) -> str:
     with get_db_session() as session:
         service = SlackMessageService(session)
         messages = service.save_slack_messages(user.id, target_date)
@@ -190,7 +190,7 @@ def _collect_slack_events(user: UserDetailModel, target_date: date) -> str:
     return message_details
 
 
-def _summarize_github(user: UserDetailModel, target_date: date, commit_message: str):
+def _summarize_github(user: UserContext, target_date: date, commit_message: str):
     llm_config = SummaryOllamaConfig()
     prompt = GITHUB_COMMIT_SUMMARY_PROMPT
 
@@ -213,7 +213,7 @@ def _summarize_github(user: UserDetailModel, target_date: date, commit_message: 
         )
 
 
-def _summarize_jira(user: UserDetailModel, target_date: date, issue_details: str):
+def _summarize_jira(user: UserContext, target_date: date, issue_details: str):
     llm_config = SummaryOllamaConfig()
     prompt = JIRA_ISSUE_SUMMARY_PROMPT
 
@@ -236,7 +236,7 @@ def _summarize_jira(user: UserDetailModel, target_date: date, issue_details: str
         )
 
 
-def _summarize_slack(user: UserDetailModel, target_date: date, message_details: str):
+def _summarize_slack(user: UserContext, target_date: date, message_details: str):
     llm_config = SummaryOllamaConfig()
     prompt = SLACK_MESSAGE_SUMMARY_PROMPT
 

@@ -55,7 +55,9 @@ def user_fixture(
 
     def _create(email: str, password: str | None = None) -> User:
         hashed_password = get_password_service().hash_password(password) if password else "password"
-        user = User.create(name=email, email=email, hashed_password=hashed_password)
+        user = User.create(
+            name=email, email=email, hashed_password=hashed_password, timezone="Asia/Seoul"
+        )
         db_session.add(user)
         db_session.flush()
         return user

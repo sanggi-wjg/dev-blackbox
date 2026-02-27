@@ -5,7 +5,7 @@ from starlette import status
 from dev_blackbox.controller.api.dto.github_event_dto import (
     GitHubEventResponseDto,
 )
-from dev_blackbox.controller.security_config import CurrentUser, AuthToken
+from dev_blackbox.controller.config.security_config import CurrentUser, AuthToken
 from dev_blackbox.core.database import get_db
 from dev_blackbox.service.github_event_service import GitHubEventService
 
@@ -24,4 +24,4 @@ def get_events_by_user_id(
 ):
     service = GitHubEventService(db)
     events = service.get_events_by_user_id(current_user.id)
-    return events
+    return [GitHubEventResponseDto.from_entity(e) for e in events]

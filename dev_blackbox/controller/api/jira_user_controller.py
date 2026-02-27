@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
@@ -5,7 +7,8 @@ from dev_blackbox.controller.api.dto.jira_user_dto import (
     JiraUserResponseDto,
     AssignJiraUserRequestDto,
 )
-from dev_blackbox.controller.security_config import AuthToken, CurrentUser
+from dev_blackbox.controller.api.param.jira_user_param import JiraUserParam
+from dev_blackbox.controller.config.security_config import AuthToken, CurrentUser
 from dev_blackbox.core.database import get_db
 from dev_blackbox.core.encrypt import get_encrypt_service
 from dev_blackbox.service.jira_user_service import JiraUserService
@@ -20,29 +23,14 @@ router = APIRouter(prefix="/api/v1/jira-users", tags=["JiraUser"])
 async def get_jira_users(
     token: AuthToken,
     current_user: CurrentUser,
-    jira_secret_id: int | None = Query(default=None),
+    param: Annotated[JiraUserParam, Query()],
     db: Session = Depends(get_db),
 ):
     service = JiraUserService(db)
     encrypt_service = get_encrypt_service()
-    jira_users = service.get_jira_users(jira_secret_id)
+    jira_users = service.get_jira_users(param.jira_secret_id)
 
-    return [
-        JiraUserResponseDto(
-            id=jira_user.id,
-            jira_secret_id=jira_user.jira_secret_id,
-            account_id=jira_user.account_id,
-            is_active=jira_user.is_active,
-            display_name=encrypt_service.decrypt(jira_user.display_name),
-            email_address=encrypt_service.decrypt(jira_user.email_address),
-            url=jira_user.url,
-            project=jira_user.project,
-            user_id=jira_user.user_id,
-            created_at=jira_user.created_at,
-            updated_at=jira_user.updated_at,
-        )
-        for jira_user in jira_users
-    ]
+    return [JiraUserResponseDto.from_entity(jira_user, encrypt_service) for jira_user in jira_users]
 
 
 @router.patch(

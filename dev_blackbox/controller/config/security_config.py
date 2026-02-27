@@ -7,9 +7,9 @@ from jwt import InvalidTokenError
 from pydantic import ValidationError
 from starlette import status
 
+from dev_blackbox.controller.config.model.authenticated_user import AuthenticatedUser
 from dev_blackbox.core.database import get_db_session
 from dev_blackbox.core.jwt_handler import get_jwt_service
-from dev_blackbox.service.model.user_model import UserModel
 from dev_blackbox.service.user_service import UserService
 
 oauth2_scheme = OAuth2PasswordBearer(
@@ -45,11 +45,11 @@ async def get_current_user(
         user = service.get_user_by_email_or_none(user_email)
         if user is None:
             raise authenticate_exception
-        return UserModel.model_validate(user)
+        return AuthenticatedUser.from_entity(user)
 
 
 async def get_current_admin_user(
-    current_user: UserModel = Depends(get_current_user),
+    current_user: AuthenticatedUser = Depends(get_current_user),
 ):
     if not current_user.is_admin:
         raise HTTPException(
@@ -59,5 +59,5 @@ async def get_current_admin_user(
     return current_user
 
 
-CurrentUser = Annotated[UserModel, Depends(get_current_user)]
-CurrentAdminUser = Annotated[UserModel, Depends(get_current_admin_user)]
+CurrentUser = Annotated[AuthenticatedUser, Depends(get_current_user)]
+CurrentAdminUser = Annotated[AuthenticatedUser, Depends(get_current_admin_user)]

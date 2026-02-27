@@ -11,11 +11,11 @@ from dev_blackbox.controller.api.dto.work_log_dto import (
     DailyWorkLogResponseDto,
     PlatformWorkLogDetailResponseDto,
     PlatformWorkLogResponseDto,
-    WorkLogQuery,
     WorkLogManualSyncReqeustDto,
     UserContentCreateOrUpdateRequestDto,
 )
-from dev_blackbox.controller.security_config import AuthToken, CurrentUser
+from dev_blackbox.controller.api.param.work_log_param import WorkLogParam
+from dev_blackbox.controller.config.security_config import AuthToken, CurrentUser
 from dev_blackbox.core.database import get_db
 from dev_blackbox.core.enum import PlatformEnum
 from dev_blackbox.service.work_log_service import WorkLogService
@@ -33,34 +33,29 @@ router = APIRouter(prefix="/api/v1/work-logs", tags=["WorkLog"])
 async def get_platform_work_logs(
     token: AuthToken,
     current_user: CurrentUser,
-    query: Annotated[WorkLogQuery, Query()],
+    param: Annotated[WorkLogParam, Query()],
     db: Session = Depends(get_db),
 ):
     service = WorkLogService(db)
     sources = service.get_platform_work_logs_with_sources(
         user_id=current_user.id,
-        target_date=query.target_date,
+        target_date=param.target_date,
         platforms=PlatformEnum.platforms(),
     )
 
     result = []
     for wl in sources.work_logs:
-        dto = PlatformWorkLogDetailResponseDto.model_validate(wl, from_attributes=True)
+        dto = PlatformWorkLogDetailResponseDto.from_entity(wl)
         match wl.platform:
             case PlatformEnum.GITHUB:
                 dto.github_events = [
-                    GitHubEventResponseDto.model_validate(e, from_attributes=True)
-                    for e in sources.github_events
+                    GitHubEventResponseDto.from_entity(e) for e in sources.github_events
                 ]
             case PlatformEnum.JIRA:
-                dto.jira_events = [
-                    JiraEventResponseDto.model_validate(e, from_attributes=True)
-                    for e in sources.jira_events
-                ]
+                dto.jira_events = [JiraEventResponseDto.from_entity(e) for e in sources.jira_events]
             case PlatformEnum.SLACK:
                 dto.slack_messages = [
-                    SlackMessageResponseDto.model_validate(e, from_attributes=True)
-                    for e in sources.slack_messages
+                    SlackMessageResponseDto.from_entity(e) for e in sources.slack_messages
                 ]
         result.append(dto)
     return result
@@ -74,18 +69,19 @@ async def get_platform_work_logs(
 async def get_user_content(
     token: AuthToken,
     current_user: CurrentUser,
-    query: Annotated[WorkLogQuery, Query()],
+    param: Annotated[WorkLogParam, Query()],
     response: Response,
     db: Session = Depends(get_db),
 ):
     service = WorkLogService(db)
     work_log = service.get_user_content_or_none(
         user_id=current_user.id,
-        target_date=query.target_date,
+        target_date=param.target_date,
     )
     if work_log is None:
         response.status_code = status.HTTP_204_NO_CONTENT
-    return work_log
+        return None
+    return PlatformWorkLogResponseDto.from_entity(work_log)
 
 
 @router.put(
@@ -108,7 +104,7 @@ async def create_or_update_user_content(
     )
     if is_created:
         response.status_code = status.HTTP_201_CREATED
-    return work_log
+    return PlatformWorkLogResponseDto.from_entity(work_log)
 
 
 @router.get(
@@ -119,14 +115,17 @@ async def create_or_update_user_content(
 async def get_daily_work_log(
     token: AuthToken,
     current_user: CurrentUser,
-    query: Annotated[WorkLogQuery, Query()],
+    param: Annotated[WorkLogParam, Query()],
     db: Session = Depends(get_db),
 ):
     service = WorkLogService(db)
-    return service.get_daily_work_log(
+    daily_work_log = service.get_daily_work_log(
         user_id=current_user.id,
-        target_date=query.target_date,
+        target_date=param.target_date,
     )
+    if daily_work_log is None:
+        return None
+    return DailyWorkLogResponseDto.from_entity(daily_work_log)
 
 
 @router.post(
