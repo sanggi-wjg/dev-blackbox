@@ -2,9 +2,10 @@ from datetime import date
 
 from sqlalchemy.orm import Session
 
-from dev_blackbox.core.cache import cache_evict, cacheable
-from dev_blackbox.core.const import CacheKey
+from dev_blackbox.core.cache import cache_evict, cacheable, cache_put
+from dev_blackbox.core.const import CacheKey, CacheTTL
 from dev_blackbox.core.enum import PlatformEnum
+from dev_blackbox.core.exception import UserContentNotFoundException
 from dev_blackbox.service.model.platform_work_log_model import PlatformWorkLogsWithSources
 from dev_blackbox.storage.rds.entity.daily_work_log import DailyWorkLog
 from dev_blackbox.storage.rds.entity.platform_work_log import PlatformWorkLog
@@ -27,7 +28,7 @@ class WorkLogService:
         self.jira_event_repository = JiraEventRepository(session)
         self.slack_message_repository = SlackMessageRepository(session)
 
-    @cacheable(key=CacheKey.WORK_LOG_PLATFORM)
+    @cacheable(key=CacheKey.WORK_LOG_PLATFORM, ttl=CacheTTL.MINUTES_15)
     def get_platform_work_logs_with_sources(
         self,
         user_id: int,
@@ -133,7 +134,7 @@ class WorkLogService:
         )
         return self.daily_work_log_repository.save(daily_work_log)
 
-    @cacheable(key=CacheKey.WORK_LOG_USER_CONTENT)
+    @cacheable(key=CacheKey.WORK_LOG_USER_CONTENT, ttl=CacheTTL.MINUTES_15)
     def get_user_content_or_none(self, user_id: int, target_date: date) -> PlatformWorkLog | None:
         return self.platform_work_log_repository.find_by_user_id_and_target_date_and_platform(
             user_id=user_id,
@@ -141,7 +142,6 @@ class WorkLogService:
             platform=PlatformEnum.USER_CONTENT,
         )
 
-    @cache_evict(key=CacheKey.WORK_LOG_USER_CONTENT)
     def create_or_update_user_content(
         self,
         user_id: int,
@@ -154,7 +154,19 @@ class WorkLogService:
             platform=PlatformEnum.USER_CONTENT,
         )
         if work_log is None:
-            platform_work_log = PlatformWorkLog.create(
+            return True, self.create_user_content(user_id, target_date, content)
+        else:
+            return False, self.update_user_content(user_id, target_date, content)
+
+    @cache_put(key=CacheKey.WORK_LOG_USER_CONTENT, ttl=CacheTTL.MINUTES_15)
+    def create_user_content(
+        self,
+        user_id: int,
+        target_date: date,
+        content: str,
+    ) -> PlatformWorkLog:
+        return self.platform_work_log_repository.save(
+            PlatformWorkLog.create(
                 user_id=user_id,
                 target_date=target_date,
                 platform=PlatformEnum.USER_CONTENT,
@@ -162,6 +174,20 @@ class WorkLogService:
                 model_name="",
                 prompt="",
             )
-            return True, self.platform_work_log_repository.save(platform_work_log)
-        else:
-            return False, work_log.update_content(content)
+        )
+
+    @cache_put(key=CacheKey.WORK_LOG_USER_CONTENT, ttl=CacheTTL.MINUTES_15)
+    def update_user_content(
+        self,
+        user_id: int,
+        target_date: date,
+        new_content: str,
+    ) -> PlatformWorkLog:
+        work_log = self.platform_work_log_repository.find_by_user_id_and_target_date_and_platform(
+            user_id=user_id,
+            target_date=target_date,
+            platform=PlatformEnum.USER_CONTENT,
+        )
+        if work_log is None:
+            raise UserContentNotFoundException(user_id, target_date)
+        return work_log.update_content(new_content)

@@ -10,7 +10,7 @@ from redis import Redis
 from redis.lock import Lock
 
 from dev_blackbox.core.config import get_settings
-from dev_blackbox.core.const import DEFAULT_CACHE_TTL_SECONDS
+from dev_blackbox.core.const import CacheTTL, CacheKey
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +53,7 @@ class CacheService:
         key: str,
         value: Any,
         nx: bool = False,
-        ex: int = DEFAULT_CACHE_TTL_SECONDS,
+        ex: int = CacheTTL.DEFAULT.value,
     ):
         return self.cache_client.set(
             key,
@@ -99,9 +99,9 @@ def resolve_cache_key(key_template: str, func: Callable, *args, **kwargs) -> str
     return key_template.format(**bound.arguments)
 
 
-def cacheable(key: str, ttl: int = DEFAULT_CACHE_TTL_SECONDS):
+def cacheable(key: CacheKey, ttl: CacheTTL = CacheTTL.DEFAULT):
     """
-    @cacheable(key='user:{user_id}', ttl=300)
+    @cacheable(key=CacheKey.USER, ttl=CacheTTL.DEFAULT)
     def get_user(user_id: int) -> dict:
         ...
     """
@@ -110,13 +110,13 @@ def cacheable(key: str, ttl: int = DEFAULT_CACHE_TTL_SECONDS):
         @functools.wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             cache_service = CacheService()
-            cache_key = resolve_cache_key(key, func, *args, **kwargs)
+            cache_key = resolve_cache_key(key.value, func, *args, **kwargs)
 
             if cache_service.exists(cache_key):
                 return cache_service.get(cache_key)
 
             result = func(*args, **kwargs)
-            cache_service.set(cache_key, result, ex=ttl)
+            cache_service.set(cache_key, result, ex=ttl.value)
             return result
 
         return wrapper
@@ -124,9 +124,9 @@ def cacheable(key: str, ttl: int = DEFAULT_CACHE_TTL_SECONDS):
     return decorator
 
 
-def cache_put(key: str, ttl: int = DEFAULT_CACHE_TTL_SECONDS):
+def cache_put(key: CacheKey, ttl: CacheTTL = CacheTTL.DEFAULT):
     """
-    @cache_put(key='user:{user_id}', ttl=300)
+    @cache_put(key=CacheKey.USER, ttl=CacheTTL.DEFAULT)
     def update_user(user_id: int, name: str) -> dict:
         ...
     """
@@ -135,10 +135,10 @@ def cache_put(key: str, ttl: int = DEFAULT_CACHE_TTL_SECONDS):
         @functools.wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             result = func(*args, **kwargs)
-            cache_key = resolve_cache_key(key, func, *args, **kwargs)
+            cache_key = resolve_cache_key(key.value, func, *args, **kwargs)
 
             cache_service = CacheService()
-            cache_service.set(cache_key, result, ex=ttl)
+            cache_service.set(cache_key, result, ex=ttl.value)
             return result
 
         return wrapper
@@ -146,9 +146,9 @@ def cache_put(key: str, ttl: int = DEFAULT_CACHE_TTL_SECONDS):
     return decorator
 
 
-def cache_evict(key: str):
+def cache_evict(key: CacheKey):
     """
-    @cache_evict(key='user:{user_id}')
+    @cache_evict(key=CacheKey.USER)
     def delete_user(user_id: int) -> None:
         ...
     """
@@ -157,7 +157,7 @@ def cache_evict(key: str):
         @functools.wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             result = func(*args, **kwargs)
-            cache_key = resolve_cache_key(key, func, *args, **kwargs)
+            cache_key = resolve_cache_key(key.value, func, *args, **kwargs)
 
             cache_service = CacheService()
             cache_service.delete(cache_key)

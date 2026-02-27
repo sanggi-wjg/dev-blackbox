@@ -18,10 +18,7 @@ def _build_cache_key(request: Request, idempotency_key: str) -> str:
 def idempotent_request(
     idempotency_key: Annotated[
         str,
-        Header(
-            alias="Idempotency-Key",
-            description="Request ID for idempotency",
-        ),
+        Header(alias="Idempotency-Key", description="Request ID for idempotency"),
     ],
     request: Request,
 ) -> str:

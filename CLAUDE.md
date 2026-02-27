@@ -101,7 +101,7 @@ poetry run pyright
 
 ## Code Style
 
-- **Formatter**: Black (line-length=100, skip-string-normalization)
+- **Formatter**: Black (line-length=100)
 - **Type Checker**: Pyright (standard mode)
 - **Python Target**: 3.14
 - 문자열은 큰따옴표(`"`) 사용, f-string 허용, 작은따옴표(`'`) 금지
@@ -126,7 +126,7 @@ dev_blackbox/
 ├── service/                     # 비즈니스 로직
 │   └── model/                   # Service Model (Entity → Model 변환, from_entity 팩토리)
 ├── storage/rds/                 # Repository + Entity (SQLAlchemy)
-├── client/                      # 외부 API 클라이언트 (GitHub, Jira) + Model
+├── client/                      # 외부 API 클라이언트 (GitHub, Jira, Slack) + Model
 ├── agent/                       # LLM 에이전트 + Prompt
 ├── task/                        # APScheduler 백그라운드 태스크
 ├── core/                        # 설정, DB, Redis, 캐시(CacheService), 예외, Enum, 스케줄러, JWT, Password
@@ -138,6 +138,7 @@ dev_blackbox/
 - @docs/ARCHITECTURE.md — 시스템 구조, 레이어, 파이프라인
 - @docs/API.md — 엔드포인트, DTO, 예외 처리
 - @docs/DATABASE.md — Entity, Repository, 세션 관리
+- @docs/ERD.md — 도메인별 ERD (Mermaid)
 - @docs/PIPELINE.md — 데이터 수집, LLM 요약, 동기화 파이프라인
 - @docs/INFRASTRUCTURE.md — Docker, PostgreSQL, Redis, APScheduler, Ollama, 환경 설정
 - @docs/TEST.md — 테스트 구성, 작성 가이드, 컨벤션
@@ -176,8 +177,9 @@ Controller(DTO) → Service(Model/Entity) → Repository(Entity). 역방향 참�
 ### 외부 클라이언트
 
 - `client/` 디렉토리에 클라이언트 클래스 + `client/model/`에 Pydantic 모델
-- `GithubClient` — `httpx` 비동기 HTTP, `create()` 팩토리 메서드
-- `JiraClient` — `jira` 라이브러리 (Basic Auth), `get_jira_client()` `@lru_cache` 팩토리
+- `GithubClient` — `httpx` 동기 HTTP, `create()` 팩토리 메서드
+- `JiraClient` — `jira` 라이브러리 (Basic Auth), `create()` 팩토리 메서드, `get_jira_client()` `@lru_cache` 팩토리
+- `SlackClient` — `slack_sdk` 라이브러리, `create()` 팩토리 메서드, `get_slack_client()` `@lru_cache` 팩토리
 
 ### 인증/인가
 
@@ -188,9 +190,10 @@ Controller(DTO) → Service(Model/Entity) → Repository(Entity). 역방향 참�
 
 ### 예외 처리
 
-- `ServiceException` → `EntityNotFoundException` → 구체 예외 (e.g., `UserNotFoundException`)
+- `ServiceException` → `EntityNotFoundException` → 구체 예외 (e.g., `UserNotFoundException`, `JiraSecretNotFoundException`)
 - `ServiceException` → `IdempotentRequestException` → `ConflictRequestException`(409), `CompletedRequestException`(422)
-- `ServiceException` → `JiraUserNotAssignedException`, `JiraUserProjectNotAssignedException`
+- `ServiceException` → `JiraUserSecretMismatchException`, `JiraUserNotAssignedException`, `JiraUserProjectNotAssignedException`
+- `ServiceException` → `SlackUserSecretMismatchException`, `SlackUserNotAssignedException`, `SlackClientException`, `NoSlackChannelsFound`
 - `controller/exception_handler.py`에서 FastAPI 핸들러 등록
 
 ### 환경 변수
@@ -208,3 +211,5 @@ Controller(DTO) → Service(Model/Entity) → Repository(Entity). 역방향 참�
 - **날짜 기본값**: `target_date`가 null이면 유저 타임존 기준 어제 날짜로 자동 설정
 - **분산 락**: 백그라운드 태스크는 `distributed_lock()`으로 중복 실행 방지. Redis 불가용 시 락 없이 진행 (graceful degradation)
 - **JiraUser 할당**: `jira_user.user_id`와 `project`는 NULLABLE — Jira에서 동기화된 사용자는 `assign_user_and_project()`로 User와 프로젝트를 수동 할당해야 함. 미할당 시 Jira 데이터 수집이 건너뛰어짐
+- **SlackUser 할당**: `slack_user.user_id`는 NULLABLE — Slack에서 동기화된 사용자는 `assign_user()`로 User를 수동 할당해야 함. 미할당 시 Slack 데이터 수집이 건너뛰어짐
+- **인증 정보 암호화**: JiraSecret의 `username`/`api_token`, SlackSecret의 `bot_token`은 `EncryptService`로 암호화 후 DB 저장

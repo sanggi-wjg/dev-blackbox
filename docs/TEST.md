@@ -35,11 +35,11 @@ python_classes = ['*Test']
 
 ## 테스트 DB 환경
 
-테스트 실행 시 `conftest.py`에서 테스트 DB를 자동 구성:
+테스트 실행 시 `conftest.py`에서 Testcontainers 기반으로 테스트 DB를 자동 구성:
 
-1. 메인 DB에 연결하여 `{database}_test` DB 존재 여부 확인 → 없으면 생성
+1. `PostgresContainer(pgvector/pgvector:pg17)` 임시 컨테이너 기동
 2. 테스트 DB에 `pgvector` 확장 설치
-3. `Base.metadata.drop_all()` → `create_all()`로 스키마 초기화
+3. `Base.metadata.create_all()`로 스키마 초기화
 
 세션 격리: `db_session` fixture는 function scope — 테스트마다 새 세션 생성, 종료 시 미커밋 데이터 자동 롤백.
 

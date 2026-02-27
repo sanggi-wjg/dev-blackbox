@@ -1,3 +1,4 @@
+from datetime import date
 from typing import Any
 
 
@@ -53,6 +54,14 @@ class SlackUserNotFoundException(EntityNotFoundException):
 
     def __init__(self, slack_user_id: int):
         super().__init__(entity_name="SlackUser", identifier=slack_user_id)
+
+
+class UserContentNotFoundException(EntityNotFoundException):
+
+    def __init__(self, user_id: int, target_date: date):
+        super().__init__(
+            entity_name="UserContent", identifier=f"user_id: {user_id}, target_date: {target_date}"
+        )
 
 
 ###############################
