@@ -6,7 +6,7 @@ from dev_blackbox.controller.admin.dto.slack_secret_dto import (
     CreateSlackSecretRequestDto,
     SlackSecretResponseDto,
 )
-from dev_blackbox.controller.security_config import CurrentAdminUser
+from dev_blackbox.controller.config.security_config import CurrentAdminUser
 from dev_blackbox.core.database import get_db
 from dev_blackbox.service.slack_secret_service import SlackSecretService
 from dev_blackbox.service.slack_user_service import SlackUserService

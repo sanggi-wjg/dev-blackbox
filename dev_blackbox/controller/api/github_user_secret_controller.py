@@ -5,8 +5,9 @@ from dev_blackbox.controller.api.dto.github_user_secret_dto import (
     CreateGitHubSecretRequestDto,
     GitHubSecretResponseDto,
 )
-from dev_blackbox.controller.security_config import CurrentUser, AuthToken
+from dev_blackbox.controller.config.security_config import CurrentUser, AuthToken
 from dev_blackbox.core.database import get_db
+from dev_blackbox.core.encrypt import get_encrypt_service
 from dev_blackbox.service.github_user_secret_service import GitHubUserSecretService
 
 router = APIRouter(prefix="/api/v1/github-secrets", tags=["GitHub Secret"])
@@ -25,7 +26,7 @@ async def create_github_secret(
 ):
     service = GitHubUserSecretService(db)
     user_secret = service.create_secret(current_user.id, request)
-    return GitHubSecretResponseDto.from_entity(user_secret)
+    return GitHubSecretResponseDto.from_entity(user_secret, get_encrypt_service())
 
 
 @router.delete(

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from dev_blackbox.controller.api.dto.jira_secret_dto import JiraSecretSimpleResponseDto
-from dev_blackbox.controller.security_config import AuthToken, CurrentUser
+from dev_blackbox.controller.config.security_config import AuthToken, CurrentUser
 from dev_blackbox.core.database import get_db
 from dev_blackbox.service.jira_secret_service import JiraSecretService
 

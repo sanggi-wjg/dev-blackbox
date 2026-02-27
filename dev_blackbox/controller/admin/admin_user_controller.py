@@ -4,7 +4,7 @@ from starlette import status
 
 from dev_blackbox.controller.admin.dto.user_dto import CreateUserRequestDto
 from dev_blackbox.controller.api.dto.user_dto import UserResponseDto
-from dev_blackbox.controller.security_config import (
+from dev_blackbox.controller.config.security_config import (
     CurrentAdminUser,
 )
 from dev_blackbox.core.database import get_db

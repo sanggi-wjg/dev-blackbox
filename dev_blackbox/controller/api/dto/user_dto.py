@@ -11,7 +11,6 @@ from dev_blackbox.controller.api.dto.jira_user_dto import JiraUserResponseDto
 from dev_blackbox.controller.api.dto.slack_user_dto import SlackUserResponseDto
 
 if TYPE_CHECKING:
-    from dev_blackbox.service.model.user_model import UserDetailModel
     from dev_blackbox.storage.rds.entity.user import User
 
 
@@ -46,26 +45,3 @@ class UserDetailResponseDto(BaseModel):
     github_user_secret: GitHubSecretResponseDto | None
     jira_user: JiraUserResponseDto | None
     slack_user: SlackUserResponseDto | None
-
-    @classmethod
-    def from_model(cls, model: UserDetailModel) -> UserDetailResponseDto:
-        return cls(
-            id=model.id,
-            name=model.name,
-            email=model.email,
-            timezone=model.timezone,
-            tz_info=model.tz_info,
-            created_at=model.created_at,
-            updated_at=model.updated_at,
-            github_user_secret=(
-                GitHubSecretResponseDto.from_model(model.github_user_secret)
-                if model.github_user_secret
-                else None
-            ),
-            jira_user=(
-                JiraUserResponseDto.from_model(model.jira_user) if model.jira_user else None
-            ),
-            slack_user=(
-                SlackUserResponseDto.from_model(model.slack_user) if model.slack_user else None
-            ),
-        )

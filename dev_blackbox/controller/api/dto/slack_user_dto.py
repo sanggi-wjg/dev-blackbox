@@ -6,7 +6,8 @@ from typing import TYPE_CHECKING
 from pydantic import BaseModel
 
 if TYPE_CHECKING:
-    from dev_blackbox.service.model.slack_user_model import SlackUserModel
+    from dev_blackbox.core.encrypt import EncryptService
+    from dev_blackbox.storage.rds.entity.slack_user import SlackUser
 
 
 class SlackUserResponseDto(BaseModel):
@@ -22,18 +23,20 @@ class SlackUserResponseDto(BaseModel):
     updated_at: datetime
 
     @classmethod
-    def from_model(cls, model: SlackUserModel) -> SlackUserResponseDto:
+    def from_entity(
+        cls, entity: SlackUser, encrypt_service: EncryptService
+    ) -> SlackUserResponseDto:
         return cls(
-            id=model.id,
-            slack_secret_id=model.slack_secret_id,
-            member_id=model.member_id,
-            is_active=model.is_active,
-            display_name=model.display_name,
-            real_name=model.real_name,
-            email=model.email,
-            user_id=model.user_id,
-            created_at=model.created_at,
-            updated_at=model.updated_at,
+            id=entity.id,
+            slack_secret_id=entity.slack_secret_id,
+            member_id=entity.member_id,
+            is_active=entity.is_active,
+            display_name=encrypt_service.decrypt(entity.display_name),
+            real_name=encrypt_service.decrypt(entity.real_name),
+            email=encrypt_service.decrypt(entity.email) if entity.email else None,
+            user_id=entity.user_id,
+            created_at=entity.created_at,
+            updated_at=entity.updated_at,
         )
 
 

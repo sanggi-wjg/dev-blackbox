@@ -6,7 +6,7 @@ from dev_blackbox.controller.api.dto.slack_user_dto import (
     AssignSlackUserRequestDto,
     SlackUserResponseDto,
 )
-from dev_blackbox.controller.security_config import CurrentUser, AuthToken
+from dev_blackbox.controller.config.security_config import CurrentUser, AuthToken
 from dev_blackbox.core.database import get_db
 from dev_blackbox.core.encrypt import get_encrypt_service
 from dev_blackbox.service.slack_user_service import SlackUserService
@@ -29,19 +29,7 @@ async def get_slack_users(
     slack_users = service.get_slack_users(slack_secret_id=slack_secret_id)
 
     return [
-        SlackUserResponseDto(
-            id=slack_user.id,
-            slack_secret_id=slack_user.slack_secret_id,
-            member_id=slack_user.member_id,
-            is_active=slack_user.is_active,
-            display_name=encrypt_service.decrypt(slack_user.display_name),
-            real_name=encrypt_service.decrypt(slack_user.real_name),
-            email=encrypt_service.decrypt(slack_user.email) if slack_user.email else None,
-            user_id=slack_user.user_id,
-            created_at=slack_user.created_at,
-            updated_at=slack_user.updated_at,
-        )
-        for slack_user in slack_users
+        SlackUserResponseDto.from_entity(slack_user, encrypt_service) for slack_user in slack_users
     ]
 
 

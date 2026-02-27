@@ -7,7 +7,7 @@ from dev_blackbox.controller.admin.dto.jira_secret_dto import (
     JiraSecretResponseDto,
     SyncJiraUsersRequestDto,
 )
-from dev_blackbox.controller.security_config import CurrentAdminUser
+from dev_blackbox.controller.config.security_config import CurrentAdminUser
 from dev_blackbox.core.database import get_db
 from dev_blackbox.service.jira_secret_service import JiraSecretService
 from dev_blackbox.service.jira_user_service import JiraUserService

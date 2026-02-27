@@ -15,7 +15,7 @@ from dev_blackbox.controller.api.dto.work_log_dto import (
     WorkLogManualSyncReqeustDto,
     UserContentCreateOrUpdateRequestDto,
 )
-from dev_blackbox.controller.security_config import AuthToken, CurrentUser
+from dev_blackbox.controller.config.security_config import AuthToken, CurrentUser
 from dev_blackbox.core.database import get_db
 from dev_blackbox.core.enum import PlatformEnum
 from dev_blackbox.service.work_log_service import WorkLogService

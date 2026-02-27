@@ -6,7 +6,8 @@ from typing import TYPE_CHECKING
 from pydantic import BaseModel
 
 if TYPE_CHECKING:
-    from dev_blackbox.service.model.jira_user_model import JiraUserModel
+    from dev_blackbox.core.encrypt import EncryptService
+    from dev_blackbox.storage.rds.entity.jira_user import JiraUser
 
 
 class JiraUserResponseDto(BaseModel):
@@ -23,19 +24,19 @@ class JiraUserResponseDto(BaseModel):
     updated_at: datetime
 
     @classmethod
-    def from_model(cls, model: JiraUserModel) -> JiraUserResponseDto:
+    def from_entity(cls, entity: JiraUser, encrypt_service: EncryptService) -> JiraUserResponseDto:
         return cls(
-            id=model.id,
-            jira_secret_id=model.jira_secret_id,
-            account_id=model.account_id,
-            is_active=model.is_active,
-            display_name=model.display_name,
-            email_address=model.email_address,
-            url=model.url,
-            project=model.project,
-            user_id=model.user_id,
-            created_at=model.created_at,
-            updated_at=model.updated_at,
+            id=entity.id,
+            jira_secret_id=entity.jira_secret_id,
+            account_id=entity.account_id,
+            is_active=entity.is_active,
+            display_name=encrypt_service.decrypt(entity.display_name),
+            email_address=encrypt_service.decrypt(entity.email_address),
+            url=entity.url,
+            project=entity.project,
+            user_id=entity.user_id,
+            created_at=entity.created_at,
+            updated_at=entity.updated_at,
         )
 
 
