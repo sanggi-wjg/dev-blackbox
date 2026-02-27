@@ -43,10 +43,6 @@ class AuthSecrets(BaseModel):
     access_token_expire_minutes: int = 30
 
 
-class SlackSecrets(BaseModel):
-    bot_token: str
-
-
 class LoggingConfig(BaseModel):
     level: str = "INFO"  # 루트 로거 레벨
     uvicorn_level: str = "INFO"
@@ -72,7 +68,6 @@ class Settings(BaseSettings):
     redis: RedisSecrets
     encryption: EncryptionSecrets
     auth: AuthSecrets
-    slack: SlackSecrets
     logging: LoggingConfig = LoggingConfig()
 
     @property

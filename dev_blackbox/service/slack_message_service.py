@@ -5,12 +5,12 @@ from datetime import date
 from sqlalchemy.orm import Session
 
 from dev_blackbox.client.model.slack_api_model import SlackMessageModel
-from dev_blackbox.client.slack_client import get_slack_client
 from dev_blackbox.core.exception import (
     UserNotFoundException,
     SlackUserNotAssignedException,
     NoSlackChannelsFound,
 )
+from dev_blackbox.service.slack_secret_service import SlackSecretService
 from dev_blackbox.storage.rds.entity import User
 from dev_blackbox.storage.rds.entity.slack_message import SlackMessage
 from dev_blackbox.storage.rds.repository import (
@@ -32,6 +32,7 @@ class SlackMessageService:
         self.session = session
         self.user_repository = UserRepository(session)
         self.slack_message_repository = SlackMessageRepository(session)
+        self.slack_secret_service = SlackSecretService(session)
 
     def get_slack_messages(
         self,
@@ -58,7 +59,7 @@ class SlackMessageService:
         # 기존 데이터 삭제 후 갱신
         self.slack_message_repository.delete_by_user_id_and_target_date(user_id, target_date)
 
-        slack_client = get_slack_client()
+        slack_client = self.slack_secret_service.get_slack_client(slack_user.slack_secret)
         channels = slack_client.fetch_channels()
         if not channels:
             raise NoSlackChannelsFound()

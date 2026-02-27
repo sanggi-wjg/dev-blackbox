@@ -10,6 +10,7 @@ from dev_blackbox.core.exception import (
     ConflictRequestException,
     EntityNotFoundException,
     JiraUserSecretMismatchException,
+    SlackUserSecretMismatchException,
     ServiceException,
 )
 
@@ -89,6 +90,23 @@ def register_exception_handlers(app: FastAPI) -> None:
             content={
                 "status": f"{status.HTTP_400_BAD_REQUEST} BAD_REQUEST",
                 "error": "Jira User Secret Mismatch",
+                "message": e.message,
+                "path": request.url.path,
+                "requestedAt": datetime.now(UTC.utc).isoformat(),
+            },
+        )
+
+    @app.exception_handler(SlackUserSecretMismatchException)
+    async def slack_user_secret_mismatch_handler(
+        request: Request, e: SlackUserSecretMismatchException
+    ):
+        logger.warning(e)
+
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={
+                "status": f"{status.HTTP_400_BAD_REQUEST} BAD_REQUEST",
+                "error": "Slack User Secret Mismatch",
                 "message": e.message,
                 "path": request.url.path,
                 "requestedAt": datetime.now(UTC.utc).isoformat(),

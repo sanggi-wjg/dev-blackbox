@@ -17,7 +17,7 @@ class EntityNotFoundException(ServiceException):
 
 
 ###############################
-# NotFoundException
+# Not Found Exception
 ###############################
 class UserNotFoundException(EntityNotFoundException):
 
@@ -43,6 +43,20 @@ class JiraUserNotFoundException(EntityNotFoundException):
         super().__init__(entity_name="JiraUser", identifier=identifier)
 
 
+class SlackSecretNotFoundException(EntityNotFoundException):
+
+    def __init__(self, identifier: Any):
+        super().__init__(entity_name="SlackSecret", identifier=identifier)
+
+
+class SlackUserNotFoundException(EntityNotFoundException):
+
+    def __init__(self, slack_user_id: int):
+        super().__init__(entity_name="SlackUser", identifier=slack_user_id)
+
+
+###############################
+# Service Exception
 ###############################
 class GitHubUserSecretAlreadyExistException(ServiceException):
 
@@ -78,10 +92,12 @@ class JiraUserProjectNotAssignedException(ServiceException):
         super().__init__(f"JiraUser project not assigned to User. (UserId: {user_id}")
 
 
-class SlackUserByIdNotFoundException(EntityNotFoundException):
+class SlackUserSecretMismatchException(ServiceException):
 
-    def __init__(self, slack_user_id: int):
-        super().__init__(entity_name="SlackUser", identifier=slack_user_id)
+    def __init__(self, slack_user_id: int, slack_secret_id: int):
+        super().__init__(
+            f"SlackUser(id={slack_user_id}) does not belong to SlackSecret(id={slack_secret_id})"
+        )
 
 
 class SlackUserNotAssignedException(ServiceException):
@@ -90,9 +106,21 @@ class SlackUserNotAssignedException(ServiceException):
         super().__init__(f"SlackUser not assigned to User. (UserId: {user_id})")
 
 
+class SlackClientException(ServiceException):
+
+    def __init__(self, message: str = "Slack API error occurred"):
+        super().__init__(message)
+
+
+class NoSlackChannelsFound(ServiceException):
+
+    def __init__(self):
+        super().__init__(f"No channels found invite slack bot first.")
+
+
 #######################
-
-
+# Http Exception
+#######################
 class IdempotentRequestException(ServiceException):
 
     def __init__(self, idempotency_key: str):
@@ -111,15 +139,3 @@ class CompletedRequestException(IdempotentRequestException):
     def __init__(self, idempotency_key: str, cached_response: dict):
         self.cached_response = cached_response
         super().__init__(idempotency_key)
-
-
-class SlackClientException(ServiceException):
-
-    def __init__(self, message: str = "Slack API error occurred"):
-        super().__init__(message)
-
-
-class NoSlackChannelsFound(ServiceException):
-
-    def __init__(self):
-        super().__init__(f"No channels found invite slack bot first.")

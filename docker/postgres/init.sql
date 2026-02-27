@@ -304,23 +304,51 @@ COMMENT ON COLUMN jira_event.issue IS '이슈 원본 데이터 (JSONB)';
 COMMENT ON COLUMN jira_event.changelog IS '변경 이력 데이터 (JSONB)';
 
 
+-- slack_secret 테이블 (Slack 인증 정보)
+CREATE TABLE IF NOT EXISTS slack_secret
+(
+    id         BIGSERIAL PRIMARY KEY,
+    name       VARCHAR(100) NOT NULL,
+    bot_token  VARCHAR(512) NOT NULL,
+
+    created_at TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    is_deleted BOOLEAN      NOT NULL DEFAULT FALSE,
+    deleted_at TIMESTAMPTZ  NOT NULL DEFAULT '9999-12-31 14:59:59+00'
+);
+
+CREATE TRIGGER tr_slack_secret_updated_at
+    BEFORE UPDATE
+    ON slack_secret
+    FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+CREATE INDEX idx_slack_secret_001 ON slack_secret (created_at DESC);
+
+COMMENT ON TABLE slack_secret IS 'Slack 인증 정보 테이블';
+COMMENT ON COLUMN slack_secret.name IS '관리용 이름';
+COMMENT ON COLUMN slack_secret.bot_token IS 'Slack Bot Token (AES-256-GCM 암호화 저장)';
+
+
 -- slack_user 테이블 (Slack 사용자 정보)
 CREATE TABLE IF NOT EXISTS slack_user
 (
-    id           BIGSERIAL PRIMARY KEY,
-    user_id      BIGINT       NULL,
-    member_id    VARCHAR(128) NOT NULL,
-    is_active    BOOLEAN      NOT NULL DEFAULT TRUE,
-    display_name VARCHAR(255) NOT NULL,
-    real_name    VARCHAR(255) NOT NULL,
-    email        VARCHAR(255) NULL,
+    id              BIGSERIAL PRIMARY KEY,
+    slack_secret_id BIGINT       NOT NULL,
+    user_id         BIGINT       NULL,
+    member_id       VARCHAR(128) NOT NULL,
+    is_active       BOOLEAN      NOT NULL DEFAULT TRUE,
+    display_name    VARCHAR(255) NOT NULL,
+    real_name       VARCHAR(255) NOT NULL,
+    email           VARCHAR(255) NULL,
 
-    created_at   TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
-    updated_at   TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    created_at      TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
 
+    CONSTRAINT fk_slack_user_slack_secret FOREIGN KEY (slack_secret_id) REFERENCES slack_secret (id) ON DELETE RESTRICT,
     CONSTRAINT fk_slack_user_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE RESTRICT,
 
-    CONSTRAINT uq_slack_user_member_id UNIQUE (member_id),
+    CONSTRAINT uq_slack_user_secret_member_id UNIQUE (slack_secret_id, member_id),
     CONSTRAINT uq_slack_user_user_id UNIQUE (user_id)
 );
 
@@ -331,11 +359,12 @@ CREATE TRIGGER tr_slack_user_updated_at
 EXECUTE FUNCTION update_updated_at_column();
 
 CREATE INDEX idx_slack_user_001 ON slack_user (user_id);
-CREATE INDEX idx_slack_user_002 ON slack_user (member_id);
+CREATE INDEX idx_slack_user_002 ON slack_user (slack_secret_id, member_id);
 CREATE INDEX idx_slack_user_003 ON slack_user (created_at DESC);
 
 COMMENT ON TABLE slack_user IS 'Slack 사용자 정보 테이블';
-COMMENT ON COLUMN slack_user.member_id IS 'Slack 멤버 ID (UNIQUE)';
+COMMENT ON COLUMN slack_user.slack_secret_id IS 'Slack 인증 정보 FK';
+COMMENT ON COLUMN slack_user.member_id IS 'Slack 멤버 ID (slack_secret_id와 복합 UNIQUE)';
 COMMENT ON COLUMN slack_user.is_active IS '활성상태';
 COMMENT ON COLUMN slack_user.display_name IS 'Slack 표시 이름';
 COMMENT ON COLUMN slack_user.real_name IS 'Slack 실제 이름';

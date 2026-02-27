@@ -27,14 +27,23 @@ class SlackUserRepository:
         stmt = select(SlackUser).where(SlackUser.user_id == user_id)
         return self.session.scalar(stmt)
 
-    def find_by_member_id(self, member_id: str) -> SlackUser | None:
-        stmt = select(SlackUser).where(SlackUser.member_id == member_id)
-        return self.session.scalar(stmt)
-
-    def find_by_member_ids(self, member_ids: list[str]) -> list[SlackUser]:
-        stmt = select(SlackUser).where(SlackUser.member_id.in_(member_ids))
-        return list(self.session.scalars(stmt).all())
-
     def find_all(self) -> list[SlackUser]:
         stmt = select(SlackUser).order_by(SlackUser.id)
+        return list(self.session.scalars(stmt).all())
+
+    def find_all_by_slack_secret_id(self, slack_secret_id: int) -> list[SlackUser]:
+        stmt = (
+            select(SlackUser)
+            .where(SlackUser.slack_secret_id == slack_secret_id)
+            .order_by(SlackUser.id)
+        )
+        return list(self.session.scalars(stmt).all())
+
+    def find_by_slack_secret_id_and_member_ids(
+        self, slack_secret_id: int, member_ids: list[str]
+    ) -> list[SlackUser]:
+        stmt = select(SlackUser).where(
+            SlackUser.slack_secret_id == slack_secret_id,
+            SlackUser.member_id.in_(member_ids),
+        )
         return list(self.session.scalars(stmt).all())
