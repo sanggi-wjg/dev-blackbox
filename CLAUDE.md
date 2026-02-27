@@ -118,17 +118,23 @@ main.py                          # FastAPI 앱 진입점
 dev_blackbox/
 ├── controller/
 │   ├── api/                     # 사용자 API 엔드포인트 (/api/v1/*, 인증 필요)
-│   │   └── dto/                 # API Request/Response DTO
+│   │   ├── dto/                 # API Request/Response DTO
+│   │   └── param/               # Query Parameter 모델 (Pydantic)
 │   ├── admin/                   # 관리자 API 엔드포인트 (/admin-api/v1/*, 관리자 권한 필요)
 │   │   └── dto/                 # Admin Request/Response DTO
-│   ├── security_config.py       # OAuth2 보안 설정 (AuthToken, CurrentUser, CurrentAdminUser)
-│   └── exception_handler.py     # 전역 예외 핸들러
+│   └── config/                  # 보안, 예외 핸들러, 인증 모델
+│       ├── model/               # AuthenticatedUser (인증된 사용자 모델)
+│       ├── security_config.py   # OAuth2 보안 설정 (AuthToken, CurrentUser, CurrentAdminUser)
+│       └── exception_handler.py # 전역 예외 핸들러
 ├── service/                     # 비즈니스 로직
-│   └── model/                   # Service Model (Entity → Model 변환, from_entity 팩토리)
+│   ├── command/                 # Command 객체 (쓰기 작업 입력)
+│   ├── query/                   # Query 객체 (조회 조건)
+│   └── model/                   # Service Model (실질적 변환 로직이 있는 경우만)
 ├── storage/rds/                 # Repository + Entity (SQLAlchemy)
 ├── client/                      # 외부 API 클라이언트 (GitHub, Jira, Slack) + Model
 ├── agent/                       # LLM 에이전트 + Prompt
 ├── task/                        # APScheduler 백그라운드 태스크
+│   └── context/                 # 태스크 실행 컨텍스트 모델 (UserContext)
 ├── core/                        # 설정, DB, Redis, 캐시(CacheService), 예외, Enum, 스케줄러, JWT, Password
 └── util/                        # 분산 락, 날짜 유틸리티, 마스킹, 멱등성 처리
 ```
@@ -165,7 +171,14 @@ Controller(DTO) → Service(Model/Entity) → Repository(Entity). 역방향 참�
 - API DTO는 `controller/api/dto/`에, Admin DTO는 `controller/admin/dto/`에 정의
 - Pydantic v2 BaseModel 사용
 - DTO는 같은 레이어의 다른 DTO만 참조 가능. `service/model/`을 import하지 말 것
-- DTO 조립(Entity → DTO 변환, 여러 데이터 매핑)은 Controller 책임
+- DTO에 `from_entity()` / `from_model()` 팩토리 메서드로 변환 로직을 캡슐화. Controller에서 직접 필드를 매핑하지 말 것
+- Query Parameter는 `controller/api/param/`에 Pydantic 모델로 정의
+
+### Service Command / Query
+
+- **Command** (`service/command/`): 쓰기 작업의 입력 데이터. Service 메서드가 Controller의 DTO에 직접 의존하지 않도록 중간 객체 역할
+- **Query** (`service/query/`): 조회 조건 객체. 기존 `storage/rds/condition/`을 대체하여 Service 레이어에서 관리
+- Controller에서 DTO → Command/Query 변환 후 Service에 전달
 
 ### Service Model
 
@@ -173,6 +186,12 @@ Controller(DTO) → Service(Model/Entity) → Repository(Entity). 역방향 참�
 - **실질적 변환 로직이 있을 때만 사용** (암호화/복호화, 관계 엔티티 조합 등)
 - 필드 단순 복사만 하는 경우 Service Model을 만들지 말 것 — Entity를 직접 반환
 - Service Model은 Entity, 다른 Service Model만 참조 가능. `controller/`의 DTO를 import하지 말 것
+
+### Task Context
+
+- `task/context/`에 태스크 실행에 필요한 컨텍스트 모델 정의 (e.g., `UserContext`)
+- DB 세션 밖에서 안전하게 사용할 수 있도록 Entity에서 필요한 필드만 추출
+- `from_entity()` 팩토리 메서드로 Entity → Context 변환
 
 ### 외부 클라이언트
 
@@ -184,6 +203,7 @@ Controller(DTO) → Service(Model/Entity) → Repository(Entity). 역방향 참�
 ### 인증/인가
 
 - JWT Bearer Token 기반 인증 (OAuth2PasswordBearer)
+- `AuthenticatedUser` (`controller/config/model/`) — 인증된 사용자 정보 모델. `from_entity()` 팩토리 메서드 사용
 - `CurrentUser` — 인증된 사용자 의존성 (API 엔드포인트용)
 - `CurrentAdminUser` — 관리자 권한 의존성 (Admin 엔드포인트용)
 - 비밀번호는 `PasswordService` (Argon2)로 해싱 후 DB 저장
@@ -194,7 +214,7 @@ Controller(DTO) → Service(Model/Entity) → Repository(Entity). 역방향 참�
 - `ServiceException` → `IdempotentRequestException` → `ConflictRequestException`(409), `CompletedRequestException`(422)
 - `ServiceException` → `JiraUserSecretMismatchException`, `JiraUserNotAssignedException`, `JiraUserProjectNotAssignedException`
 - `ServiceException` → `SlackUserSecretMismatchException`, `SlackUserNotAssignedException`, `SlackClientException`, `NoSlackChannelsFound`
-- `controller/exception_handler.py`에서 FastAPI 핸들러 등록
+- `controller/config/exception_handler.py`에서 FastAPI 핸들러 등록
 
 ### 환경 변수
 

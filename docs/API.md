@@ -110,7 +110,7 @@ ServiceException (500)
     └── SlackUserNotFoundException
 ```
 
-- `exception_handler.py`에서 FastAPI에 핸들러 등록
+- `controller/config/exception_handler.py`에서 FastAPI에 핸들러 등록
 - 각 예외는 적절한 HTTP 상태 코드로 변환
 - 인증/인가 관련 에러는 FastAPI `HTTPException`으로 처리 (401, 403)
 

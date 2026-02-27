@@ -1,12 +1,26 @@
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from dev_blackbox.util.datetime_util import (
     get_daily_timestamp_range,
     get_date_from_iso_format,
+    get_datetime_utc_now,
     get_yesterday,
     is_timestamp_in_range,
 )
+
+
+def test_get_datetime_utc_now():
+    # given
+    before = datetime.now(UTC)
+
+    # when
+    result = get_datetime_utc_now()
+
+    # then
+    after = datetime.now(UTC)
+    assert result.tzinfo is not None
+    assert before <= result <= after
 
 
 def test_get_date_from_iso_format():

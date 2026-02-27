@@ -25,7 +25,7 @@ collect_events_and_summarize_work_log_task()
        │
        ├── distributed_lock 획득
        │
-       ├── UserService.get_users() → UserDetailModel 변환
+       ├── UserService.get_users() → UserContext 변환
        │
        ▼  (사용자별 반복)
   _collect_events_and_summarize(user, target_date)

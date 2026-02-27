@@ -15,6 +15,7 @@ class UserServiceTest:
             name="테스트유저",
             email="test@dev.com",
             password="password123",
+            timezone="Asia/Seoul",
         )
 
         # when
@@ -33,6 +34,7 @@ class UserServiceTest:
             name="관리자",
             email="admin@dev.com",
             password="password123",
+            timezone="Asia/Seoul",
         )
 
         # when
