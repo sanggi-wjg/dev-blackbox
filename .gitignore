@@ -9,3 +9,6 @@ gen
 docker/postgres/data/
 playground*
 
+# Coverage
+htmlcov/
+.coverage

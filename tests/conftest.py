@@ -1,3 +1,5 @@
+import uuid
+from datetime import date
 from typing import Generator, Callable
 
 import pytest
@@ -5,9 +7,13 @@ from sqlalchemy import create_engine, text, Engine
 from sqlalchemy.orm import sessionmaker, Session
 from testcontainers.postgres import PostgresContainer
 
+from dev_blackbox.core.encrypt import get_encrypt_service
 from dev_blackbox.core.password import get_password_service
 from dev_blackbox.storage.rds.entity import *  # noqa: F403,F401
 from dev_blackbox.storage.rds.entity.base import Base
+from dev_blackbox.storage.rds.entity.github_event import GitHubEvent
+from dev_blackbox.storage.rds.entity.github_user_secret import GitHubUserSecret
+from tests.fixtures.github_fixture import create_github_event_model
 
 
 @pytest.fixture(scope="session")
@@ -51,15 +57,73 @@ def db_session(
 @pytest.fixture()
 def user_fixture(
     db_session: Session,
-) -> Callable[[str], User]:
+) -> Callable[..., User]:
 
-    def _create(email: str, password: str | None = None) -> User:
-        hashed_password = get_password_service().hash_password(password) if password else "password"
+    def _create(
+        email: str = "user@dev.com",
+        password: str = "password",
+    ) -> User:
+        password_service = get_password_service()
         user = User.create(
-            name=email, email=email, hashed_password=hashed_password, timezone="Asia/Seoul"
+            name=email,
+            email=email,
+            hashed_password=password_service.hash(password),
+            timezone="Asia/Seoul",
         )
         db_session.add(user)
         db_session.flush()
         return user
+
+    return _create
+
+
+@pytest.fixture()
+def github_user_secret_fixture(
+    db_session: Session,
+) -> Callable[..., GitHubUserSecret]:
+
+    def _create(
+        user_id: int,
+        username: str = "test_user",
+        personal_access_token: str = "token",
+    ) -> GitHubUserSecret:
+        encrypt_service = get_encrypt_service()
+        secret = GitHubUserSecret.create(
+            username=username,
+            personal_access_token=encrypt_service.encrypt(personal_access_token),
+            user_id=user_id,
+        )
+        db_session.add(secret)
+        db_session.flush()
+        return secret
+
+    return _create
+
+
+@pytest.fixture()
+def github_event_fixture(
+    db_session: Session,
+) -> Callable[..., GitHubEvent]:
+
+    def _create(
+        user_id: int,
+        github_user_secret_id: int,
+        target_date: date = date(2025, 1, 1),
+        event_id: str | None = None,
+        event_type: str = "PushEvent",
+    ) -> GitHubEvent:
+        event = GitHubEvent.create(
+            user_id=user_id,
+            github_user_secret_id=github_user_secret_id,
+            target_date=target_date,
+            event=create_github_event_model(
+                event_id or str(uuid.uuid4()),
+                event_type,
+            ),
+            commit=None,
+        )
+        db_session.add(event)
+        db_session.flush()
+        return event
 
     return _create

@@ -17,7 +17,7 @@ class UserService:
         self.jwt_service = get_jwt_service()
 
     def create_user(self, command: CreateUserCommand) -> User:
-        hashed_password = self.password_service.hash_password(command.password)
+        hashed_password = self.password_service.hash(command.password)
         user = User.create(
             name=command.name,
             email=command.email,
@@ -27,7 +27,7 @@ class UserService:
         return self.user_repository.save(user)
 
     def create_admin_user(self, command: CreateUserCommand) -> User:
-        hashed_password = self.password_service.hash_password(command.password)
+        hashed_password = self.password_service.hash(command.password)
         user = User.create_admin(
             name=command.name,
             email=command.email,
@@ -50,7 +50,7 @@ class UserService:
         if user is None:
             return None
 
-        is_valid_password = self.password_service.verify_password(password, user.password)
+        is_valid_password = self.password_service.verify(password, user.password)
         if not is_valid_password:
             return None
 

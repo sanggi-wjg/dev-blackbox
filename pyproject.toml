@@ -13,22 +13,22 @@ dependencies = [
     "llama-index-core (>=0.14.14,<0.15.0)",
     "llama-index-llms-ollama (>=0.9.1,<0.10.0)",
     "llama-index-embeddings-ollama (>=0.8.6,<0.9.0)",
-    "fastapi (>=0.128.8,<0.129.0)",
     "uvicorn[standard] (>=0.40.0,<0.41.0)",
     "email-validator (>=2.3.0,<3.0.0)",
     "cryptography (>=46.0.5,<47.0.0)",
-    "sqlalchemy (>=2.0.46,<3.0.0)",
+    "sqlalchemy (>=2.0.47,<3.0.0)",
     "pgvector (>=0.4.2,<0.5.0)",
     "psycopg2-binary (>=2.9.11,<3.0.0)",
     "tenacity (>=9.1.4,<10.0.0)",
     "apscheduler (>=3.11.2,<4.0.0)",
-    "redis (>=7.2.0,<8.0.0)",
+    "redis (>=7.2.1,<8.0.0)",
     "pytest (>=9.0.2,<10.0.0)",
     "jira (>=3.10.5,<4.0.0)",
     "slack-sdk (>=3.40.0,<4.0.0)",
     "pyjwt (>=2.11.0,<3.0.0)",
     "pwdlib[argon2] (>=0.3.0,<0.4.0)",
     "python-multipart (>=0.0.22,<0.0.23)",
+    "fastapi (>=0.133.1,<0.134.0)",
 ]
 
 [dependency-groups]
@@ -36,9 +36,10 @@ dev = [
     "black (>=26.1.0,<27.0.0)",
     "pyright (>=1.1.408,<2.0.0)",
     "pre-commit (>=4.5.1,<5.0.0)",
-    "pytest (>=9.0.2,<10.0.0)",
     "testcontainers[postgres] (>=4.14.1,<5.0.0)",
+    "pytest (>=9.0.2,<10.0.0)",
     "pytest-env (>=1.5.0,<2.0.0)",
+    "pytest-cov (>=6.0.0,<7.0.0)",
 ]
 
 [build-system]
@@ -53,6 +54,8 @@ target-version = ['py314']
 testpaths = ['tests']
 pythonpath = ['.']
 python_classes = ['*Test']
+addopts = "--cov=dev_blackbox --cov-report=html"
+# https://pytest-cov.readthedocs.io/en/latest/readme.html
 
 [tool.pytest_env]
 ENV = "test"
@@ -70,6 +73,19 @@ AUTH__SECRET_KEY = "test-jwt-secret-key-abcdefghijklmnopqrstuvwxyz"
 AUTH__ALGORITHM = "HS256"
 AUTH__ACCESS_TOKEN_EXPIRE_MINUTES = "30"
 SLACK__BOT_TOKEN = "xoxb-test-token"
+
+[tool.coverage.run]
+source = ["dev_blackbox"]
+omit = ["tests/*", "*/__pycache__/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "if __name__ == .__main__.",
+    "pragma: no cover",
+]
+precision = 1
+show_missing = true
+skip_covered = true
 
 [tool.pyright]
 pythonVersion = "3.14"
