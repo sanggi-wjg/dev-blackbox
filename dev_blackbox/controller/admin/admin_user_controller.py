@@ -8,6 +8,7 @@ from dev_blackbox.controller.config.security_config import (
     CurrentAdminUser,
 )
 from dev_blackbox.core.database import get_db
+from dev_blackbox.service.command.user_command import CreateUserCommand
 from dev_blackbox.service.user_service import UserService
 
 router = APIRouter(prefix="/admin-api/v1/users", tags=["Admin User Management"])
@@ -38,7 +39,13 @@ async def create_user(
     db: Session = Depends(get_db),
 ):
     service = UserService(db)
-    user = service.create_user(request)
+    command = CreateUserCommand(
+        name=request.name,
+        email=request.email,
+        password=request.password,
+        timezone=request.timezone,
+    )
+    user = service.create_user(command)
     return UserResponseDto.from_entity(user)
 
 

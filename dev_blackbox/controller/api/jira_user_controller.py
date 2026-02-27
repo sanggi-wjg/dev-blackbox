@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
@@ -5,6 +7,7 @@ from dev_blackbox.controller.api.dto.jira_user_dto import (
     JiraUserResponseDto,
     AssignJiraUserRequestDto,
 )
+from dev_blackbox.controller.api.param.jira_user_param import JiraUserParam
 from dev_blackbox.controller.config.security_config import AuthToken, CurrentUser
 from dev_blackbox.core.database import get_db
 from dev_blackbox.core.encrypt import get_encrypt_service
@@ -20,12 +23,12 @@ router = APIRouter(prefix="/api/v1/jira-users", tags=["JiraUser"])
 async def get_jira_users(
     token: AuthToken,
     current_user: CurrentUser,
-    jira_secret_id: int | None = Query(default=None),
+    param: Annotated[JiraUserParam, Query()],
     db: Session = Depends(get_db),
 ):
     service = JiraUserService(db)
     encrypt_service = get_encrypt_service()
-    jira_users = service.get_jira_users(jira_secret_id)
+    jira_users = service.get_jira_users(param.jira_secret_id)
 
     return [JiraUserResponseDto.from_entity(jira_user, encrypt_service) for jira_user in jira_users]
 

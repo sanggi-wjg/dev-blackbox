@@ -11,6 +11,7 @@ from dev_blackbox.controller.api.dto.jira_user_dto import JiraUserResponseDto
 from dev_blackbox.controller.api.dto.slack_user_dto import SlackUserResponseDto
 
 if TYPE_CHECKING:
+    from dev_blackbox.core.encrypt import EncryptService
     from dev_blackbox.storage.rds.entity.user import User
 
 
@@ -45,3 +46,30 @@ class UserDetailResponseDto(BaseModel):
     github_user_secret: GitHubSecretResponseDto | None
     jira_user: JiraUserResponseDto | None
     slack_user: SlackUserResponseDto | None
+
+    @classmethod
+    def from_entity(cls, entity: User, encrypt_service: EncryptService) -> UserDetailResponseDto:
+        return cls(
+            id=entity.id,
+            name=entity.name,
+            email=entity.email,
+            timezone=entity.timezone,
+            tz_info=entity.tz_info,
+            created_at=entity.created_at,
+            updated_at=entity.updated_at,
+            github_user_secret=(
+                GitHubSecretResponseDto.from_entity(entity.github_user_secret, encrypt_service)
+                if entity.github_user_secret
+                else None
+            ),
+            jira_user=(
+                JiraUserResponseDto.from_entity(entity.jira_user, encrypt_service)
+                if entity.jira_user
+                else None
+            ),
+            slack_user=(
+                SlackUserResponseDto.from_entity(entity.slack_user, encrypt_service)
+                if entity.slack_user
+                else None
+            ),
+        )

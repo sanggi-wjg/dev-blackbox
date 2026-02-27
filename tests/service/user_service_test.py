@@ -1,9 +1,9 @@
 import pytest
 
-from dev_blackbox.controller.admin.dto.user_dto import CreateUserRequestDto
 from dev_blackbox.core.exception import UserNotFoundException
+from dev_blackbox.service.command.user_command import CreateUserCommand
+from dev_blackbox.service.query.user_query import UserQuery
 from dev_blackbox.service.user_service import UserService
-from dev_blackbox.storage.rds.condition import UserSearchCondition
 
 
 class UserServiceTest:
@@ -11,38 +11,38 @@ class UserServiceTest:
     def test_create_user(self, db_session):
         # given
         service = UserService(db_session)
-        request = CreateUserRequestDto(
+        command = CreateUserCommand(
             name="테스트유저",
             email="test@dev.com",
             password="password123",
         )
 
         # when
-        user = service.create_user(request)
+        user = service.create_user(command)
 
         # then
         assert user.id is not None
-        assert user.name == request.name
-        assert user.email == request.email
-        assert user.password != request.password
+        assert user.name == command.name
+        assert user.email == command.email
+        assert user.password != command.password
 
     def test_create_admin_user(self, db_session):
         # given
         service = UserService(db_session)
-        request = CreateUserRequestDto(
+        command = CreateUserCommand(
             name="관리자",
             email="admin@dev.com",
             password="password123",
         )
 
         # when
-        user = service.create_admin_user(request)
+        user = service.create_admin_user(command)
 
         # then
         assert user.id is not None
-        assert user.name == request.name
-        assert user.email == request.email
-        assert user.password != request.password
+        assert user.name == command.name
+        assert user.email == command.email
+        assert user.password != command.password
         assert user.is_admin is True
 
     def test_get_user_by_id_or_throw(self, db_session, user_fixture):
@@ -152,7 +152,7 @@ class UserServiceTest:
         db_session.flush()
 
         # when
-        result = service.get_users_by_condition(UserSearchCondition(name="bob"))
+        result = service.get_users_by_query(UserQuery(name="bob"))
 
         # then
         assert result == [bob]

@@ -1,10 +1,10 @@
 from sqlalchemy.orm import Session
 
-from dev_blackbox.controller.admin.dto.user_dto import CreateUserRequestDto
 from dev_blackbox.core.exception import UserNotFoundException
 from dev_blackbox.core.jwt_handler import get_jwt_service
 from dev_blackbox.core.password import get_password_service
-from dev_blackbox.storage.rds.condition import UserSearchCondition
+from dev_blackbox.service.command.user_command import CreateUserCommand
+from dev_blackbox.service.query.user_query import UserQuery
 from dev_blackbox.storage.rds.entity.user import User
 from dev_blackbox.storage.rds.repository import UserRepository
 
@@ -16,21 +16,23 @@ class UserService:
         self.password_service = get_password_service()
         self.jwt_service = get_jwt_service()
 
-    def create_user(self, request: CreateUserRequestDto) -> User:
-        hashed_password = self.password_service.hash_password(request.password)
+    def create_user(self, command: CreateUserCommand) -> User:
+        hashed_password = self.password_service.hash_password(command.password)
         user = User.create(
-            name=request.name,
-            email=request.email,
+            name=command.name,
+            email=command.email,
             hashed_password=hashed_password,
+            timezone=command.timezone,
         )
         return self.user_repository.save(user)
 
-    def create_admin_user(self, request: CreateUserRequestDto) -> User:
-        hashed_password = self.password_service.hash_password(request.password)
+    def create_admin_user(self, command: CreateUserCommand) -> User:
+        hashed_password = self.password_service.hash_password(command.password)
         user = User.create_admin(
-            name=request.name,
-            email=request.email,
+            name=command.name,
+            email=command.email,
             hashed_password=hashed_password,
+            timezone=command.timezone,
         )
         return self.user_repository.save(user)
 
@@ -64,8 +66,11 @@ class UserService:
     def get_users(self) -> list[User]:
         return self.user_repository.find_all()
 
-    def get_users_by_condition(self, condition: UserSearchCondition) -> list[User]:
-        return self.user_repository.find_all_by_condition(condition)
+    def get_users_by_query(self, query: UserQuery) -> list[User]:
+        return self.user_repository.find_all_by_condition(
+            name=query.name,
+            is_deleted=query.is_deleted,
+        )
 
     def delete_user(self, user_id: int) -> None:
         user = self.get_user_by_id_or_throw(user_id)

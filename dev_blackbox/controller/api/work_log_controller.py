@@ -11,10 +11,10 @@ from dev_blackbox.controller.api.dto.work_log_dto import (
     DailyWorkLogResponseDto,
     PlatformWorkLogDetailResponseDto,
     PlatformWorkLogResponseDto,
-    WorkLogQuery,
     WorkLogManualSyncReqeustDto,
     UserContentCreateOrUpdateRequestDto,
 )
+from dev_blackbox.controller.api.param.work_log_param import WorkLogParam
 from dev_blackbox.controller.config.security_config import AuthToken, CurrentUser
 from dev_blackbox.core.database import get_db
 from dev_blackbox.core.enum import PlatformEnum
@@ -33,13 +33,13 @@ router = APIRouter(prefix="/api/v1/work-logs", tags=["WorkLog"])
 async def get_platform_work_logs(
     token: AuthToken,
     current_user: CurrentUser,
-    query: Annotated[WorkLogQuery, Query()],
+    param: Annotated[WorkLogParam, Query()],
     db: Session = Depends(get_db),
 ):
     service = WorkLogService(db)
     sources = service.get_platform_work_logs_with_sources(
         user_id=current_user.id,
-        target_date=query.target_date,
+        target_date=param.target_date,
         platforms=PlatformEnum.platforms(),
     )
 
@@ -69,14 +69,14 @@ async def get_platform_work_logs(
 async def get_user_content(
     token: AuthToken,
     current_user: CurrentUser,
-    query: Annotated[WorkLogQuery, Query()],
+    param: Annotated[WorkLogParam, Query()],
     response: Response,
     db: Session = Depends(get_db),
 ):
     service = WorkLogService(db)
     work_log = service.get_user_content_or_none(
         user_id=current_user.id,
-        target_date=query.target_date,
+        target_date=param.target_date,
     )
     if work_log is None:
         response.status_code = status.HTTP_204_NO_CONTENT
@@ -115,13 +115,13 @@ async def create_or_update_user_content(
 async def get_daily_work_log(
     token: AuthToken,
     current_user: CurrentUser,
-    query: Annotated[WorkLogQuery, Query()],
+    param: Annotated[WorkLogParam, Query()],
     db: Session = Depends(get_db),
 ):
     service = WorkLogService(db)
     daily_work_log = service.get_daily_work_log(
         user_id=current_user.id,
-        target_date=query.target_date,
+        target_date=param.target_date,
     )
     if daily_work_log is None:
         return None

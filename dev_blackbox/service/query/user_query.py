@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
 
-class UserSearchCondition(BaseModel):
+class UserQuery(BaseModel):
     name: str | None = None
     is_deleted: bool | None = None

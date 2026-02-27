@@ -246,7 +246,6 @@ class JiraIssueModel(BaseModel):
             lines.append("코멘트:")
             for comment in filtered_comments:
                 time_str = comment.created[:19]
-                # 코멘트 본문이 너무 길면 잘라내기 (LLM model 절약)
                 body = comment.body[:500] if len(comment.body) > 500 else comment.body
                 lines.append(f"- ({time_str}) {body}")
 

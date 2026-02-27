@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from starlette import status
@@ -6,6 +8,7 @@ from dev_blackbox.controller.api.dto.slack_user_dto import (
     AssignSlackUserRequestDto,
     SlackUserResponseDto,
 )
+from dev_blackbox.controller.api.param.slack_user_param import SlackUserParam
 from dev_blackbox.controller.config.security_config import CurrentUser, AuthToken
 from dev_blackbox.core.database import get_db
 from dev_blackbox.core.encrypt import get_encrypt_service
@@ -21,12 +24,12 @@ router = APIRouter(prefix="/api/v1/slack-users", tags=["SlackUser"])
 async def get_slack_users(
     token: AuthToken,
     current_user: CurrentUser,
-    slack_secret_id: int | None = Query(default=None),
+    param: Annotated[SlackUserParam, Query()],
     db: Session = Depends(get_db),
 ):
     service = SlackUserService(db)
     encrypt_service = get_encrypt_service()
-    slack_users = service.get_slack_users(slack_secret_id=slack_secret_id)
+    slack_users = service.get_slack_users(slack_secret_id=param.slack_secret_id)
 
     return [
         SlackUserResponseDto.from_entity(slack_user, encrypt_service) for slack_user in slack_users

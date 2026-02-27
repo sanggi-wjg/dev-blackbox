@@ -14,10 +14,6 @@ if TYPE_CHECKING:
     from dev_blackbox.storage.rds.entity.platform_work_log import PlatformWorkLog
 
 
-class WorkLogQuery(BaseModel):
-    target_date: date = Field(..., description="조회 대상 날짜 (YYYY-MM-DD)")
-
-
 class PlatformWorkLogResponseDto(BaseModel):
     id: int
     target_date: date = Field(..., description="요약 대상 날짜 (YYYY-MM-DD)")

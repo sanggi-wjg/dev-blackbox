@@ -42,19 +42,22 @@ class User(SoftDeleteMixin, Base):
         return f"<User(name={self.name}, email={self.email})>"
 
     @classmethod
-    def create(cls, name: str, email: str, hashed_password: str) -> "User":
+    def create(cls, name: str, email: str, hashed_password: str, timezone: str) -> "User":
         return cls(
             name=name,
             email=email,
             password=hashed_password,
+            timezone=timezone,
+            is_admin=False,
         )
 
     @classmethod
-    def create_admin(cls, name: str, email: str, hashed_password: str) -> "User":
+    def create_admin(cls, name: str, email: str, hashed_password: str, timezone: str) -> "User":
         return cls(
             name=name,
             email=email,
             password=hashed_password,
+            timezone=timezone,
             is_admin=True,
         )
 
