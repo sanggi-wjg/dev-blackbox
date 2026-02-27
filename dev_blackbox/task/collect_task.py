@@ -8,9 +8,9 @@ from dev_blackbox.agent.model.prompt import (
     JIRA_ISSUE_SUMMARY_PROMPT,
     SLACK_MESSAGE_SUMMARY_PROMPT,
 )
-from dev_blackbox.core.const import EMPTY_ACTIVITY_MESSAGE
+from dev_blackbox.core.const import EMPTY_ACTIVITY_MESSAGE, LockKey
 from dev_blackbox.core.database import get_db_session
-from dev_blackbox.core.enum import PlatformEnum, DistributedLockName
+from dev_blackbox.core.enum import PlatformEnum
 from dev_blackbox.service.github_event_service import GitHubEventService
 from dev_blackbox.service.jira_event_service import JiraEventService
 from dev_blackbox.service.model.user_model import UserDetailModel
@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 def collect_events_and_summarize_work_log_task():
     with distributed_lock(
-        DistributedLockName.COLLECT_EVENTS_AND_SUMMARIZE_WORK_LOG_TASK.value, timeout=300
+        LockKey.COLLECT_EVENTS_AND_SUMMARIZE_WORK_LOG_TASK.value, timeout=300
     ) as acquired:
         if not acquired:
             logger.warning("collect_platform_task is already running, skipping...")
@@ -41,11 +41,11 @@ def collect_events_and_summarize_work_log_task():
 
 
 def collect_events_and_summarize_work_log_by_user_task(user_id: int, target_date: date):
-    lock_name = (
-        DistributedLockName.COLLECT_EVENTS_AND_SUMMARIZE_WORK_LOG_TASK
+    lock_key = (
+        LockKey.COLLECT_EVENTS_AND_SUMMARIZE_WORK_LOG_TASK.value
         + f":user_id:{user_id}:target_date:{target_date}"
     )
-    with distributed_lock(lock_name, timeout=300) as acquired:
+    with distributed_lock(lock_key, timeout=300) as acquired:
         if not acquired:
             logger.warning("collect_platform_task is already running, skipping...")
             return

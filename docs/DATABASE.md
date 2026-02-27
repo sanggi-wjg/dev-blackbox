@@ -27,17 +27,22 @@ PostgreSQL 데이터 모델, ORM 엔티티, 세션 관리.
 
 ## Entity 목록
 
-| Entity           | 테이블                  | Mixin             | UNIQUE 제약                          | 비고                                                        |
-|------------------|----------------------|-------------------|------------------------------------|-----------------------------------------------------------|
-| User             | `users`              | `SoftDeleteMixin` | `email`                            | Relationship: GitHubUserSecret, JiraUser, SlackUser (1:1) |
-| GitHubUserSecret | `github_user_secret` | `SoftDeleteMixin` | —                                  | PAT 암호화 저장, `deactivate()` 비활성화                           |
-| GitHubEvent      | `github_event`       | —                 | `event_id`                         | `event`/`commit` JSONB 저장                                 |
-| JiraUser         | `jira_user`          | —                 | `account_id`, `user_id` (NULLABLE) | `assign_user_and_project()`로 User 할당                      |
-| JiraEvent        | `jira_event`         | —                 | `issue_id`                         | `changelog` JSONB (target_date 기준 필터링)                    |
-| PlatformWorkLog  | `platform_work_log`  | —                 | `(user_id, target_date, platform)` | `markdown_text` property, `update_content()`              |
-| DailyWorkLog     | `daily_work_log`     | —                 | `(user_id, target_date)`           | 플랫폼별 WorkLog 병합 결과                                        |
+| Entity           | 테이블                  | Mixin             | UNIQUE 제약                                 | 비고                                                        |
+|------------------|----------------------|-------------------|-------------------------------------------|-----------------------------------------------------------|
+| User             | `users`              | `SoftDeleteMixin` | `email`                                   | Relationship: GitHubUserSecret, JiraUser, SlackUser (1:1) |
+| GitHubUserSecret | `github_user_secret` | —                 | `user_id`                                 | PAT 암호화 저장                                                |
+| GitHubEvent      | `github_event`       | —                 | `event_id`                                | `event`/`commit` JSONB 저장                                 |
+| JiraSecret       | `jira_secret`        | `SoftDeleteMixin` | —                                         | Jira 인증 정보 (username, api_token 암호화 저장)                   |
+| JiraUser         | `jira_user`          | —                 | `(jira_secret_id, account_id)`, `user_id` | `assign_user_and_project()`로 User 할당                      |
+| JiraEvent        | `jira_event`         | —                 | `issue_id`                                | `changelog` JSONB (target_date 기준 필터링)                    |
+| SlackUser        | `slack_user`         | —                 | `(slack_secret_id, member_id)`, `user_id` | `assign_user()`/`unassign_user()`로 User 할당                |
+| SlackSecret      | `slack_secret`       | `SoftDeleteMixin` | —                                         | Slack 인증 정보 (bot_token 암호화 저장)                             |
+| SlackMessage     | `slack_message`      | —                 | —                                         | Slack 메시지 저장, `message` JSONB                             |
+| PlatformWorkLog  | `platform_work_log`  | —                 | `(user_id, target_date, platform)`        | `markdown_text` property, `update_content()`              |
+| DailyWorkLog     | `daily_work_log`     | —                 | `(user_id, target_date)`                  | 플랫폼별 WorkLog 병합 결과                                        |
 
 - 모든 FK는 `ON DELETE RESTRICT`
+- 관계도(ERD)는 [ERD.md](ERD.md) 참고
 - 컬럼 상세는 `storage/rds/entity/` 코드 또는 `docker/postgres/init.sql` 참고
 
 ## Repository 패턴

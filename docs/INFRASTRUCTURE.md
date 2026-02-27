@@ -22,7 +22,7 @@ docker compose -f docker/docker-compose.yaml up -d
 
 - **APScheduler JobStore** — 스케줄링 태스크 상태 저장
 - **분산 락** — 동일 태스크 중복 실행 방지 (`distributed_lock()`)
-- **캐싱** — `CacheService`를 통한 데이터 캐싱 (`@cacheable`, `@cache_put`, `@cache_evict`)
+- **캐싱** — `CacheService`를 통한 데이터 캐싱 (`@cacheable`, `@cache_put`, `@cache_evict`), TTL은 `CacheTTL` Enum으로 관리
 - **멱등성** — `idempotent_request`를 통한 요청 중복 처리 방지
 
 Redis 불가용 시 `None` 반환 (graceful degradation).
@@ -31,7 +31,7 @@ Redis 불가용 시 `None` 반환 (graceful degradation).
 
 Redis 기반 분산 락으로 동일 태스크 중복 실행 방지. Redis 불가용 시 락 없이 진행.
 
-- 스케줄 태스크: `DistributedLockName` Enum 기반 전역 락
+- 스케줄 태스크: `LockKey` Enum 기반 전역 락
 - 수동 동기화: 사용자+날짜 조합 동적 락
 
 ## 환경 설정
