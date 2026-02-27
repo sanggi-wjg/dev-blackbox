@@ -45,22 +45,17 @@ async def get_platform_work_logs(
 
     result = []
     for wl in sources.work_logs:
-        dto = PlatformWorkLogDetailResponseDto.model_validate(wl, from_attributes=True)
+        dto = PlatformWorkLogDetailResponseDto.from_entity(wl)
         match wl.platform:
             case PlatformEnum.GITHUB:
                 dto.github_events = [
-                    GitHubEventResponseDto.model_validate(e, from_attributes=True)
-                    for e in sources.github_events
+                    GitHubEventResponseDto.from_entity(e) for e in sources.github_events
                 ]
             case PlatformEnum.JIRA:
-                dto.jira_events = [
-                    JiraEventResponseDto.model_validate(e, from_attributes=True)
-                    for e in sources.jira_events
-                ]
+                dto.jira_events = [JiraEventResponseDto.from_entity(e) for e in sources.jira_events]
             case PlatformEnum.SLACK:
                 dto.slack_messages = [
-                    SlackMessageResponseDto.model_validate(e, from_attributes=True)
-                    for e in sources.slack_messages
+                    SlackMessageResponseDto.from_entity(e) for e in sources.slack_messages
                 ]
         result.append(dto)
     return result
@@ -85,7 +80,8 @@ async def get_user_content(
     )
     if work_log is None:
         response.status_code = status.HTTP_204_NO_CONTENT
-    return work_log
+        return None
+    return PlatformWorkLogResponseDto.from_entity(work_log)
 
 
 @router.put(
@@ -108,7 +104,7 @@ async def create_or_update_user_content(
     )
     if is_created:
         response.status_code = status.HTTP_201_CREATED
-    return work_log
+    return PlatformWorkLogResponseDto.from_entity(work_log)
 
 
 @router.get(
@@ -123,10 +119,13 @@ async def get_daily_work_log(
     db: Session = Depends(get_db),
 ):
     service = WorkLogService(db)
-    return service.get_daily_work_log(
+    daily_work_log = service.get_daily_work_log(
         user_id=current_user.id,
         target_date=query.target_date,
     )
+    if daily_work_log is None:
+        return None
+    return DailyWorkLogResponseDto.from_entity(daily_work_log)
 
 
 @router.post(

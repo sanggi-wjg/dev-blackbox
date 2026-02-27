@@ -25,7 +25,7 @@ async def create_github_secret(
 ):
     service = GitHubUserSecretService(db)
     user_secret = service.create_secret(current_user.id, request)
-    return user_secret
+    return GitHubSecretResponseDto.from_entity(user_secret)
 
 
 @router.delete(

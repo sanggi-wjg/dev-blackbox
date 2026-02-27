@@ -25,10 +25,11 @@ async def create_slack_secret(
     db: Session = Depends(get_db),
 ):
     service = SlackSecretService(db)
-    return service.create_secret(
+    secret = service.create_secret(
         name=request.name,
         bot_token=request.bot_token,
     )
+    return SlackSecretResponseDto.from_entity(secret)
 
 
 @router.get(
@@ -41,7 +42,8 @@ async def get_slack_secrets(
     db: Session = Depends(get_db),
 ):
     service = SlackSecretService(db)
-    return service.get_secrets()
+    secrets = service.get_secrets()
+    return [SlackSecretResponseDto.from_entity(s) for s in secrets]
 
 
 @router.delete(

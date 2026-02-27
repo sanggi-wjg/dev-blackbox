@@ -20,4 +20,4 @@ async def get_jira_secrets(
 ):
     service = JiraSecretService(db)
     secrets = service.get_secrets()
-    return secrets
+    return [JiraSecretSimpleResponseDto.from_entity(s) for s in secrets]

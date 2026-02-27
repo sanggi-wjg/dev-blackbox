@@ -24,4 +24,4 @@ def get_events_by_user_id(
 ):
     service = GitHubEventService(db)
     events = service.get_events_by_user_id(current_user.id)
-    return events
+    return [GitHubEventResponseDto.from_entity(e) for e in events]

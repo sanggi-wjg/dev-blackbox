@@ -19,4 +19,5 @@ async def get_slack_secrets(
     db: Session = Depends(get_db),
 ):
     service = SlackSecretService(db)
-    return service.get_secrets()
+    secrets = service.get_secrets()
+    return [SlackSecretSimpleResponseDto.from_entity(s) for s in secrets]

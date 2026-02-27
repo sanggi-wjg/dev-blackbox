@@ -24,7 +24,7 @@ async def get_users(
 ):
     service = UserService(db)
     users = service.get_users()
-    return users
+    return [UserResponseDto.from_entity(u) for u in users]
 
 
 @router.post(
@@ -39,7 +39,7 @@ async def create_user(
 ):
     service = UserService(db)
     user = service.create_user(request)
-    return user
+    return UserResponseDto.from_entity(user)
 
 
 @router.delete(
