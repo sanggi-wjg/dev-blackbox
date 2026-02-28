@@ -14,3 +14,7 @@ __pycache__/
 .github/
 .test/
 *.md
+
+htmlcov/
+.coverage*
+coverage*

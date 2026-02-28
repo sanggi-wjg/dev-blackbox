@@ -1,0 +1,54 @@
+name: 📊 Coverage Badge
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  coverage-badge:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: latest
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Cache Poetry dependencies
+        uses: actions/cache@v5
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            venv-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: poetry install --no-interaction
+
+      - name: 🚀 Run Pytest
+        run: poetry run pytest
+
+      - name: 📊 Generate coverage badge
+        run: |
+          pip install "genbadge[coverage]"
+          mkdir -p badges
+          genbadge coverage -i coverage.xml -o badges/coverage-badge.svg
+
+      - name: 🚀 Deploy badge to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./badges
+          destination_dir: badges
+          keep_files: true
