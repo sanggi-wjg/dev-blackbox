@@ -132,6 +132,8 @@ class WorkLogService:
         merged_work_log_text = "\n\n".join(
             work_log.markdown_text for work_log in platform_work_logs
         )
+        if not merged_work_log_text:
+            merged_work_log_text = ""
 
         # 기존 일일 요약 삭제 후 새로 저장
         self.daily_work_log_repository.delete_by_user_id_and_target_date(

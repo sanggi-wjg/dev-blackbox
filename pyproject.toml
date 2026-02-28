@@ -88,7 +88,8 @@ omit = [
     "exceptions.py",
     "middleware.py",
     "types.py",
-    "*/entity/*"
+    "*/entity/*",
+    "*/task/*",
 ]
 
 [tool.coverage.report]
