@@ -1,13 +1,11 @@
 from unittest.mock import patch, MagicMock
 
-from redis import Redis
-
 from dev_blackbox.util.distributed_lock import distributed_lock
 
 
 class DistributedLockTest:
 
-    def test_락을_획득하면_True를_반환한다(self, fake_redis: Redis):
+    def test_락을_획득하면_True를_반환한다(self):
         # given
         lock_key = "test:lock:acquire"
 
@@ -16,7 +14,7 @@ class DistributedLockTest:
             # then
             assert acquired is True
 
-    def test_락_획득_후_블록_내부가_실행된다(self, fake_redis: Redis):
+    def test_락_획득_후_블록_내부가_실행된다(self):
         # given
         lock_key = "test:lock:execution"
         executed = False
@@ -29,7 +27,7 @@ class DistributedLockTest:
         # then
         assert executed is True
 
-    def test_이미_획득된_락은_False를_반환한다(self, fake_redis: Redis):
+    def test_이미_획득된_락은_False를_반환한다(self):
         # given
         lock_key = "test:lock:already-held"
 

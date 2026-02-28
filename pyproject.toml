@@ -78,7 +78,18 @@ SLACK__BOT_TOKEN = "xoxb-test-token"
 
 [tool.coverage.run]
 source = ["dev_blackbox"]
-omit = ["tests/*", "*/__pycache__/*"]
+omit = [
+    "tests/*",
+    "*/__pycache__/*",
+    "logging.py",
+    "background_scheduler.py",
+    "config.py",
+    "database.py",
+    "exceptions.py",
+    "middleware.py",
+    "types.py",
+    "*/entity/*"
+]
 
 [tool.coverage.report]
 exclude_lines = [

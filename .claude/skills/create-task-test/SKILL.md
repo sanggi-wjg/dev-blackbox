@@ -71,9 +71,9 @@ class {태스크명_PascalCase}Test:  # 예: CollectTaskTest
 
 ```python
 from unittest.mock import patch, MagicMock, call
-from contextlib import contextmanager
 
 from dev_blackbox.task.{태스크_모듈} import {태스크_함수}
+from tests.fixtures.lock_helper import mock_lock_acquired, mock_lock_not_acquired
 
 
 class {태스크명}Test:
@@ -82,12 +82,11 @@ class {태스크명}Test:
         # given
         mock_service = MagicMock()
 
-        @contextmanager
-        def mock_lock(*args, **kwargs):
-            yield True
-
         with (
-            patch("dev_blackbox.task.{모듈}.distributed_lock", side_effect=mock_lock),
+            patch(
+                "dev_blackbox.task.{모듈}.distributed_lock",
+                return_value=mock_lock_acquired(),
+            ),
             patch("dev_blackbox.task.{모듈}.{Service}", return_value=mock_service),
             patch("dev_blackbox.task.{모듈}.get_db_session") as mock_db,
         ):
@@ -104,12 +103,11 @@ class {태스크명}Test:
         # given
         mock_service = MagicMock()
 
-        @contextmanager
-        def mock_lock(*args, **kwargs):
-            yield False
-
         with (
-            patch("dev_blackbox.task.{모듈}.distributed_lock", side_effect=mock_lock),
+            patch(
+                "dev_blackbox.task.{모듈}.distributed_lock",
+                return_value=mock_lock_not_acquired(),
+            ),
             patch("dev_blackbox.task.{모듈}.{Service}", return_value=mock_service),
         ):
             # when
@@ -171,29 +169,26 @@ def test_{함수명}_한_플랫폼_실패가_다른_플랫폼에_영향을_주�
     mock_jira_service.{method}.assert_called_once()
 ```
 
-### UserContext 생성 헬퍼
+### 공통 Fixture 헬퍼
 
-테스트에서 `UserContext`를 생성하는 팩토리 함수를 파일 상단에 정의한다.
+테스트에서 사용하는 공통 헬퍼는 `tests/fixtures/`에 정의되어 있다. 직접 정의하지 말고 import하여 사용한다.
+
+#### 분산 락 헬퍼 — `tests/fixtures/lock_helper.py`
 
 ```python
-from dev_blackbox.task.context.user_context import UserContext
+from tests.fixtures.lock_helper import mock_lock_acquired, mock_lock_not_acquired
+```
 
+#### UserContext 헬퍼 — `tests/fixtures/user_context_helper.py`
 
-def _create_user_context(
-    user_id: int = 1,
-    timezone: str = "Asia/Seoul",
-    github_user_secret_id: int | None = None,
-    jira_user_id: int | None = None,
-    slack_user_id: int | None = None,
-) -> UserContext:
-    return UserContext(
-        user_id=user_id,
-        timezone=timezone,
-        github_user_secret_id=github_user_secret_id,
-        jira_user_id=jira_user_id,
-        slack_user_id=slack_user_id,
-    )
+```python
+from tests.fixtures.user_context_helper import create_user_context
 
+# 기본값: id=1, tz_info=Asia/Seoul, 모든 플랫폼 비활성
+user_context = create_user_context()
+
+# 특정 플랫폼 활성화
+user_context = create_user_context(has_github_user_secret=True, has_jira_user=True)
 ```
 
 ## 테스트 케이스 설계 원칙
@@ -229,7 +224,8 @@ def _create_user_context(
     patch 경로: `"dev_blackbox.task.{모듈}.GitHubEventService"`
 - `get_db_session()`은 context manager이므로 `__enter__`/`__exit__`을 mock해야 함
 - Task 테스트는 DB를 사용하지 않고 **전부 mock으로 격리** (Task는 Service를 조합하는 레이어)
-- `UserContext`는 테스트 파일 내 팩토리 함수로 생성
+- `UserContext`는 `tests/fixtures/user_context_helper.py`의 `create_user_context()`로 생성
+- 분산 락 mock은 `tests/fixtures/lock_helper.py`의 `mock_lock_acquired()` / `mock_lock_not_acquired()`를 사용
 - 테스트 실행 후 `poetry run pytest tests/task/{파일}_test.py -v`로 검증
 
 ## 체크리스트

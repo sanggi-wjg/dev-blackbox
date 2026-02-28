@@ -359,7 +359,7 @@ def daily_work_log_fixture(
     return _create
 
 
-@pytest.fixture()
+@pytest.fixture(scope="session", autouse=True)
 def fake_redis() -> Generator[Redis, None, None]:
     server = fakeredis.FakeServer()
     client = fakeredis.FakeRedis(server=server)
@@ -368,3 +368,8 @@ def fake_redis() -> Generator[Redis, None, None]:
     with patch("dev_blackbox.core.cache.get_redis_client", return_value=client):
         yield client
     get_redis_client.cache_clear()
+
+
+@pytest.fixture(autouse=True)
+def _flush_fake_redis(fake_redis: Redis) -> None:
+    fake_redis.flushall()

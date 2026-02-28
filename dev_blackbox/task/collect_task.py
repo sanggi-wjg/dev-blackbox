@@ -34,9 +34,9 @@ def collect_events_and_summarize_work_log_task():
         with get_db_session() as session:
             user_service = UserService(session)
             users = user_service.get_users()  # fixme n+1
-            users_with_related = [UserContext.from_entity(user) for user in users]
+            user_contexts = [UserContext.from_entity(user) for user in users]
 
-        for user in users_with_related:
+        for user in user_contexts:
             _collect_events_and_summarize(user)
 
 
@@ -53,8 +53,8 @@ def collect_events_and_summarize_work_log_by_user_task(user_id: int, target_date
         with get_db_session() as session:
             user_service = UserService(session)
             user = user_service.get_user_by_id_or_throw(user_id)
-            user_model = UserContext.from_entity(user)
-        _collect_events_and_summarize(user_model, target_date)
+            user_context = UserContext.from_entity(user)
+        _collect_events_and_summarize(user_context, target_date)
 
 
 def _collect_events_and_summarize(user: UserContext, target_date: date | None = None):

@@ -33,7 +33,7 @@ class BuildCacheKeyTest:
 
 class IdempotentRequestTest:
 
-    def test_최초_요청은_멱등성_키를_반환한다(self, fake_redis: Redis):
+    def test_최초_요청은_멱등성_키를_반환한다(self):
         # given
         request = _mock_request()
         idempotency_key = "first-request"
@@ -44,9 +44,7 @@ class IdempotentRequestTest:
         # then
         assert result == idempotency_key
 
-    def test_처리_중인_요청을_중복_호출하면_ConflictRequestException이_발생한다(
-        self, fake_redis: Redis
-    ):
+    def test_처리_중인_요청을_중복_호출하면_ConflictRequestException이_발생한다(self):
         # given
         request = _mock_request()
         idempotency_key = "conflict-request"
@@ -57,9 +55,7 @@ class IdempotentRequestTest:
         with pytest.raises(ConflictRequestException):
             idempotent_request(idempotency_key, request)
 
-    def test_완료된_요청을_중복_호출하면_CompletedRequestException이_발생한다(
-        self, fake_redis: Redis
-    ):
+    def test_완료된_요청을_중복_호출하면_CompletedRequestException이_발생한다(self):
         # given
         request = _mock_request()
         idempotency_key = "completed-request"
