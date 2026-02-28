@@ -69,7 +69,7 @@ def save_idempotent_response(
         cache_service.set(
             cache_key,
             response_data,
-            ex=IDEMPOTENCY_TTL_SECONDS,
+            ex=CacheTTL.IDEMPOTENT_REQUEST,
         )
     except Exception as e:
         logger.warning(f"Failed to cache idempotent response: {e}")
