@@ -53,13 +53,13 @@ class CacheService:
         key: str,
         value: Any,
         nx: bool = False,
-        ex: int = CacheTTL.DEFAULT.value,
+        ex: int = CacheTTL.DEFAULT,
     ):
         return self.cache_client.set(
             key,
             pickle.dumps(value),
             nx=nx,
-            ex=ex,
+            ex=int(ex),
         )
 
     def delete(self, key: str):
@@ -110,13 +110,13 @@ def cacheable(key: CacheKey, ttl: CacheTTL = CacheTTL.DEFAULT):
         @functools.wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             cache_service = CacheService()
-            cache_key = resolve_cache_key(key.value, func, *args, **kwargs)
+            cache_key = resolve_cache_key(key, func, *args, **kwargs)
 
             if cache_service.exists(cache_key):
                 return cache_service.get(cache_key)
 
             result = func(*args, **kwargs)
-            cache_service.set(cache_key, result, ex=ttl.value)
+            cache_service.set(cache_key, result, ex=ttl)
             return result
 
         return wrapper
@@ -135,10 +135,10 @@ def cache_put(key: CacheKey, ttl: CacheTTL = CacheTTL.DEFAULT):
         @functools.wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             result = func(*args, **kwargs)
-            cache_key = resolve_cache_key(key.value, func, *args, **kwargs)
+            cache_key = resolve_cache_key(key, func, *args, **kwargs)
 
             cache_service = CacheService()
-            cache_service.set(cache_key, result, ex=ttl.value)
+            cache_service.set(cache_key, result, ex=ttl)
             return result
 
         return wrapper
@@ -157,7 +157,7 @@ def cache_evict(key: CacheKey):
         @functools.wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             result = func(*args, **kwargs)
-            cache_key = resolve_cache_key(key.value, func, *args, **kwargs)
+            cache_key = resolve_cache_key(key, func, *args, **kwargs)
 
             cache_service = CacheService()
             cache_service.delete(cache_key)

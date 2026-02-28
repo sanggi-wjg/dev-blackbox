@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 def sync_slack_users_task():
-    with distributed_lock(LockKey.SYNC_SLACK_USERS_TASK.value) as acquired:
+    with distributed_lock(LockKey.SYNC_SLACK_USERS_TASK) as acquired:
         if not acquired:
             logger.warning("sync_slack_users_task is already running, skipping...")
             return

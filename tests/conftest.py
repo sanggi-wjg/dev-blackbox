@@ -1,12 +1,16 @@
 import uuid
 from datetime import date
 from typing import Generator, Callable
+from unittest.mock import patch
 
+import fakeredis
 import pytest
+from redis import Redis
 from sqlalchemy import create_engine, text, Engine
 from sqlalchemy.orm import sessionmaker, Session
 from testcontainers.postgres import PostgresContainer
 
+from dev_blackbox.core.cache import get_redis_client
 from dev_blackbox.core.encrypt import get_encrypt_service
 from dev_blackbox.core.password import get_password_service
 from dev_blackbox.storage.rds.entity import *  # noqa: F403,F401
@@ -175,3 +179,14 @@ def github_event_fixture(
         return event
 
     return _create
+
+
+@pytest.fixture()
+def fake_redis() -> Generator[Redis, None, None]:
+    server = fakeredis.FakeServer()
+    client = fakeredis.FakeRedis(server=server)
+
+    get_redis_client.cache_clear()
+    with patch("dev_blackbox.core.cache.get_redis_client", return_value=client):
+        yield client
+    get_redis_client.cache_clear()

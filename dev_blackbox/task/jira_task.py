@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 def sync_jira_users_task():
-    with distributed_lock(LockKey.SYNC_JIRA_USERS_TASK.value) as acquired:
+    with distributed_lock(LockKey.SYNC_JIRA_USERS_TASK) as acquired:
         if not acquired:
             logger.warning("sync_jira_users_task is already running, skipping...")
             return

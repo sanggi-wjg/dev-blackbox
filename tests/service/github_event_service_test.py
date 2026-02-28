@@ -13,6 +13,7 @@ from dev_blackbox.core.exception import (
     UserNotFoundException,
 )
 from dev_blackbox.service.github_event_service import GitHubEventService
+from dev_blackbox.storage.rds.entity import GitHubEvent
 from tests.fixtures.github_fixture import create_github_event_model
 
 

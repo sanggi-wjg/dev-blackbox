@@ -4,7 +4,7 @@ from typing import Annotated
 from fastapi import Header, Request
 
 from dev_blackbox.core.cache import CacheService
-from dev_blackbox.core.const import IDEMPOTENCY_PROCESSING_VALUE, IDEMPOTENCY_TTL_SECONDS
+from dev_blackbox.core.const import IDEMPOTENCY_PROCESSING_VALUE, CacheTTL
 from dev_blackbox.core.exception import CompletedRequestException, ConflictRequestException
 
 logger = logging.getLogger(__name__)
@@ -36,7 +36,7 @@ def idempotent_request(
             cache_key,
             IDEMPOTENCY_PROCESSING_VALUE,
             nx=True,
-            ex=IDEMPOTENCY_TTL_SECONDS,
+            ex=CacheTTL.IDEMPOTENT_REQUEST,
         )
 
         if not is_acquired:

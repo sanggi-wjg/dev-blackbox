@@ -35,16 +35,18 @@ class GitHubEventRepository:
         return list(self.session.scalars(stmt).all())
 
     def find_all_by_user_id_and_target_date(
-        self, user_id: int, target_date: date
+        self,
+        user_id: int,
+        target_date: date,
+        order_by: list[tuple[str, str]] | None = None,
     ) -> list[GitHubEvent]:
-        stmt = (
-            select(GitHubEvent)
-            .where(
-                GitHubEvent.user_id == user_id,
-                GitHubEvent.target_date == target_date,
-            )
-            .order_by(GitHubEvent.id.asc())
+        stmt = select(GitHubEvent).where(
+            GitHubEvent.user_id == user_id,
+            GitHubEvent.target_date == target_date,
         )
+        for field, direction in order_by or [("id", "asc")]:
+            column = getattr(GitHubEvent, field)
+            stmt = stmt.order_by(column.asc() if direction == "asc" else column.desc())
         return list(self.session.scalars(stmt).all())
 
     def delete_by_user_id_and_target_date(self, user_id: int, target_date: date) -> None:
@@ -56,7 +58,10 @@ class GitHubEventRepository:
         self.session.flush()
 
     def find_all_by_user_id_and_target_date_and_event_types(
-        self, user_id: int, target_date: date, event_types: list[str]
+        self,
+        user_id: int,
+        target_date: date,
+        event_types: list[str],
     ) -> list[GitHubEvent]:
         stmt = (
             select(GitHubEvent)
