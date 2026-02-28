@@ -4,5 +4,5 @@ logger = logging.getLogger(__name__)
 
 
 def health_check_task():
-    logger.info("😎 Health check task executed")
+    logger.info("😎 I'm healthy!")
     return {"status": "healthy"}

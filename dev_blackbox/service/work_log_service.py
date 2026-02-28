@@ -7,6 +7,10 @@ from dev_blackbox.core.const import CacheKey, CacheTTL
 from dev_blackbox.core.enum import PlatformEnum
 from dev_blackbox.core.exception import UserContentNotFoundException
 from dev_blackbox.service.model.platform_work_log_model import PlatformWorkLogsWithSources
+from dev_blackbox.service.query.common_query import OrderDirection
+from dev_blackbox.service.query.github_event_query import GitHubEventOrderField
+from dev_blackbox.service.query.jira_event_query import JiraEventOrderField
+from dev_blackbox.service.query.slack_message_query import SlackMessageOrderField
 from dev_blackbox.storage.rds.entity.daily_work_log import DailyWorkLog
 from dev_blackbox.storage.rds.entity.platform_work_log import PlatformWorkLog
 from dev_blackbox.storage.rds.repository import (
@@ -41,13 +45,19 @@ class WorkLogService:
             )
         )
         github_events = self.github_event_repository.find_all_by_user_id_and_target_date(
-            user_id, target_date
+            user_id,
+            target_date,
+            [(GitHubEventOrderField.ID, OrderDirection.DESC)],
         )
         jira_events = self.jira_event_repository.find_all_by_user_id_and_target_date(
-            user_id, target_date
+            user_id,
+            target_date,
+            [(JiraEventOrderField.ID, OrderDirection.DESC)],
         )
         slack_messages = self.slack_message_repository.find_all_by_user_id_and_target_date(
-            user_id, target_date
+            user_id,
+            target_date,
+            [(SlackMessageOrderField.ID, OrderDirection.DESC)],
         )
         return PlatformWorkLogsWithSources(
             work_logs=work_logs,
@@ -122,6 +132,8 @@ class WorkLogService:
         merged_work_log_text = "\n\n".join(
             work_log.markdown_text for work_log in platform_work_logs
         )
+        if not merged_work_log_text:
+            merged_work_log_text = ""
 
         # 기존 일일 요약 삭제 후 새로 저장
         self.daily_work_log_repository.delete_by_user_id_and_target_date(

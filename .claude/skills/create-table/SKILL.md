@@ -1,3 +1,10 @@
+---
+name: create-table
+description: 새로운 데이터베이스 테이블을 생성합니다. init.sql의 기존 패턴을 따라 SQL DDL, Entity, Repository를 함께 생성합니다.
+disable-model-invocation: true
+allowed-tools: Read, Glob, Grep, Write, Edit, Bash
+---
+
 # create-table
 
 새로운 데이터베이스 테이블을 생성하는 스킬.
@@ -124,7 +131,7 @@ class {엔티티명}(Base):  # SoftDelete 필요 시: class {엔티티명}(SoftD
   - `vector(1024)` → `Vector(1024)` (from `pgvector.sqlalchemy`)
 - JSONB 컬럼이 Pydantic 모델과 매핑되면 `@cached_property`로 변환 메서드 추가
 - Enum 컬럼은 `PlatformEnum` 등 Python Enum을 `Mapped` 타입으로 사용하되, DB 컬럼은 `String`으로 매핑
-- 문자열은 작은따옴표 사용
+- 문자열은 큰 따옴표 사용
 
 ### 3. Repository — `dev_blackbox/storage/rds/repository/{테이블명}_repository.py`
 

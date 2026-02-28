@@ -26,7 +26,7 @@ def distributed_lock(
         bool: 락 획득 성공 여부
 
     Example:
-        with distributed_lock(LockKey.SYNC_JIRA_USERS_TASK.value, timeout=300) as acquired:
+        with distributed_lock(LockKey.SYNC_JIRA_USERS_TASK, timeout=300) as acquired:
             if not acquired:
                 logger.warning("Task is already running, skipping...")
                 return

@@ -17,16 +17,18 @@ class SlackMessageRepository:
         return slack_messages
 
     def find_all_by_user_id_and_target_date(
-        self, user_id: int, target_date: date
+        self,
+        user_id: int,
+        target_date: date,
+        order_by: list[tuple[str, str]] | None = None,
     ) -> list[SlackMessage]:
-        stmt = (
-            select(SlackMessage)
-            .where(
-                SlackMessage.user_id == user_id,
-                SlackMessage.target_date == target_date,
-            )
-            .order_by(SlackMessage.id.asc())
+        stmt = select(SlackMessage).where(
+            SlackMessage.user_id == user_id,
+            SlackMessage.target_date == target_date,
         )
+        for field, direction in order_by or [("id", "asc")]:
+            column = getattr(SlackMessage, field)
+            stmt = stmt.order_by(column.asc() if direction == "asc" else column.desc())
         return list(self.session.scalars(stmt).all())
 
     def delete_by_user_id_and_target_date(self, user_id: int, target_date: date) -> None:

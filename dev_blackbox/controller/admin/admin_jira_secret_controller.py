@@ -9,6 +9,7 @@ from dev_blackbox.controller.admin.dto.jira_secret_dto import (
 )
 from dev_blackbox.controller.config.security_config import CurrentAdminUser
 from dev_blackbox.core.database import get_db
+from dev_blackbox.service.command.jira_secret_command import CreateJiraSecretCommand
 from dev_blackbox.service.jira_secret_service import JiraSecretService
 from dev_blackbox.service.jira_user_service import JiraUserService
 
@@ -26,12 +27,13 @@ async def create_jira_secret(
     db: Session = Depends(get_db),
 ):
     service = JiraSecretService(db)
-    secret = service.create_secret(
+    command = CreateJiraSecretCommand(
         name=request.name,
         url=request.url,
         username=request.username,
         api_token=request.api_token,
     )
+    secret = service.create_secret(command)
     return JiraSecretResponseDto.from_entity(secret)
 
 

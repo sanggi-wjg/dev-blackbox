@@ -12,5 +12,5 @@ __pycache__/
 .venv/
 .claude/
 .github/
-
+.test/
 *.md

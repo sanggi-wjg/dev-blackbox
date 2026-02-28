@@ -39,13 +39,31 @@ class GitHubEventService:
     def get_events_by_user_id(self, user_id: int) -> list[GitHubEvent]:
         return self.github_event_repository.find_all_by_user_id(user_id)
 
-    def get_github_events(self, user_id: int, target_date: date) -> list[GitHubEvent]:
+    def get_github_events(
+        self,
+        user_id: int,
+        target_date: date,
+    ) -> list[GitHubEvent]:
         return self.github_event_repository.find_all_by_user_id_and_target_date(
             user_id, target_date
         )
 
+    def get_github_events_by_event_types(
+        self,
+        user_id: int,
+        target_date: date,
+        event_types: list[str],
+    ) -> list[GitHubEvent]:
+        return self.github_event_repository.find_all_by_user_id_and_target_date_and_event_types(
+            user_id,
+            target_date,
+            event_types,
+        )
+
     def save_github_events(
-        self, user_id: int, target_date: date | None = None
+        self,
+        user_id: int,
+        target_date: date | None = None,
     ) -> list[GitHubEvent]:
         user = self.user_repository.find_by_id(user_id)
         if user is None:
@@ -115,21 +133,13 @@ class GitHubEventService:
         github_event: GithubEventModel,
     ) -> GithubCommitModel | None:
         """GitHub API를 통해 PushEvent의 커밋 정보 조회. 다른 이벤트 타입은 None 반환."""
-        typed = github_event.typed_payload
-        if not isinstance(typed, GithubPushEventPayloadModel):
+        if not isinstance(github_event.typed_payload, GithubPushEventPayloadModel):
             return None
 
-        payload = typed
+        payload = github_event.typed_payload
         commit = github_client.fetch_commit(
             repository_url=github_event.repo.url,
             sha=payload.head,
         )
         logger.info(f"Collected commit info for {github_event.id}.")
         return commit
-
-    def get_github_events_by_event_types(
-        self, user_id: int, target_date: date, event_types: list[str]
-    ) -> list[GitHubEvent]:
-        return self.github_event_repository.find_all_by_user_id_and_target_date_and_event_types(
-            user_id, target_date, event_types
-        )

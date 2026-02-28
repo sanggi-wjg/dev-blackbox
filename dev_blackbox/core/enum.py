@@ -1,7 +1,7 @@
-from enum import Enum
+from enum import StrEnum
 
 
-class PlatformEnum(str, Enum):
+class PlatformEnum(StrEnum):
     GITHUB = "GITHUB"
     JIRA = "JIRA"
     CONFLUENCE = "CONFLUENCE"

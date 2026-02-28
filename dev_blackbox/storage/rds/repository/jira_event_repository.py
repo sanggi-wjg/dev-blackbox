@@ -17,16 +17,18 @@ class JiraEventRepository:
         return jira_events
 
     def find_all_by_user_id_and_target_date(
-        self, user_id: int, target_date: date
+        self,
+        user_id: int,
+        target_date: date,
+        order_by: list[tuple[str, str]] | None = None,
     ) -> list[JiraEvent]:
-        stmt = (
-            select(JiraEvent)
-            .where(
-                JiraEvent.user_id == user_id,
-                JiraEvent.target_date == target_date,
-            )
-            .order_by(JiraEvent.id.asc())
+        stmt = select(JiraEvent).where(
+            JiraEvent.user_id == user_id,
+            JiraEvent.target_date == target_date,
         )
+        for field, direction in order_by or [("id", "asc")]:
+            column = getattr(JiraEvent, field)
+            stmt = stmt.order_by(column.asc() if direction == "asc" else column.desc())
         return list(self.session.scalars(stmt).all())
 
     def delete_by_user_id_and_target_date(self, user_id: int, target_date: date) -> None:
