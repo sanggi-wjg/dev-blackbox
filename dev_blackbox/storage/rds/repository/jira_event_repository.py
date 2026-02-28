@@ -26,7 +26,7 @@ class JiraEventRepository:
             JiraEvent.user_id == user_id,
             JiraEvent.target_date == target_date,
         )
-        for field, direction in (order_by or [("id", "asc")]):
+        for field, direction in order_by or [("id", "asc")]:
             column = getattr(JiraEvent, field)
             stmt = stmt.order_by(column.asc() if direction == "asc" else column.desc())
         return list(self.session.scalars(stmt).all())

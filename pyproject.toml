@@ -20,6 +20,7 @@ dependencies = [
     "pgvector (>=0.4.2,<0.5.0)",
     "psycopg2-binary (>=2.9.11,<3.0.0)",
     "tenacity (>=9.1.4,<10.0.0)",
+    "fastapi (>=0.133.1,<0.134.0)",
     "apscheduler (>=3.11.2,<4.0.0)",
     "redis (>=7.2.1,<8.0.0)",
     "pytest (>=9.0.2,<10.0.0)",
@@ -28,14 +29,13 @@ dependencies = [
     "pyjwt (>=2.11.0,<3.0.0)",
     "pwdlib[argon2] (>=0.3.0,<0.4.0)",
     "python-multipart (>=0.0.22,<0.0.23)",
-    "fastapi (>=0.133.1,<0.134.0)",
+    "pre-commit (>=4.5.1,<5.0.0)",
 ]
 
 [dependency-groups]
 dev = [
     "black (>=26.1.0,<27.0.0)",
     "pyright (>=1.1.408,<2.0.0)",
-    "pre-commit (>=4.5.1,<5.0.0)",
     "testcontainers[postgres] (>=4.14.1,<5.0.0)",
     "pytest (>=9.0.2,<10.0.0)",
     "pytest-env (>=1.5.0,<2.0.0)",

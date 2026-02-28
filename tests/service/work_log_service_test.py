@@ -346,9 +346,7 @@ class WorkLogServiceTest:
         service = WorkLogService(db_session)
 
         # when
-        is_created, result = service.create_or_update_user_content(
-            user.id, target_date, "My note"
-        )
+        is_created, result = service.create_or_update_user_content(user.id, target_date, "My note")
 
         # then
         assert is_created is True

@@ -39,8 +39,7 @@ class GitHubUserSecretServiceTest:
         assert result.user_id == command.user_id
         assert result.username == command.username
         assert (
-            encrypt_service.decrypt(result.personal_access_token)
-            == command.personal_access_token
+            encrypt_service.decrypt(result.personal_access_token) == command.personal_access_token
         )
 
     def test_create_secret_존재하지_않는_유저(

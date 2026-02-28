@@ -120,7 +120,5 @@ class SaveIdempotentResponseTest:
         mock_cache.set.side_effect = Exception("Connection refused")
 
         # when / then — 예외 없이 정상 완료
-        with patch(
-            "dev_blackbox.util.idempotent_request.CacheService", return_value=mock_cache
-        ):
+        with patch("dev_blackbox.util.idempotent_request.CacheService", return_value=mock_cache):
             save_idempotent_response(request, idempotency_key, response_data)
