@@ -13,6 +13,8 @@ from dev_blackbox.storage.rds.entity import *  # noqa: F403,F401
 from dev_blackbox.storage.rds.entity.base import Base
 from dev_blackbox.storage.rds.entity.github_event import GitHubEvent
 from dev_blackbox.storage.rds.entity.github_user_secret import GitHubUserSecret
+from dev_blackbox.storage.rds.entity.jira_secret import JiraSecret
+from dev_blackbox.storage.rds.entity.slack_secret import SlackSecret
 from tests.fixtures.github_fixture import create_github_event_model
 
 
@@ -92,6 +94,52 @@ def github_user_secret_fixture(
             username=username,
             personal_access_token=encrypt_service.encrypt(personal_access_token),
             user_id=user_id,
+        )
+        db_session.add(secret)
+        db_session.flush()
+        return secret
+
+    return _create
+
+
+@pytest.fixture()
+def jira_secret_fixture(
+    db_session: Session,
+) -> Callable[..., JiraSecret]:
+
+    def _create(
+        name: str = "Test Jira",
+        url: str = "https://test.atlassian.net",
+        username: str = "jira_user",
+        api_token: str = "jira_token",
+    ) -> JiraSecret:
+        encrypt_service = get_encrypt_service()
+        secret = JiraSecret.create(
+            name=name,
+            url=url,
+            username=encrypt_service.encrypt(username),
+            api_token=encrypt_service.encrypt(api_token),
+        )
+        db_session.add(secret)
+        db_session.flush()
+        return secret
+
+    return _create
+
+
+@pytest.fixture()
+def slack_secret_fixture(
+    db_session: Session,
+) -> Callable[..., SlackSecret]:
+
+    def _create(
+        name: str = "Test Slack",
+        bot_token: str = "xoxb-test-token",
+    ) -> SlackSecret:
+        encrypt_service = get_encrypt_service()
+        secret = SlackSecret.create(
+            name=name,
+            bot_token=encrypt_service.encrypt(bot_token),
         )
         db_session.add(secret)
         db_session.flush()

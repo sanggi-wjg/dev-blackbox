@@ -1,12 +1,12 @@
 from sqlalchemy.orm import Session
 
-from dev_blackbox.controller.api.dto.github_user_secret_dto import CreateGitHubSecretRequestDto
 from dev_blackbox.core.encrypt import get_encrypt_service
 from dev_blackbox.core.exception import (
+    GitHubUserSecretAlreadyExistException,
     GitHubUserSecretNotFoundException,
     UserNotFoundException,
-    GitHubUserSecretAlreadyExistException,
 )
+from dev_blackbox.service.command.github_user_secret_command import CreateGitHubUserSecretCommand
 from dev_blackbox.storage.rds.entity.github_user_secret import GitHubUserSecret
 from dev_blackbox.storage.rds.repository import GitHubUserSecretRepository, UserRepository
 
@@ -18,23 +18,19 @@ class GitHubUserSecretService:
         self.github_user_secret_repository = GitHubUserSecretRepository(session)
         self.encrypt_service = get_encrypt_service()
 
-    def create_secret(
-        self,
-        user_id: int,
-        request: CreateGitHubSecretRequestDto,
-    ) -> GitHubUserSecret:
+    def create_secret(self, command: CreateGitHubUserSecretCommand) -> GitHubUserSecret:
         # 권한 등은 유저 부분이 안되었으니 현재는 스킵
-        user = self.user_repository.find_by_id(user_id)
+        user = self.user_repository.find_by_id(command.user_id)
         if not user:
-            raise UserNotFoundException(user_id)
+            raise UserNotFoundException(command.user_id)
 
         github_user_secret = self.github_user_secret_repository.find_by_user_id(user_id=user.id)
         if github_user_secret:
             raise GitHubUserSecretAlreadyExistException(user_id=user.id)
 
-        encrypted_token = self.encrypt_service.encrypt(request.personal_access_token)
+        encrypted_token = self.encrypt_service.encrypt(command.personal_access_token)
         secret = GitHubUserSecret.create(
-            username=request.username,
+            username=command.username,
             personal_access_token=encrypted_token,
             user_id=user.id,
         )

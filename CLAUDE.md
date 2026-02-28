@@ -59,6 +59,15 @@
 3. [단계] → 검증: [확인 사항]
 ```
 
+### 5. Skills 활용
+
+**반복적이고 패턴화된 작업은 Skills를 사용할 것.**
+
+- 작업이 기존 Skill의 범위에 해당하면 해당 Skill의 가이드라인을 따를 것.
+- 현재 사용 가능한 Skills:
+    - `create-table` — DB 테이블 및 Entity/Repository 생성
+    - `create-service-test` — Service 레이어 테스트 코드 생성
+
 ---
 
 # Dev-Blackbox

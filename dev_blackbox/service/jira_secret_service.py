@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from dev_blackbox.client.jira_client import JiraClient, get_jira_client
 from dev_blackbox.core.encrypt import get_encrypt_service
 from dev_blackbox.core.exception import JiraSecretNotFoundException
+from dev_blackbox.service.command.jira_secret_command import CreateJiraSecretCommand
 from dev_blackbox.storage.rds.entity.jira_secret import JiraSecret
 from dev_blackbox.storage.rds.repository import JiraSecretRepository
 
@@ -13,18 +14,12 @@ class JiraSecretService:
         self.jira_secret_repository = JiraSecretRepository(session)
         self.encrypt_service = get_encrypt_service()
 
-    def create_secret(
-        self,
-        name: str,
-        url: str,
-        username: str,
-        api_token: str,
-    ) -> JiraSecret:
-        encrypted_username = self.encrypt_service.encrypt(username)
-        encrypted_api_token = self.encrypt_service.encrypt(api_token)
+    def create_secret(self, command: CreateJiraSecretCommand) -> JiraSecret:
+        encrypted_username = self.encrypt_service.encrypt(command.username)
+        encrypted_api_token = self.encrypt_service.encrypt(command.api_token)
         secret = JiraSecret.create(
-            name=name,
-            url=url,
+            name=command.name,
+            url=command.url,
             username=encrypted_username,
             api_token=encrypted_api_token,
         )

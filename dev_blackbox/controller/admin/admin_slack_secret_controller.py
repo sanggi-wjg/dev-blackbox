@@ -8,6 +8,7 @@ from dev_blackbox.controller.admin.dto.slack_secret_dto import (
 )
 from dev_blackbox.controller.config.security_config import CurrentAdminUser
 from dev_blackbox.core.database import get_db
+from dev_blackbox.service.command.slack_secret_command import CreateSlackSecretCommand
 from dev_blackbox.service.slack_secret_service import SlackSecretService
 from dev_blackbox.service.slack_user_service import SlackUserService
 
@@ -25,10 +26,11 @@ async def create_slack_secret(
     db: Session = Depends(get_db),
 ):
     service = SlackSecretService(db)
-    secret = service.create_secret(
+    command = CreateSlackSecretCommand(
         name=request.name,
         bot_token=request.bot_token,
     )
+    secret = service.create_secret(command)
     return SlackSecretResponseDto.from_entity(secret)
 
 

@@ -200,6 +200,21 @@ def test_{메서드명}_{예외조건}(self, db_session):
 ## 컨벤션
 
 - `# given`, `# when`, `# then` 주석으로 구분 (mock이 있으면 `# mock` 섹션 추가)
+- **`then`에서 `given`의 입력 값을 참조**: 검증 시 리터럴 문자열을 반복하지 말고, `given`에서 생성한 변수(DTO, 모델 등)의 필드를 참조한다.
+    ```python
+    # given
+    request = CreateGitHubSecretRequestDto(
+        username="test_user",
+        personal_access_token="ghp_test_token_123",
+    )
+
+    # then
+    # Good — given의 변수를 참조
+    assert result.username == request.username
+
+    # Bad — 리터럴 값을 반복
+    assert result.username == "test_user"
+    ```
 - 한글 함수명 사용 가능 (예: `test_get_events_이벤트가_없으면_빈_리스트`)
 - `db_session` 내 조회 결과는 SQLAlchemy Identity Map 덕분에 `==`로 객체 비교
 - `MagicMock`에는 반드시 `spec=ClassName` 지정 (type-safe mock)
