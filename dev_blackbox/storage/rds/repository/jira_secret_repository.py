@@ -23,4 +23,4 @@ class JiraSecretRepository:
 
     def find_all(self) -> list[JiraSecret]:
         stmt = select(JiraSecret).where(JiraSecret.is_deleted.is_(False)).order_by(JiraSecret.id)
-        return list(self.session.scalars(stmt).all())
+        return list(self.session.scalars(stmt))

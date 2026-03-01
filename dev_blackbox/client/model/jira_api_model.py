@@ -59,11 +59,7 @@ class JiraStatusGroup:
     ]
 
 
-class JQL(BaseModel):
-    pass
-
-
-class IssueJQL(JQL):
+class IssueJQL(BaseModel):
     project: str | None = None
     assignee_account_id: str | None = None
     include_status: JiraIssueStatus | None = None

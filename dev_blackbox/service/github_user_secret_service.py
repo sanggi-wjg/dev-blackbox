@@ -7,6 +7,7 @@ from dev_blackbox.core.exception import (
     UserNotFoundException,
 )
 from dev_blackbox.service.command.github_user_secret_command import CreateGitHubUserSecretCommand
+from dev_blackbox.storage.rds.entity import User
 from dev_blackbox.storage.rds.entity.github_user_secret import GitHubUserSecret
 from dev_blackbox.storage.rds.repository import GitHubUserSecretRepository, UserRepository
 
@@ -20,10 +21,7 @@ class GitHubUserSecretService:
 
     def create_secret(self, command: CreateGitHubUserSecretCommand) -> GitHubUserSecret:
         # 권한 등은 유저 부분이 안되었으니 현재는 스킵
-        user = self.user_repository.find_by_id(command.user_id)
-        if not user:
-            raise UserNotFoundException(command.user_id)
-
+        user = self._get_user_or_throw(command.user_id)
         github_user_secret = self.github_user_secret_repository.find_by_user_id(user_id=user.id)
         if github_user_secret:
             raise GitHubUserSecretAlreadyExistException(user_id=user.id)
@@ -37,6 +35,8 @@ class GitHubUserSecretService:
         return self.github_user_secret_repository.save(secret)
 
     def get_secret_by_user_id_or_throw(self, user_id: int) -> GitHubUserSecret:
+        if self.user_repository.find_by_id(user_id) is None:
+            raise UserNotFoundException(user_id)
         secret = self.github_user_secret_repository.find_by_user_id(user_id)
         if secret is None:
             raise GitHubUserSecretNotFoundException(user_id)
@@ -45,7 +45,12 @@ class GitHubUserSecretService:
     def get_decrypted_token_by_secret(self, secret: GitHubUserSecret) -> str:
         return self.encrypt_service.decrypt(secret.personal_access_token)
 
-    def delete_secret(self, user_id: int) -> bool:
+    def delete_secret(self, user_id: int) -> None:
         secret = self.get_secret_by_user_id_or_throw(user_id)
-        self.github_user_secret_repository.delete(secret)
-        return True
+        secret.delete()
+
+    def _get_user_or_throw(self, user_id: int) -> User:
+        user = self.user_repository.find_by_id(user_id)
+        if user is None:
+            raise UserNotFoundException(user_id)
+        return user

@@ -33,7 +33,7 @@ class DailyWorkLogRepository:
             .where(DailyWorkLog.user_id == user_id)
             .order_by(DailyWorkLog.target_date.desc())
         )
-        return list(self.session.scalars(stmt).all())
+        return list(self.session.scalars(stmt))
 
     def delete_by_user_id_and_target_date(self, user_id: int, target_date: date) -> None:
         stmt = delete(DailyWorkLog).where(

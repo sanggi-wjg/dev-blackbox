@@ -42,7 +42,7 @@ class PlatformWorkLogRepository:
             )
             .order_by(PlatformWorkLog.platform.asc())
         )
-        return list(self.session.scalars(stmt).all())
+        return list(self.session.scalars(stmt))
 
     def delete_by_user_id_and_target_date_and_platform(
         self,

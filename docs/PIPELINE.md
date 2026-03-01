@@ -60,7 +60,7 @@ _collect_github_events(user_id, target_date)
        ├── commit_detail_text 추출 → 텍스트 병합 (최대 50,000자)
        │
        ▼
-_summarize_github(user, target_date, commit_message)
+_summarize_platform(user, target_date, GITHUB, GITHUB_COMMIT_SUMMARY_PROMPT, ...)
        │
        ├── SummaryOllamaConfig (temperature=0.1, context=64k)
        ├── LLMAgent.query(GITHUB_COMMIT_SUMMARY_PROMPT)   ← Ollama 요약
@@ -86,7 +86,7 @@ _collect_jira_events(user, target_date)
        ├── issue_detail_text(target_date, tz_info) 추출 → 텍스트 병합 (최대 50,000자)
        │
        ▼
-_summarize_jira(user, target_date, issue_details)
+_summarize_platform(user, target_date, JIRA, JIRA_ISSUE_SUMMARY_PROMPT, ...)
        │
        ├── SummaryOllamaConfig (temperature=0.1, context=64k)
        ├── LLMAgent.query(JIRA_ISSUE_SUMMARY_PROMPT)      ← Ollama 요약
@@ -105,7 +105,7 @@ _collect_slack_events(user, target_date)
        ├── "[#{channel_name}] {message_text}" 포맷 → 텍스트 병합 (최대 50,000자)
        │
        ▼
-_summarize_slack(user, target_date, message_details)
+_summarize_platform(user, target_date, SLACK, SLACK_MESSAGE_SUMMARY_PROMPT, ...)
        │
        ├── SummaryOllamaConfig (temperature=0.1, context=64k)
        ├── LLMAgent.query(SLACK_MESSAGE_SUMMARY_PROMPT)    ← Ollama 요약

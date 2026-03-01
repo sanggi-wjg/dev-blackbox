@@ -1,6 +1,8 @@
 import logging
 from datetime import date
 
+from llama_index.core.prompts import PromptTemplate
+
 from dev_blackbox.agent.llm_agent import LLMAgent
 from dev_blackbox.agent.model.llm_model import SummaryOllamaConfig
 from dev_blackbox.agent.model.prompt import (
@@ -52,7 +54,7 @@ def collect_events_and_summarize_work_log_by_user_task(user_id: int, target_date
 
         with get_db_session() as session:
             user_service = UserService(session)
-            user = user_service.get_user_by_id_or_throw(user_id)
+            user = user_service.get_user_with_relations_or_throw(user_id)
             user_context = UserContext.from_entity(user)
         _collect_events_and_summarize(user_context, target_date)
 
@@ -97,7 +99,13 @@ def _collect_and_summarize(user: UserContext, target_date: date):
         if user.has_github_user_secret:
             commit_message = _collect_github_events(user.id, target_date)
             if commit_message:
-                _summarize_github(user, target_date, commit_message)
+                _summarize_platform(
+                    user,
+                    target_date,
+                    PlatformEnum.GITHUB,
+                    GITHUB_COMMIT_SUMMARY_PROMPT,
+                    commit_message=commit_message,
+                )
             else:
                 _save_empty_work_log(user, target_date, PlatformEnum.GITHUB)
     except Exception as e:
@@ -110,7 +118,13 @@ def _collect_and_summarize(user: UserContext, target_date: date):
         if user.has_jira_user:
             issue_details = _collect_jira_events(user, target_date)
             if issue_details:
-                _summarize_jira(user, target_date, issue_details)
+                _summarize_platform(
+                    user,
+                    target_date,
+                    PlatformEnum.JIRA,
+                    JIRA_ISSUE_SUMMARY_PROMPT,
+                    issue_details=issue_details,
+                )
             else:
                 _save_empty_work_log(user, target_date, PlatformEnum.JIRA)
     except Exception as e:
@@ -123,7 +137,13 @@ def _collect_and_summarize(user: UserContext, target_date: date):
         if user.has_slack_user:
             message_details = _collect_slack_events(user, target_date)
             if message_details:
-                _summarize_slack(user, target_date, message_details)
+                _summarize_platform(
+                    user,
+                    target_date,
+                    PlatformEnum.SLACK,
+                    SLACK_MESSAGE_SUMMARY_PROMPT,
+                    message_details=message_details,
+                )
             else:
                 _save_empty_work_log(user, target_date, PlatformEnum.SLACK)
     except Exception as e:
@@ -190,38 +210,22 @@ def _collect_slack_events(user: UserContext, target_date: date) -> str:
     return message_details
 
 
-def _summarize_github(user: UserContext, target_date: date, commit_message: str):
+def _summarize_platform(
+    user: UserContext,
+    target_date: date,
+    platform: PlatformEnum,
+    prompt: PromptTemplate,
+    **prompt_kwargs: str,
+):
     llm_config = SummaryOllamaConfig()
-    prompt = GITHUB_COMMIT_SUMMARY_PROMPT
 
     try:
         llm_agent = LLMAgent.create_with_ollama(llm_config)
-        summary_text = llm_agent.query(prompt, commit_message=commit_message)
+        summary_text = llm_agent.query(prompt, **prompt_kwargs)
     except Exception:
-        logger.exception(f"LLM 요약 실패 (GitHub): user_id={user.id}, target_date={target_date}")
-        raise
-
-    with get_db_session() as session:
-        service = WorkLogService(session)
-        service.save_platform_work_log(
-            user_id=user.id,
-            target_date=target_date,
-            platform=PlatformEnum.GITHUB,
-            content=summary_text,
-            model_name=llm_config.model,
-            prompt=prompt.template,
+        logger.exception(
+            f"LLM 요약 실패 ({platform}): user_id={user.id}, target_date={target_date}"
         )
-
-
-def _summarize_jira(user: UserContext, target_date: date, issue_details: str):
-    llm_config = SummaryOllamaConfig()
-    prompt = JIRA_ISSUE_SUMMARY_PROMPT
-
-    try:
-        llm_agent = LLMAgent.create_with_ollama(llm_config)
-        summary_text = llm_agent.query(prompt, issue_details=issue_details)
-    except Exception:
-        logger.exception(f"LLM 요약 실패 (Jira): user_id={user.id}, target_date={target_date}")
         raise
 
     with get_db_session() as session:
@@ -229,30 +233,7 @@ def _summarize_jira(user: UserContext, target_date: date, issue_details: str):
         service.save_platform_work_log(
             user_id=user.id,
             target_date=target_date,
-            platform=PlatformEnum.JIRA,
-            content=summary_text,
-            model_name=llm_config.model,
-            prompt=prompt.template,
-        )
-
-
-def _summarize_slack(user: UserContext, target_date: date, message_details: str):
-    llm_config = SummaryOllamaConfig()
-    prompt = SLACK_MESSAGE_SUMMARY_PROMPT
-
-    try:
-        llm_agent = LLMAgent.create_with_ollama(llm_config)
-        summary_text = llm_agent.query(prompt, message_details=message_details)
-    except Exception:
-        logger.exception(f"LLM 요약 실패 (Slack): user_id={user.id}, target_date={target_date}")
-        raise
-
-    with get_db_session() as session:
-        service = WorkLogService(session)
-        service.save_platform_work_log(
-            user_id=user.id,
-            target_date=target_date,
-            platform=PlatformEnum.SLACK,
+            platform=platform,
             content=summary_text,
             model_name=llm_config.model,
             prompt=prompt.template,
