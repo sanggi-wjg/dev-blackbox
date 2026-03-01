@@ -1,13 +1,12 @@
-name: ✅ Build
+name: 📊 Coverage Badge
 
 on:
-  pull_request:
   push:
     branches:
       - main
 
 jobs:
-  lint-and-typecheck-and-test:
+  coverage-badge:
     runs-on: ubuntu-latest
 
     steps:
@@ -37,11 +36,19 @@ jobs:
       - name: Install dependencies
         run: poetry install --no-interaction
 
-      - name: ✅ Run Black (format check)
-        run: poetry run black --check --diff .
-
-      - name: ✅ Run Pyright (type check)
-        run: poetry run pyright
-
       - name: 🚀 Run Pytest
         run: poetry run pytest
+
+      - name: 📊 Generate coverage badge
+        run: |
+          pip install "genbadge[coverage]"
+          mkdir -p badges
+          genbadge coverage -i coverage.xml -o badges/coverage-badge.svg
+
+      - name: 🚀 Deploy badge to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./badges
+          destination_dir: badges
+          keep_files: true

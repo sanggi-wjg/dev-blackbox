@@ -11,4 +11,5 @@ playground*
 
 # Coverage
 htmlcov/
-.coverage
+.coverage*
+coverage*

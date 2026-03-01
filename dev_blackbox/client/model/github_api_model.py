@@ -10,10 +10,10 @@ from dev_blackbox.util.datetime_util import get_date_from_iso_format
 
 class GithubEventModel(BaseModel):
     id: str
-    type: Literal["PushEvent", "PullRequestEvent"] | str
-    actor: dict
+    actor: GitHubActorModel
     repo: GithubRepositoryModel
-    payload: dict
+    type: Literal["PushEvent", "PullRequestEvent", "CreateEvent", "DeleteEvent"] | str
+    payload: GithubPushEventPayloadModel | GithubPullRequestEventPayload | dict
     public: bool
     created_at: str
     org: dict | None = None
@@ -61,6 +61,15 @@ class GithubEventModel(BaseModel):
 
 class GithubEventModelList(BaseModel):
     events: list[GithubEventModel]
+
+
+class GitHubActorModel(BaseModel):
+    id: int
+    url: str
+    login: str
+    avatar_url: str
+    gravatar_id: str
+    display_login: str
 
 
 class GithubPushEventPayloadModel(BaseModel):

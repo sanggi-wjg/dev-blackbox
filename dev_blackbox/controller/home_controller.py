@@ -8,5 +8,5 @@ router = APIRouter(tags=["Home"])
     status_code=status.HTTP_200_OK,
     response_model=dict[str, str],
 )
-async def root():
+async def index():
     return {"message": "Hello World"}
