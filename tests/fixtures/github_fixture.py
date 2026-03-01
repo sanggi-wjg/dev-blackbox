@@ -1,6 +1,10 @@
 import uuid
 
-from dev_blackbox.client.model.github_api_model import GithubEventModel, GithubRepositoryModel
+from dev_blackbox.client.model.github_api_model import (
+    GithubEventModel,
+    GithubRepositoryModel,
+    GitHubActorModel,
+)
 
 
 def create_github_event_model(
@@ -10,7 +14,14 @@ def create_github_event_model(
     return GithubEventModel(
         id=event_id,
         type=event_type,
-        actor={},
+        actor=GitHubActorModel(
+            id=1,
+            url="https://api.github.com/users/test",
+            login="test",
+            avatar_url="https://avatars.githubusercontent.com/u/12345678?v=4",
+            gravatar_id="abc123",
+            display_login="Test",
+        ),
         repo=GithubRepositoryModel(
             id=1, name="test/repo", url="https://api.github.com/repos/test/repo"
         ),
