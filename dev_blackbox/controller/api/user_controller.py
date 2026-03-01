@@ -21,5 +21,5 @@ async def get_user_me(
 ):
     service = UserService(db)
     encrypt_service = get_encrypt_service()
-    user = service.get_user_by_id_or_throw(current_user.id)
+    user = service.get_user_with_relations_or_throw(current_user.id)
     return UserDetailResponseDto.from_entity(user, encrypt_service)

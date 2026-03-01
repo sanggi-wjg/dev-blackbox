@@ -35,7 +35,8 @@ class GitHubUserSecretService:
         return self.github_user_secret_repository.save(secret)
 
     def get_secret_by_user_id_or_throw(self, user_id: int) -> GitHubUserSecret:
-        self.user_repository.find_by_id(user_id)
+        if self.user_repository.find_by_id(user_id) is None:
+            raise UserNotFoundException(user_id)
         secret = self.github_user_secret_repository.find_by_user_id(user_id)
         if secret is None:
             raise GitHubUserSecretNotFoundException(user_id)
@@ -44,10 +45,9 @@ class GitHubUserSecretService:
     def get_decrypted_token_by_secret(self, secret: GitHubUserSecret) -> str:
         return self.encrypt_service.decrypt(secret.personal_access_token)
 
-    def delete_secret(self, user_id: int) -> bool:
+    def delete_secret(self, user_id: int) -> None:
         secret = self.get_secret_by_user_id_or_throw(user_id)
         secret.delete()
-        return True
 
     def _get_user_or_throw(self, user_id: int) -> User:
         user = self.user_repository.find_by_id(user_id)

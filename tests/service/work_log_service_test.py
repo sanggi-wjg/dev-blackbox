@@ -70,7 +70,7 @@ class WorkLogServiceTest:
         service = WorkLogService(db_session)
 
         # when
-        result = service.get_platform_work_logs(user.id, date(2025, 1, 1), PlatformEnum.all())
+        result = service.get_platform_work_logs(user.id, date(2025, 1, 1), list(PlatformEnum))
 
         # then
         assert result == []

@@ -92,13 +92,13 @@ class JiraUserSecretMismatchException(ServiceException):
 class JiraUserNotAssignedException(ServiceException):
 
     def __init__(self, user_id: int):
-        super().__init__(f"JiraUser not assigned to User. (UserId: {user_id}")
+        super().__init__(f"JiraUser not assigned to User. (UserId: {user_id})")
 
 
 class JiraUserProjectNotAssignedException(ServiceException):
 
     def __init__(self, user_id: int):
-        super().__init__(f"JiraUser project not assigned to User. (UserId: {user_id}")
+        super().__init__(f"JiraUser project not assigned to User. (UserId: {user_id})")
 
 
 class SlackUserSecretMismatchException(ServiceException):

@@ -32,7 +32,7 @@ class DailyWorkLog(Base):
         content: str,
         embedding: list[float] | None = None,
     ) -> "DailyWorkLog":
-        return DailyWorkLog(
+        return cls(
             user_id=user_id,
             target_date=target_date,
             content=content,

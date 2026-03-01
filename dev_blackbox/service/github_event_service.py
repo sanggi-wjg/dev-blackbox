@@ -30,7 +30,6 @@ class GitHubEventService:
     SUMMARY_EVENT_TYPES = ["PushEvent"]
 
     def __init__(self, session: Session):
-        self.session = session
         self.user_repository = UserRepository(session)
         self.github_event_repository = GitHubEventRepository(session)
         self.github_user_secret_repository = GitHubUserSecretRepository(session)

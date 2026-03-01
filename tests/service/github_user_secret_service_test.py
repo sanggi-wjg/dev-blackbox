@@ -137,11 +137,8 @@ class GitHubUserSecretServiceTest:
         github_user_secret_fixture(user_id=user.id)
         service = GitHubUserSecretService(db_session)
 
-        # when
-        result = service.delete_secret(user.id)
-
-        # then
-        assert result is True
+        # when & then
+        service.delete_secret(user.id)
 
     def test_delete_secret_시크릿이_없으면_예외(
         self,

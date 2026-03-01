@@ -76,8 +76,6 @@ class Settings(BaseSettings):
 
     @property
     def cors_allow_origins(self) -> list[str]:
-        if self.env in ["test", "local"]:
-            return ["*"]
         return ["*"]
 
 

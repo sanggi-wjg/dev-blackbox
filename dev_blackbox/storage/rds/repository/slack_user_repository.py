@@ -29,7 +29,7 @@ class SlackUserRepository:
 
     def find_all(self) -> list[SlackUser]:
         stmt = select(SlackUser).order_by(SlackUser.id)
-        return list(self.session.scalars(stmt).all())
+        return list(self.session.scalars(stmt))
 
     def find_all_by_slack_secret_id(self, slack_secret_id: int) -> list[SlackUser]:
         stmt = (
@@ -37,7 +37,7 @@ class SlackUserRepository:
             .where(SlackUser.slack_secret_id == slack_secret_id)
             .order_by(SlackUser.id)
         )
-        return list(self.session.scalars(stmt).all())
+        return list(self.session.scalars(stmt))
 
     def find_by_slack_secret_id_and_member_ids(
         self, slack_secret_id: int, member_ids: list[str]
@@ -46,4 +46,4 @@ class SlackUserRepository:
             SlackUser.slack_secret_id == slack_secret_id,
             SlackUser.member_id.in_(member_ids),
         )
-        return list(self.session.scalars(stmt).all())
+        return list(self.session.scalars(stmt))
