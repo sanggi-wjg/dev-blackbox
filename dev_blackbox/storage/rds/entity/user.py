@@ -26,6 +26,7 @@ class User(SoftDeleteMixin, Base):
         "GitHubUserSecret",
         back_populates="user",
         uselist=False,
+        primaryjoin="and_(User.id == GitHubUserSecret.user_id, GitHubUserSecret.is_deleted == False)",
     )
     jira_user: Mapped["JiraUser | None"] = relationship(
         "JiraUser",

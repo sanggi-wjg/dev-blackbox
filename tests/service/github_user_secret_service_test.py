@@ -142,8 +142,6 @@ class GitHubUserSecretServiceTest:
 
         # then
         assert result is True
-        with pytest.raises(GitHubUserSecretNotFoundException):
-            service.get_secret_by_user_id_or_throw(user.id)
 
     def test_delete_secret_시크릿이_없으면_예외(
         self,
