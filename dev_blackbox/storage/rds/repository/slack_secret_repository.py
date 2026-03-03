@@ -23,4 +23,4 @@ class SlackSecretRepository:
 
     def find_all(self) -> list[SlackSecret]:
         stmt = select(SlackSecret).where(SlackSecret.is_deleted.is_(False)).order_by(SlackSecret.id)
-        return list(self.session.scalars(stmt).all())
+        return list(self.session.scalars(stmt))

@@ -33,7 +33,7 @@ class JiraUserRepository:
 
     def find_by_account_ids(self, account_ids: list[str]) -> list[JiraUser]:
         stmt = select(JiraUser).where(JiraUser.account_id.in_(account_ids))
-        return list(self.session.scalars(stmt).all())
+        return list(self.session.scalars(stmt))
 
     def find_by_jira_secret_id_and_account_ids(
         self,
@@ -44,14 +44,14 @@ class JiraUserRepository:
             JiraUser.jira_secret_id == jira_secret_id,
             JiraUser.account_id.in_(account_ids),
         )
-        return list(self.session.scalars(stmt).all())
+        return list(self.session.scalars(stmt))
 
     def find_all(self) -> list[JiraUser]:
         stmt = select(JiraUser).order_by(JiraUser.id)
-        return list(self.session.scalars(stmt).all())
+        return list(self.session.scalars(stmt))
 
     def find_all_by_jira_secret_id(self, jira_secret_id: int) -> list[JiraUser]:
         stmt = (
             select(JiraUser).where(JiraUser.jira_secret_id == jira_secret_id).order_by(JiraUser.id)
         )
-        return list(self.session.scalars(stmt).all())
+        return list(self.session.scalars(stmt))

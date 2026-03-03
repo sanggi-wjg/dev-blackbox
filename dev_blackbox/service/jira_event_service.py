@@ -28,7 +28,6 @@ logger = logging.getLogger(__name__)
 class JiraEventService:
 
     def __init__(self, session: Session):
-        self.session = session
         self.user_repository = UserRepository(session)
         self.jira_event_repository = JiraEventRepository(session)
         self.jira_secret_service = JiraSecretService(session)

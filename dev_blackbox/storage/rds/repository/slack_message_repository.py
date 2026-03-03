@@ -29,7 +29,7 @@ class SlackMessageRepository:
         for field, direction in order_by or [("id", "asc")]:
             column = getattr(SlackMessage, field)
             stmt = stmt.order_by(column.asc() if direction == "asc" else column.desc())
-        return list(self.session.scalars(stmt).all())
+        return list(self.session.scalars(stmt))
 
     def delete_by_user_id_and_target_date(self, user_id: int, target_date: date) -> None:
         stmt = delete(SlackMessage).where(

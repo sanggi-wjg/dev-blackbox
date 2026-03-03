@@ -18,7 +18,6 @@ logger = logging.getLogger(__name__)
 class SlackUserService:
 
     def __init__(self, session: Session):
-        self.session = session
         self.user_repository = UserRepository(session)
         self.slack_user_repository = SlackUserRepository(session)
         self.slack_secret_service = SlackSecretService(session)

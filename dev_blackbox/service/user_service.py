@@ -42,6 +42,12 @@ class UserService:
             raise UserNotFoundException(user_id)
         return user
 
+    def get_user_with_relations_or_throw(self, user_id: int) -> User:
+        user = self.user_repository.find_with_join_by_id(user_id)
+        if user is None:
+            raise UserNotFoundException(user_id)
+        return user
+
     def get_user_by_email_or_none(self, email: str) -> User | None:
         return self.user_repository.find_by_email(email)
 

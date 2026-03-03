@@ -25,7 +25,6 @@ from dev_blackbox.storage.rds.repository import (
 class WorkLogService:
 
     def __init__(self, session: Session):
-        self.session = session
         self.platform_work_log_repository = PlatformWorkLogRepository(session)
         self.daily_work_log_repository = DailyWorkLogRepository(session)
         self.github_event_repository = GitHubEventRepository(session)

@@ -1,5 +1,5 @@
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from dev_blackbox.storage.rds.entity.user import User
 
@@ -18,6 +18,18 @@ class UserRepository:
         stmt = select(User).where(User.id == user_id, User.is_deleted.is_(False))
         return self.session.scalar(stmt)
 
+    def find_with_join_by_id(self, user_id: int) -> User | None:
+        stmt = (
+            select(User)
+            .options(
+                joinedload(User.github_user_secret),
+                joinedload(User.jira_user),
+                joinedload(User.slack_user),
+            )
+            .where(User.id == user_id, User.is_deleted.is_(False))
+        )
+        return self.session.scalar(stmt)
+
     def find_by_name(self, name: str) -> User | None:
         stmt = select(User).where(User.name == name, User.is_deleted.is_(False))
         return self.session.scalar(stmt)
@@ -28,7 +40,7 @@ class UserRepository:
 
     def find_all(self) -> list[User]:
         stmt = select(User).where(User.is_deleted.is_(False)).order_by(User.id)
-        return list(self.session.scalars(stmt).all())
+        return list(self.session.scalars(stmt))
 
     def find_all_by_condition(
         self,
@@ -42,7 +54,7 @@ class UserRepository:
             stmt = stmt.where(User.is_deleted == is_deleted)
 
         stmt = stmt.order_by(User.id)
-        return list(self.session.scalars(stmt).all())
+        return list(self.session.scalars(stmt))
 
     def is_exist(self, user_id: int) -> bool:
         stmt = select(User.id).where(User.id == user_id, User.is_deleted.is_(False))

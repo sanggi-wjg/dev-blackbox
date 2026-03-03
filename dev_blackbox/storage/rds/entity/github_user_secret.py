@@ -1,16 +1,24 @@
 from typing import TYPE_CHECKING
 
-from sqlalchemy import BigInteger, String, ForeignKey
+from sqlalchemy import BigInteger, Index, String, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from dev_blackbox.storage.rds.entity.base import Base
+from dev_blackbox.storage.rds.entity.base import Base, SoftDeleteMixin
 
 if TYPE_CHECKING:
     from dev_blackbox.storage.rds.entity.user import User
 
 
-class GitHubUserSecret(Base):
+class GitHubUserSecret(SoftDeleteMixin, Base):
     __tablename__ = "github_user_secret"
+    __table_args__ = (
+        Index(
+            "uq_github_user_secret_user_id",
+            "user_id",
+            unique=True,
+            postgresql_where="is_deleted = FALSE",
+        ),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True, autoincrement=True)
     username: Mapped[str] = mapped_column(String(50), nullable=False)
@@ -20,7 +28,6 @@ class GitHubUserSecret(Base):
         BigInteger,
         ForeignKey("users.id", ondelete="RESTRICT"),
         nullable=False,
-        unique=True,
     )
     user: Mapped["User"] = relationship("User", back_populates="github_user_secret")
 
@@ -39,3 +46,7 @@ class GitHubUserSecret(Base):
             personal_access_token=personal_access_token,
             user_id=user_id,
         )
+
+    def delete(self):
+        super().delete()
+        self.personal_access_token = ""
