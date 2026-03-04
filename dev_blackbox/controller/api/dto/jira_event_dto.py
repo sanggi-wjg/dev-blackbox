@@ -18,6 +18,7 @@ class JiraEventResponseDto(BaseModel):
     id: int
     issue_id: str
     issue_key: str
+    issue_url: str
     target_date: date
     issue: JiraIssueModel
     changelog: list[JiraChangelogHistoryModel] | None
@@ -28,6 +29,7 @@ class JiraEventResponseDto(BaseModel):
             id=entity.id,
             issue_id=entity.issue_id,
             issue_key=entity.issue_key,
+            issue_url=entity.issue_url,
             target_date=entity.target_date,
             issue=entity.issue_model,
             changelog=(

@@ -17,6 +17,7 @@ class JiraEvent(Base):
     target_date: Mapped[date] = mapped_column(Date, nullable=False)
     issue_id: Mapped[str] = mapped_column(String(100), nullable=False)
     issue_key: Mapped[str] = mapped_column(String(100), nullable=False)
+    issue_url: Mapped[str] = mapped_column(String(512), nullable=False)
     issue: Mapped[dict] = mapped_column(JSONB, nullable=False)
     changelog: Mapped[list | None] = mapped_column(JSONB, nullable=True)
 
@@ -42,6 +43,7 @@ class JiraEvent(Base):
         target_date: date,
         issue_id: str,
         issue_key: str,
+        issue_url: str,
         issue: dict,
         changelog: list | None,
     ) -> "JiraEvent":
@@ -51,6 +53,7 @@ class JiraEvent(Base):
             target_date=target_date,
             issue_id=issue_id,
             issue_key=issue_key,
+            issue_url=issue_url,
             issue=issue,
             changelog=changelog,
         )

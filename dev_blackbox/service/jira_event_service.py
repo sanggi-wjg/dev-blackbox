@@ -14,7 +14,7 @@ from dev_blackbox.core.exception import (
     JiraUserProjectNotAssignedException,
 )
 from dev_blackbox.service.jira_secret_service import JiraSecretService
-from dev_blackbox.storage.rds.entity import User
+from dev_blackbox.storage.rds.entity import User, jira_secret
 from dev_blackbox.storage.rds.entity.jira_event import JiraEvent
 from dev_blackbox.storage.rds.repository import (
     UserRepository,
@@ -37,10 +37,7 @@ class JiraEventService:
         user_id: int,
         target_date: date,
     ) -> list[JiraEvent]:
-        return self.jira_event_repository.find_all_by_user_id_and_target_date(
-            user_id,
-            target_date,
-        )
+        return self.jira_event_repository.find_all_by_user_id_and_target_date(user_id, target_date)
 
     def save_jira_events(
         self,
@@ -102,6 +99,7 @@ class JiraEventService:
                     target_date=target_date,
                     issue_id=issue_model.id,
                     issue_key=issue_model.key,
+                    issue_url=f"{jira_user.jira_secret}/browse/{issue_model.key}",
                     issue=issue_model.model_dump(mode="json"),
                     changelog=changelog_data,
                 )
