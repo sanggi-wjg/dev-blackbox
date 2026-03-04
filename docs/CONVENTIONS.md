@@ -19,6 +19,17 @@
 
 Controller(DTO) → Service(Model/Entity) → Repository(Entity). 역방향 참조 금지.
 
+## Controller 의존성 주입
+
+Controller 엔드포인트의 파라미터 바인딩 방식:
+
+- **DB 세션**: `db: Session = Depends(get_db)`
+- **인증 토큰**: `token: AuthToken` (OAuth2 Bearer Token)
+- **현재 사용자**: `current_user: CurrentUser` / `current_user: CurrentAdminUser`
+- **Query Parameter**: `param: Annotated[XxxParam, Query()]` — `Depends()` 사용 금지. `Annotated + Query()`로 명시적 바인딩
+- **Request Body**: DTO를 타입 힌트로 직접 선언 (e.g., `request_dto: CreateRequestDto`)
+- **Path Parameter**: 함수 파라미터로 직접 선언 (e.g., `task_id: int`)
+
 ## DTO
 
 - API DTO는 `controller/api/dto/`에, Admin DTO는 `controller/admin/dto/`에 정의
@@ -32,6 +43,7 @@ Controller(DTO) → Service(Model/Entity) → Repository(Entity). 역방향 참�
 - **Command** (`service/command/`): 쓰기 작업의 입력 데이터. Service 메서드가 Controller의 DTO에 직접 의존하지 않도록 중간 객체 역할
 - **Query** (`service/query/`): 조회 조건 객체. 기존 `storage/rds/condition/`을 대체하여 Service 레이어에서 관리
 - Controller에서 DTO → Command/Query 변환 후 Service에 전달
+- **Service 메서드는 개별 파라미터 대신 Command/Query 객체를 받을 것** — 조회 메서드는 Query, 쓰기 메서드는 Command로 파라미터를 그룹화. `user_id` 등 인증 정보도 Query/Command에 포함
 
 ## Service Model
 

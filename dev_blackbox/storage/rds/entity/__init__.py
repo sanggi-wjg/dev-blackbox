@@ -8,6 +8,7 @@ from dev_blackbox.storage.rds.entity.platform_work_log import PlatformWorkLog
 from dev_blackbox.storage.rds.entity.slack_message import SlackMessage
 from dev_blackbox.storage.rds.entity.slack_secret import SlackSecret
 from dev_blackbox.storage.rds.entity.slack_user import SlackUser
+from dev_blackbox.storage.rds.entity.task import Task
 from dev_blackbox.storage.rds.entity.user import User
 
 __all__ = [
@@ -21,5 +22,6 @@ __all__ = [
     "SlackMessage",
     "SlackSecret",
     "SlackUser",
+    "Task",
     "User",
 ]
