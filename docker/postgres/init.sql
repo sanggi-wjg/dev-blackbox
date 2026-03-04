@@ -276,6 +276,7 @@ CREATE TABLE IF NOT EXISTS jira_event
     jira_user_id BIGINT       NOT NULL,
     issue_id     VARCHAR(100) NOT NULL,
     issue_key    VARCHAR(100) NOT NULL,
+    issue_url    VARCHAR(512) NOT NULL,
     target_date  DATE         NOT NULL,
     issue        JSONB        NOT NULL,
     changelog    JSONB        NULL,
@@ -300,7 +301,9 @@ CREATE INDEX idx_jira_event_003 ON jira_event (created_at DESC);
 COMMENT ON TABLE jira_event IS 'Jira 이슈 수집 데이터';
 COMMENT ON COLUMN jira_event.user_id IS '사용자 FK';
 COMMENT ON COLUMN jira_event.jira_user_id IS 'Jira 사용자 FK';
+COMMENT ON COLUMN jira_event.issue_id IS 'Jira 이슈 아이디 (123)';
 COMMENT ON COLUMN jira_event.issue_key IS 'Jira 이슈 키 (FMP-123)';
+COMMENT ON COLUMN jira_event.issue_url IS 'Jira 이슈 URL';
 COMMENT ON COLUMN jira_event.target_date IS '수집 대상 날짜';
 COMMENT ON COLUMN jira_event.issue IS '이슈 원본 데이터 (JSONB)';
 COMMENT ON COLUMN jira_event.changelog IS '변경 이력 데이터 (JSONB)';

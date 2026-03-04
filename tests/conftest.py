@@ -237,6 +237,7 @@ def jira_event_fixture(
             target_date=target_date,
             issue_id=issue_id,
             issue_key=issue_key,
+            issue_url=f"https://test.atlassian.net/browse/{issue_key}",
             issue={"id": issue_id, "key": issue_key, "fields": {}},
             changelog=None,
         )

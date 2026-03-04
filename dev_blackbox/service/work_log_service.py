@@ -46,17 +46,23 @@ class WorkLogService:
         github_events = self.github_event_repository.find_all_by_user_id_and_target_date(
             user_id,
             target_date,
-            [(GitHubEventOrderField.ID, OrderDirection.DESC)],
+            [
+                (GitHubEventOrderField.ID, OrderDirection.DESC),
+            ],
         )
         jira_events = self.jira_event_repository.find_all_by_user_id_and_target_date(
             user_id,
             target_date,
-            [(JiraEventOrderField.ID, OrderDirection.DESC)],
+            [
+                (JiraEventOrderField.ID, OrderDirection.DESC),
+            ],
         )
         slack_messages = self.slack_message_repository.find_all_by_user_id_and_target_date(
             user_id,
             target_date,
-            [(SlackMessageOrderField.ID, OrderDirection.DESC)],
+            [
+                (SlackMessageOrderField.ID, OrderDirection.DESC),
+            ],
         )
         return PlatformWorkLogsWithSources(
             work_logs=work_logs,
