@@ -11,3 +11,11 @@ class PlatformEnum(StrEnum):
     @classmethod
     def platforms(cls) -> list[PlatformEnum]:
         return [member for member in cls if member != PlatformEnum.USER_CONTENT]
+
+
+class TaskStatusEnum(StrEnum):
+    BACKLOG = "BACKLOG"
+    TODO = "TODO"
+    IN_PROGRESS = "IN_PROGRESS"
+    DONE = "DONE"
+    CANCELED = "CANCELED"

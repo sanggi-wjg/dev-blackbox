@@ -14,6 +14,7 @@ from dev_blackbox.storage.rds.repository.platform_work_log_repository import (
 from dev_blackbox.storage.rds.repository.slack_message_repository import SlackMessageRepository
 from dev_blackbox.storage.rds.repository.slack_secret_repository import SlackSecretRepository
 from dev_blackbox.storage.rds.repository.slack_user_repository import SlackUserRepository
+from dev_blackbox.storage.rds.repository.task_repository import TaskRepository
 from dev_blackbox.storage.rds.repository.user_repository import UserRepository
 
 __all__ = [
@@ -27,5 +28,6 @@ __all__ = [
     "SlackMessageRepository",
     "SlackSecretRepository",
     "SlackUserRepository",
+    "TaskRepository",
     "UserRepository",
 ]

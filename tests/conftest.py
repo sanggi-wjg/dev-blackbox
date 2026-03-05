@@ -12,7 +12,7 @@ from testcontainers.postgres import PostgresContainer
 
 from dev_blackbox.core.cache import get_redis_client
 from dev_blackbox.core.encrypt import get_encrypt_service
-from dev_blackbox.core.enum import PlatformEnum
+from dev_blackbox.core.enum import PlatformEnum, TaskStatusEnum
 from dev_blackbox.core.password import get_password_service
 from dev_blackbox.storage.rds.entity import *  # noqa: F403,F401
 from dev_blackbox.storage.rds.entity.base import Base
@@ -25,6 +25,7 @@ from dev_blackbox.storage.rds.entity.jira_user import JiraUser
 from dev_blackbox.storage.rds.entity.platform_work_log import PlatformWorkLog
 from dev_blackbox.storage.rds.entity.slack_message import SlackMessage
 from dev_blackbox.storage.rds.entity.slack_secret import SlackSecret
+from dev_blackbox.storage.rds.entity.task import Task
 from dev_blackbox.storage.rds.entity.slack_user import SlackUser
 from tests.fixtures.github_fixture import create_github_event_model
 
@@ -356,6 +357,34 @@ def daily_work_log_fixture(
         db_session.add(work_log)
         db_session.flush()
         return work_log
+
+    return _create
+
+
+@pytest.fixture()
+def task_fixture(
+    db_session: Session,
+) -> Callable[..., Task]:
+
+    def _create(
+        user_id: int,
+        title: str = "테스트 태스크",
+        status: TaskStatusEnum = TaskStatusEnum.TODO,
+        content: str = "",
+        tags: str | None = None,
+        display_order: int = 0,
+    ) -> Task:
+        task = Task.create(
+            user_id=user_id,
+            title=title,
+            status=status,
+            content=content,
+            tags=tags,
+            display_order=display_order,
+        )
+        db_session.add(task)
+        db_session.flush()
+        return task
 
     return _create
 

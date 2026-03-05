@@ -13,6 +13,7 @@ class CacheTTL(IntEnum):
 
 
 class CacheKey(StrEnum):
+    TASK = "tasks:users:{user_id}"
     WORK_LOG_PLATFORM = "work-logs-platforms:users:{user_id}:target_date:{target_date}"
     WORK_LOG_USER_CONTENT = "work-logs-user-content:users:{user_id}:target_date:{target_date}"
 

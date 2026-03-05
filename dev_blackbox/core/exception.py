@@ -56,6 +56,12 @@ class SlackUserNotFoundException(EntityNotFoundException):
         super().__init__(entity_name="SlackUser", identifier=slack_user_id)
 
 
+class TaskNotFoundException(EntityNotFoundException):
+
+    def __init__(self, identifier: Any):
+        super().__init__(entity_name="Task", identifier=identifier)
+
+
 class UserContentNotFoundException(EntityNotFoundException):
 
     def __init__(self, user_id: int, target_date: date):
