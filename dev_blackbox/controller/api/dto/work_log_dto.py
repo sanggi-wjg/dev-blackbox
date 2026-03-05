@@ -91,8 +91,3 @@ class PlatformWorkLogDetailResponseDto(BaseModel):
             created_at=entity.created_at,
             updated_at=entity.updated_at,
         )
-
-
-class UserContentCreateOrUpdateRequestDto(BaseModel):
-    target_date: date = Field(..., description="사용자 콘텐츠의 대상 날짜 (YYYY-MM-DD)")
-    content: str = Field(..., description="사용자 콘텐츠")

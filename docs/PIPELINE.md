@@ -66,7 +66,7 @@ _summarize_platform(user, target_date, GITHUB, GITHUB_COMMIT_SUMMARY_PROMPT, ...
        ├── LLMAgent.query(GITHUB_COMMIT_SUMMARY_PROMPT)   ← Ollama 요약
        │
        ▼
-  WorkLogService.save_platform_work_log(platform=GITHUB)   ← DB 저장
+  PlatformWorkLogService.save_platform_work_log(platform=GITHUB)   ← DB 저장
 ```
 
 ### Jira 수집 + LLM 요약
@@ -92,7 +92,7 @@ _summarize_platform(user, target_date, JIRA, JIRA_ISSUE_SUMMARY_PROMPT, ...)
        ├── LLMAgent.query(JIRA_ISSUE_SUMMARY_PROMPT)      ← Ollama 요약
        │
        ▼
-  WorkLogService.save_platform_work_log(platform=JIRA)     ← DB 저장
+  PlatformWorkLogService.save_platform_work_log(platform=JIRA)     ← DB 저장
 ```
 
 ### Slack 수집 + LLM 요약
@@ -111,7 +111,7 @@ _summarize_platform(user, target_date, SLACK, SLACK_MESSAGE_SUMMARY_PROMPT, ...)
        ├── LLMAgent.query(SLACK_MESSAGE_SUMMARY_PROMPT)    ← Ollama 요약
        │
        ▼
-  WorkLogService.save_platform_work_log(platform=SLACK)    ← DB 저장
+  PlatformWorkLogService.save_platform_work_log(platform=SLACK)    ← DB 저장
 ```
 
 ### 빈 활동 데이터 처리
@@ -131,9 +131,9 @@ _save_empty_work_log(user, target_date, platform, message=EMPTY_ACTIVITY_MESSAGE
 ```python
 _save_daily_work_log(user, target_date)
 ↓
-WorkLogService.save_daily_work_log(user_id, target_date)
+DailyWorkLogService.save_daily_work_log(user_id, target_date)
 ↓
-# PlatformEnum.platforms() 기준 (USER_CONTENT 제외) PlatformWorkLog 조회
+# 전체 PlatformWorkLog 조회
 # 각 PlatformWorkLog의 markdown_text ("# {platform}\n\n{content}") 병합
 # DailyWorkLog.create() → DB 저장
 ```
@@ -143,7 +143,7 @@ WorkLogService.save_daily_work_log(user_id, target_date)
 API를 통해 특정 사용자의 특정 날짜에 대해 수동으로 수집/요약을 트리거할 수 있다.
 
 ```
-POST /api/v1/work-logs/manual-sync  (Idempotency-Key 헤더 필수)
+POST /api/v1/platform-work-logs/sync  (Idempotency-Key 헤더 필수)
        │
        ▼
 collect_events_and_summarize_work_log_by_user_task(user_id, target_date)

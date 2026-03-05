@@ -34,41 +34,39 @@ REST API 엔드포인트 명세.
 
 ### 사용자 API (`/api/v1/*`, 인증 필요)
 
-| Method | Path                                  | 설명                | 상태 코드   |
-|--------|---------------------------------------|-------------------|---------|
-| GET    | `/api/v1/users/me`                    | 내 정보 조회           | 200     |
-| POST   | `/api/v1/github-secrets`              | GitHub 시크릿 등록     | 201     |
-| DELETE | `/api/v1/github-secrets`              | GitHub 시크릿 삭제     | 204     |
-| GET    | `/api/v1/github-events`               | GitHub 이벤트 조회     | 200     |
-| GET    | `/api/v1/jira-secrets`                | Jira 시크릿 목록 조회    | 200     |
-| GET    | `/api/v1/jira-users`                  | Jira 사용자 조회       | 200     |
-| PATCH  | `/api/v1/jira-users`                  | Jira 사용자 할당       | 204     |
-| DELETE | `/api/v1/jira-users/{jira_user_id}`   | Jira 사용자 할당 해제    | 204     |
-| GET    | `/api/v1/slack-secrets`               | Slack 시크릿 목록 조회   | 200     |
-| GET    | `/api/v1/slack-users`                 | Slack 사용자 조회      | 200     |
-| PATCH  | `/api/v1/slack-users/{slack_user_id}` | Slack 사용자 할당      | 204     |
-| DELETE | `/api/v1/slack-users/{slack_user_id}` | Slack 사용자 할당 해제   | 204     |
-| GET    | `/api/v1/work-logs/platforms`         | 플랫폼별 업무 일지 조회     | 200     |
-| GET    | `/api/v1/work-logs/user-content`      | 사용자 직접 입력 조회      | 200/204 |
-| PUT    | `/api/v1/work-logs/user-content`      | 사용자 직접 입력 생성/수정   | 200/201 |
-| GET    | `/api/v1/work-logs/daily`             | 일일 통합 업무 일지 조회    | 200     |
-| POST   | `/api/v1/work-logs/manual-sync`       | 수동 동기화 (멱등성 키 필요) | 202     |
+| Method | Path                                  | 설명                | 상태 코드 |
+|--------|---------------------------------------|-------------------|-------|
+| GET    | `/api/v1/users/me`                    | 내 정보 조회           | 200   |
+| POST   | `/api/v1/github-secrets`              | GitHub 시크릿 등록     | 201   |
+| DELETE | `/api/v1/github-secrets`              | GitHub 시크릿 삭제     | 204   |
+| GET    | `/api/v1/github-events`               | GitHub 이벤트 조회     | 200   |
+| GET    | `/api/v1/jira-secrets`                | Jira 시크릿 목록 조회    | 200   |
+| GET    | `/api/v1/jira-users`                  | Jira 사용자 조회       | 200   |
+| PATCH  | `/api/v1/jira-users`                  | Jira 사용자 할당       | 204   |
+| DELETE | `/api/v1/jira-users/{jira_user_id}`   | Jira 사용자 할당 해제    | 204   |
+| GET    | `/api/v1/slack-secrets`               | Slack 시크릿 목록 조회   | 200   |
+| GET    | `/api/v1/slack-users`                 | Slack 사용자 조회      | 200   |
+| PATCH  | `/api/v1/slack-users/{slack_user_id}` | Slack 사용자 할당      | 204   |
+| DELETE | `/api/v1/slack-users/{slack_user_id}` | Slack 사용자 할당 해제   | 204   |
+| GET    | `/api/v1/platform-work-logs`          | 플랫폼별 업무 일지 조회     | 200   |
+| POST   | `/api/v1/platform-work-logs/sync`     | 수동 동기화 (멱등성 키 필요) | 202   |
+| GET    | `/api/v1/daily-work-logs`             | 일일 통합 업무 일지 조회    | 200   |
 
 ### 관리자 API (`/admin-api/v1/*`, 관리자 권한 필요)
 
-| Method | Path                                               | 설명             | 상태 코드 |
-|--------|----------------------------------------------------|----------------|-------|
-| GET    | `/admin-api/v1/users`                              | 전체 사용자 목록      | 200   |
-| POST   | `/admin-api/v1/users`                              | 사용자 생성         | 201   |
-| DELETE | `/admin-api/v1/users/{user_id}`                    | 사용자 삭제         | 204   |
-| GET    | `/admin-api/v1/jira-secrets`                       | Jira 시크릿 목록 조회 | 200   |
-| POST   | `/admin-api/v1/jira-secrets`                       | Jira 시크릿 등록    | 201   |
-| DELETE | `/admin-api/v1/jira-secrets/{jira_secret_id}`      | Jira 시크릿 삭제    | 204   |
-| POST   | `/admin-api/v1/jira-secrets/{jira_secret_id}/sync` | Jira 사용자 동기화   | 200   |
-| GET    | `/admin-api/v1/slack-secrets`                       | Slack 시크릿 목록 조회 | 200   |
-| POST   | `/admin-api/v1/slack-secrets`                       | Slack 시크릿 등록    | 201   |
-| DELETE | `/admin-api/v1/slack-secrets/{slack_secret_id}`     | Slack 시크릿 삭제    | 204   |
-| POST   | `/admin-api/v1/slack-secrets/{slack_secret_id}/sync` | Slack 사용자 동기화  | 200   |
+| Method | Path                                                 | 설명              | 상태 코드 |
+|--------|------------------------------------------------------|-----------------|-------|
+| GET    | `/admin-api/v1/users`                                | 전체 사용자 목록       | 200   |
+| POST   | `/admin-api/v1/users`                                | 사용자 생성          | 201   |
+| DELETE | `/admin-api/v1/users/{user_id}`                      | 사용자 삭제          | 204   |
+| GET    | `/admin-api/v1/jira-secrets`                         | Jira 시크릿 목록 조회  | 200   |
+| POST   | `/admin-api/v1/jira-secrets`                         | Jira 시크릿 등록     | 201   |
+| DELETE | `/admin-api/v1/jira-secrets/{jira_secret_id}`        | Jira 시크릿 삭제     | 204   |
+| POST   | `/admin-api/v1/jira-secrets/{jira_secret_id}/sync`   | Jira 사용자 동기화    | 200   |
+| GET    | `/admin-api/v1/slack-secrets`                        | Slack 시크릿 목록 조회 | 200   |
+| POST   | `/admin-api/v1/slack-secrets`                        | Slack 시크릿 등록    | 201   |
+| DELETE | `/admin-api/v1/slack-secrets/{slack_secret_id}`      | Slack 시크릿 삭제    | 204   |
+| POST   | `/admin-api/v1/slack-secrets/{slack_secret_id}/sync` | Slack 사용자 동기화   | 200   |
 
 ## DTO
 
@@ -76,7 +74,7 @@ DTO 필드 상세는 `controller/api/dto/`, `controller/admin/dto/` 코드 참�
 
 ### 멱등성 (Idempotency)
 
-`POST /api/v1/work-logs/manual-sync`는 `Idempotency-Key` 헤더가 필수이다.
+`POST /api/v1/platform-work-logs/sync`는 `Idempotency-Key` 헤더가 필수이다.
 
 - 최초 요청: `PROCESSING` 마킹 후 백그라운드 작업 시작 (202)
 - 중복 요청 (처리 중): `ConflictRequestException` (409)
