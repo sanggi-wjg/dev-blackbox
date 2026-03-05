@@ -5,6 +5,8 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from slack_sdk import WebClient
+from slack_sdk.errors import SlackApiError
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
 from dev_blackbox.client.model.slack_api_model import SlackChannelModel, SlackMessageModel
 from dev_blackbox.core.exception import SlackClientException
@@ -23,6 +25,11 @@ class SlackClient:
         logger.debug("Creating SlackClient")
         return cls(bot_token)
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=2),
+        retry=retry_if_exception_type((SlackApiError,)),
+    )
     def fetch_users(self, filter_bot: bool = True) -> list[dict[str, Any]]:
         logger.debug("Fetching users")
 
@@ -37,6 +44,11 @@ class SlackClient:
             ]
         return users
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=2),
+        retry=retry_if_exception_type((SlackApiError,)),
+    )
     def fetch_channels(self) -> list[SlackChannelModel]:
         """
         봇이 참여한 채널 목록 조회
@@ -68,6 +80,11 @@ class SlackClient:
         logger.info(f"Fetched {len(channels)} channels")
         return channels
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=2),
+        retry=retry_if_exception_type((SlackApiError,)),
+    )
     def fetch_messages_by_date(
         self,
         channel_id: str,
@@ -120,6 +137,11 @@ class SlackClient:
         logger.info(f"Fetched {len(messages)} messages")
         return messages
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=2),
+        retry=retry_if_exception_type((SlackApiError,)),
+    )
     def fetch_thread_replies(
         self,
         channel_id: str,

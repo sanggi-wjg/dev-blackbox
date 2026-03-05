@@ -1,0 +1,57 @@
+name: 🚀 Release
+
+on:
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Generate tag name
+        id: tag
+        run: |
+          DATE=$(date +'%Y.%m.%d')
+          # 같은 날 여러 번 머지될 경우 순번 증가
+          COUNT=$(git tag -l "v${DATE}-*" | wc -l | tr -d ' ')
+          NEXT=$((COUNT + 1))
+          TAG="v${DATE}-${NEXT}"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Generate release notes
+        id: notes
+        run: |
+          # 직전 태그 ~ HEAD 사이의 머지 커밋 목록
+          PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -z "$PREV_TAG" ]; then
+            COMMITS=$(git log --oneline --merges)
+          else
+            COMMITS=$(git log --oneline --merges "${PREV_TAG}..HEAD")
+          fi
+
+          if [ -z "$COMMITS" ]; then
+            COMMITS="(직접 푸시 — 머지 커밋 없음)"
+          fi
+
+          {
+            echo "notes<<EOF"
+            echo "## Changes"
+            echo ""
+            echo "$COMMITS"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: ${{ steps.tag.outputs.tag }}
+          body: ${{ steps.notes.outputs.notes }}

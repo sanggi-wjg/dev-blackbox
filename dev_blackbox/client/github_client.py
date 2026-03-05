@@ -3,6 +3,7 @@ from datetime import date
 from zoneinfo import ZoneInfo
 
 import httpx
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
 from dev_blackbox.client.model.github_api_model import GithubEventModelList, GithubCommitModel
 
@@ -24,8 +25,16 @@ class GitHubClient:
     def create(cls, token: str):
         return cls(token=token)
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(),
+        retry=retry_if_exception_type((httpx.TimeoutException,)),
+    )
     def fetch_events(
-        self, username: str, page: int = 1, per_page: int = 30
+        self,
+        username: str,
+        page: int = 1,
+        per_page: int = 30,
     ) -> GithubEventModelList:
         """
         https://docs.github.com/ko/rest/activity/events?apiVersion=2022-11-28#list-events-for-the-authenticated-user
@@ -84,6 +93,11 @@ class GitHubClient:
 
         return GithubEventModelList(events=result)
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(),
+        retry=retry_if_exception_type((httpx.TimeoutException,)),
+    )
     def fetch_commit(self, repository_url: str, sha: str) -> GithubCommitModel:
         """
         https://docs.github.com/ko/rest/commits/commits?apiVersion=2022-11-28#get-a-commit
