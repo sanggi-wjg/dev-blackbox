@@ -6,9 +6,11 @@ from dev_blackbox.service.command.task_command import (
     DeleteTaskCommand,
     ReorderTasksCommand,
     UpdateTaskCommand,
+    ArchiveTaskCommand,
+    UnarchiveTaskCommand,
 )
 from dev_blackbox.service.query.task_query import TaskQuery
-from dev_blackbox.storage.rds.entity.task import Task
+from dev_blackbox.storage.rds.entity import Task
 from dev_blackbox.storage.rds.repository.task_repository import TaskRepository
 
 
@@ -24,6 +26,12 @@ class TaskService:
             query.is_archived,
         )
 
+    def _get_task_or_throw(self, task_id: int, user_id: int) -> Task:
+        task = self.task_repository.find_by_id_and_user_id(task_id, user_id)
+        if task is None:
+            raise TaskNotFoundException(task_id)
+        return task
+
     def create_task(self, command: CreateTaskCommand) -> Task:
         task = Task.create(
             user_id=command.user_id,
@@ -36,19 +44,17 @@ class TaskService:
         return self.task_repository.save(task)
 
     def update_task(self, command: UpdateTaskCommand) -> Task:
-        task = self.task_repository.find_by_id_and_user_id(command.task_id, command.user_id)
-        if task is None:
-            raise TaskNotFoundException(command.task_id)
-
-        task.update(
+        task = self._get_task_or_throw(command.task_id, command.user_id)
+        return task.update(
             title=command.title,
             content=command.content,
             tags=command.tags,
             status=command.status,
             display_order=command.display_order,
         )
-        self.task_repository.save(task)
-        return task
+
+    def delete_task(self, command: DeleteTaskCommand) -> None:
+        self.task_repository.delete_by_id_and_user_id(command.task_id, command.user_id)
 
     def reorder_tasks(self, command: ReorderTasksCommand) -> list[Task]:
         tasks = self.task_repository.find_all_by_ids_and_user_id(command.task_ids, command.user_id)
@@ -61,5 +67,10 @@ class TaskService:
 
         return sorted(tasks, key=lambda t: t.display_order)
 
-    def delete_task(self, command: DeleteTaskCommand) -> None:
-        self.task_repository.delete_by_id_and_user_id(command.task_id, command.user_id)
+    def archive_task(self, command: ArchiveTaskCommand) -> Task:
+        task = self._get_task_or_throw(command.task_id, command.user_id)
+        return task.archive()
+
+    def unarchive_task(self, command: UnarchiveTaskCommand) -> Task:
+        task = self._get_task_or_throw(command.task_id, command.user_id)
+        return task.unarchive()

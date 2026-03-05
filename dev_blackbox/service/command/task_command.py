@@ -30,3 +30,13 @@ class UpdateTaskCommand(BaseModel):
 class DeleteTaskCommand(BaseModel):
     task_id: int
     user_id: int
+
+
+class ArchiveTaskCommand(BaseModel):
+    task_id: int
+    user_id: int
+
+
+class UnarchiveTaskCommand(BaseModel):
+    task_id: int
+    user_id: int

@@ -3,9 +3,11 @@ import pytest
 from dev_blackbox.core.enum import TaskStatusEnum
 from dev_blackbox.core.exception import TaskNotFoundException
 from dev_blackbox.service.command.task_command import (
+    ArchiveTaskCommand,
     CreateTaskCommand,
     DeleteTaskCommand,
     ReorderTasksCommand,
+    UnarchiveTaskCommand,
     UpdateTaskCommand,
 )
 from dev_blackbox.service.query.task_query import TaskQuery
@@ -162,3 +164,91 @@ class TaskServiceTest:
         query = TaskQuery(user_id=user.id)
         result = service.get_tasks(query)
         assert task not in result
+
+    def test_archive_task(self, db_session, user_fixture, task_fixture):
+        # given
+        user = user_fixture("task-archive@dev.com")
+        task = task_fixture(user_id=user.id, title="아카이브 대상")
+
+        service = TaskService(db_session)
+        command = ArchiveTaskCommand(task_id=task.id, user_id=user.id)
+
+        # when
+        result = service.archive_task(command)
+
+        # then
+        assert result.is_archived is True
+        assert result.archived_at is not None
+
+    def test_archive_task_존재하지_않으면_예외(self, db_session, user_fixture):
+        # given
+        user = user_fixture("task-archive-err@dev.com")
+        service = TaskService(db_session)
+        command = ArchiveTaskCommand(task_id=9999, user_id=user.id)
+
+        # when & then
+        with pytest.raises(TaskNotFoundException):
+            service.archive_task(command)
+
+    def test_unarchive_task(self, db_session, user_fixture, task_fixture):
+        # given
+        user = user_fixture("task-unarchive@dev.com")
+        task = task_fixture(user_id=user.id, title="언아카이브 대상")
+        task.archive()
+        db_session.flush()
+
+        service = TaskService(db_session)
+        command = UnarchiveTaskCommand(task_id=task.id, user_id=user.id)
+
+        # when
+        result = service.unarchive_task(command)
+
+        # then
+        assert result.is_archived is False
+
+    def test_unarchive_task_존재하지_않으면_예외(self, db_session, user_fixture):
+        # given
+        user = user_fixture("task-unarchive-err@dev.com")
+        service = TaskService(db_session)
+        command = UnarchiveTaskCommand(task_id=9999, user_id=user.id)
+
+        # when & then
+        with pytest.raises(TaskNotFoundException):
+            service.unarchive_task(command)
+
+    def test_get_tasks_아카이브된_태스크는_기본_조회에서_제외(
+        self, db_session, user_fixture, task_fixture
+    ):
+        # given
+        user = user_fixture("task-archive-filter@dev.com")
+        active_task = task_fixture(user_id=user.id, title="활성 태스크")
+        archived_task = task_fixture(user_id=user.id, title="아카이브 태스크")
+        archived_task.archive()
+        db_session.flush()
+
+        service = TaskService(db_session)
+        query = TaskQuery(user_id=user.id)
+
+        # when
+        result = service.get_tasks(query)
+
+        # then
+        assert active_task in result
+        assert archived_task not in result
+
+    def test_get_tasks_아카이브된_태스크만_조회(self, db_session, user_fixture, task_fixture):
+        # given
+        user = user_fixture("task-archive-only@dev.com")
+        task_fixture(user_id=user.id, title="활성 태스크")
+        archived_task = task_fixture(user_id=user.id, title="아카이브 태스크")
+        archived_task.archive()
+        db_session.flush()
+
+        service = TaskService(db_session)
+        query = TaskQuery(user_id=user.id, is_archived=True)
+
+        # when
+        result = service.get_tasks(query)
+
+        # then
+        assert result == [archived_task]

@@ -18,6 +18,8 @@ from dev_blackbox.service.command.task_command import (
     DeleteTaskCommand,
     ReorderTasksCommand,
     UpdateTaskCommand,
+    ArchiveTaskCommand,
+    UnarchiveTaskCommand,
 )
 from dev_blackbox.service.query.task_query import TaskQuery
 from dev_blackbox.service.task_service import TaskService
@@ -109,6 +111,40 @@ def delete_task(
     service = TaskService(db)
     command = DeleteTaskCommand(task_id=task_id, user_id=current_user.id)
     service.delete_task(command)
+
+
+@router.patch(
+    "/{task_id}/archive",
+    status_code=status.HTTP_200_OK,
+    response_model=TaskResponseDto,
+)
+def archive_task(
+    task_id: int,
+    token: AuthToken,
+    current_user: CurrentUser,
+    db: Session = Depends(get_db),
+):
+    service = TaskService(db)
+    command = ArchiveTaskCommand(task_id=task_id, user_id=current_user.id)
+    task = service.archive_task(command)
+    return TaskResponseDto.from_entity(task)
+
+
+@router.patch(
+    "/{task_id}/unarchive",
+    status_code=status.HTTP_200_OK,
+    response_model=TaskResponseDto,
+)
+def unarchive_task(
+    task_id: int,
+    token: AuthToken,
+    current_user: CurrentUser,
+    db: Session = Depends(get_db),
+):
+    service = TaskService(db)
+    command = UnarchiveTaskCommand(task_id=task_id, user_id=current_user.id)
+    task = service.unarchive_task(command)
+    return TaskResponseDto.from_entity(task)
 
 
 @router.patch(
