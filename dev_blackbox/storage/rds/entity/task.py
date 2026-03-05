@@ -67,3 +67,7 @@ class Task(Base):
         self.is_archived = True
         self.archived_at = get_datetime_utc_now()
         return self
+
+    def unarchive(self) -> "Task":
+        self.is_archived = False
+        return self
