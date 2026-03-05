@@ -58,7 +58,7 @@ async def get_platform_work_logs(
 
 
 @router.post(
-    "/manual-sync",
+    "/sync",
     status_code=status.HTTP_202_ACCEPTED,
     response_model=BackgroundTaskResponseDto,
 )
