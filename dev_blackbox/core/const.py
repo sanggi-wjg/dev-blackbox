@@ -9,11 +9,13 @@ class CacheTTL(IntEnum):
     DEFAULT = 60
     SECONDS_30 = 30
     MINUTES_15 = 900
+    HOURS_1 = 3600
     IDEMPOTENT_REQUEST = 300
 
 
 class CacheKey(StrEnum):
     WORK_LOG_PLATFORM = "work-logs-platforms:users:{user_id}:target_date:{target_date}"
+    EVENT_ACTIVITY = "event-activities:users:{query.user_id}:from:{query.from_date}:to:{query.to_date}:platforms:{query.platforms}:group_by:{query.group_by}"
 
 
 class LockKey(StrEnum):

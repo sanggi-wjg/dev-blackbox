@@ -26,6 +26,7 @@ from dev_blackbox.controller.api.daily_work_log_controller import (
 from dev_blackbox.controller.api.task_controller import router as task_router
 from dev_blackbox.controller.api.user_controller import router as user_router
 from dev_blackbox.controller.api.auth_controller import router as auth_router
+from dev_blackbox.controller.api.event_activity_controller import router as event_activity_router
 from dev_blackbox.controller.admin.admin_jira_secret_controller import (
     router as admin_jira_secret_router,
 )
@@ -83,6 +84,7 @@ app.include_router(slack_user_router)
 app.include_router(platform_work_log_router)
 app.include_router(daily_work_log_router)
 app.include_router(task_router)
+app.include_router(event_activity_router)
 
 # Admin
 app.include_router(admin_user_router)
