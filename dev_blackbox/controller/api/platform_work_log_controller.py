@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, Request, status, BackgroundTasks, Response
+from fastapi import APIRouter, Depends, Query, Request, status, BackgroundTasks
 from sqlalchemy.orm import Session
 
 from dev_blackbox.controller.api.dto.common_dto import BackgroundTaskResponseDto
@@ -8,25 +8,22 @@ from dev_blackbox.controller.api.dto.github_event_dto import GitHubEventResponse
 from dev_blackbox.controller.api.dto.jira_event_dto import JiraEventResponseDto
 from dev_blackbox.controller.api.dto.slack_message_dto import SlackMessageResponseDto
 from dev_blackbox.controller.api.dto.work_log_dto import (
-    DailyWorkLogResponseDto,
     PlatformWorkLogDetailResponseDto,
-    PlatformWorkLogResponseDto,
     WorkLogManualSyncReqeustDto,
-    UserContentCreateOrUpdateRequestDto,
 )
 from dev_blackbox.controller.api.param.work_log_param import WorkLogParam
 from dev_blackbox.controller.config.security_config import AuthToken, CurrentUser
 from dev_blackbox.core.database import get_db
 from dev_blackbox.core.enum import PlatformEnum
-from dev_blackbox.service.work_log_service import WorkLogService
+from dev_blackbox.service.platform_work_log_service import PlatformWorkLogService
 from dev_blackbox.task.collect_task import collect_events_and_summarize_work_log_by_user_task
 from dev_blackbox.util.idempotent_request import idempotent_request, save_idempotent_response
 
-router = APIRouter(prefix="/api/v1/work-logs", tags=["WorkLog"])
+router = APIRouter(prefix="/api/v1/platform-work-logs", tags=["WorkLog"])
 
 
 @router.get(
-    "/platforms",
+    "",
     status_code=status.HTTP_200_OK,
     response_model=list[PlatformWorkLogDetailResponseDto],
 )
@@ -36,11 +33,10 @@ async def get_platform_work_logs(
     param: Annotated[WorkLogParam, Query()],
     db: Session = Depends(get_db),
 ):
-    service = WorkLogService(db)
+    service = PlatformWorkLogService(db)
     sources = service.get_platform_work_logs_with_sources(
         user_id=current_user.id,
         target_date=param.target_date,
-        platforms=PlatformEnum.platforms(),
     )
 
     result = []
@@ -59,73 +55,6 @@ async def get_platform_work_logs(
                 ]
         result.append(dto)
     return result
-
-
-@router.get(
-    "/user-content",
-    status_code=status.HTTP_200_OK,
-    response_model=PlatformWorkLogResponseDto | None,
-)
-async def get_user_content(
-    token: AuthToken,
-    current_user: CurrentUser,
-    param: Annotated[WorkLogParam, Query()],
-    response: Response,
-    db: Session = Depends(get_db),
-):
-    service = WorkLogService(db)
-    work_log = service.get_user_content_or_none(
-        user_id=current_user.id,
-        target_date=param.target_date,
-    )
-    if work_log is None:
-        response.status_code = status.HTTP_204_NO_CONTENT
-        return None
-    return PlatformWorkLogResponseDto.from_entity(work_log)
-
-
-@router.put(
-    "/user-content",
-    status_code=status.HTTP_200_OK,
-    response_model=PlatformWorkLogResponseDto,
-)
-async def create_or_update_user_content(
-    request_dto: UserContentCreateOrUpdateRequestDto,
-    response: Response,
-    token: AuthToken,
-    current_user: CurrentUser,
-    db: Session = Depends(get_db),
-):
-    service = WorkLogService(db)
-    is_created, work_log = service.create_or_update_user_content(
-        user_id=current_user.id,
-        target_date=request_dto.target_date,
-        content=request_dto.content,
-    )
-    if is_created:
-        response.status_code = status.HTTP_201_CREATED
-    return PlatformWorkLogResponseDto.from_entity(work_log)
-
-
-@router.get(
-    "/daily",
-    status_code=status.HTTP_200_OK,
-    response_model=DailyWorkLogResponseDto | None,
-)
-async def get_daily_work_log(
-    token: AuthToken,
-    current_user: CurrentUser,
-    param: Annotated[WorkLogParam, Query()],
-    db: Session = Depends(get_db),
-):
-    service = WorkLogService(db)
-    daily_work_log = service.get_daily_work_log(
-        user_id=current_user.id,
-        target_date=param.target_date,
-    )
-    if daily_work_log is None:
-        return None
-    return DailyWorkLogResponseDto.from_entity(daily_work_log)
 
 
 @router.post(

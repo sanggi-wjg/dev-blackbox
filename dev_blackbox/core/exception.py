@@ -1,4 +1,3 @@
-from datetime import date
 from typing import Any
 
 
@@ -60,14 +59,6 @@ class TaskNotFoundException(EntityNotFoundException):
 
     def __init__(self, identifier: Any):
         super().__init__(entity_name="Task", identifier=identifier)
-
-
-class UserContentNotFoundException(EntityNotFoundException):
-
-    def __init__(self, user_id: int, target_date: date):
-        super().__init__(
-            entity_name="UserContent", identifier=f"user_id: {user_id}, target_date: {target_date}"
-        )
 
 
 ###############################

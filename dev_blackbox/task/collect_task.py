@@ -17,7 +17,8 @@ from dev_blackbox.service.github_event_service import GitHubEventService
 from dev_blackbox.service.jira_event_service import JiraEventService
 from dev_blackbox.service.slack_message_service import SlackMessageService
 from dev_blackbox.service.user_service import UserService
-from dev_blackbox.service.work_log_service import WorkLogService
+from dev_blackbox.service.daily_work_log_service import DailyWorkLogService
+from dev_blackbox.service.platform_work_log_service import PlatformWorkLogService
 from dev_blackbox.task.context.user_context import UserContext
 from dev_blackbox.util.datetime_util import get_yesterday
 from dev_blackbox.util.distributed_lock import distributed_lock
@@ -71,7 +72,7 @@ def _save_daily_work_log(
     target_date: date,
 ):
     with get_db_session() as session:
-        service = WorkLogService(session)
+        service = DailyWorkLogService(session)
         service.save_daily_work_log(user_id=user.id, target_date=target_date)
 
 
@@ -82,7 +83,7 @@ def _save_empty_work_log(
     message: str = EMPTY_ACTIVITY_MESSAGE,
 ):
     with get_db_session() as session:
-        service = WorkLogService(session)
+        service = PlatformWorkLogService(session)
         service.save_platform_work_log(
             user_id=user.id,
             target_date=target_date,
@@ -229,7 +230,7 @@ def _summarize_platform(
         raise
 
     with get_db_session() as session:
-        service = WorkLogService(session)
+        service = PlatformWorkLogService(session)
         service.save_platform_work_log(
             user_id=user.id,
             target_date=target_date,
