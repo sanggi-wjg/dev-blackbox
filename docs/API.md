@@ -51,6 +51,7 @@ REST API 엔드포인트 명세.
 | GET    | `/api/v1/platform-work-logs`          | 플랫폼별 업무 일지 조회     | 200   |
 | POST   | `/api/v1/platform-work-logs/sync`     | 수동 동기화 (멱등성 키 필요) | 202   |
 | GET    | `/api/v1/daily-work-logs`             | 일일 통합 업무 일지 조회    | 200   |
+| GET    | `/api/v1/event-activity/heatmap`      | 이벤트 활동 기여도 조회     | 200   |
 
 ### 관리자 API (`/admin-api/v1/*`, 관리자 권한 필요)
 
