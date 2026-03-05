@@ -2,6 +2,8 @@ from datetime import timedelta, date
 
 from sqlalchemy.orm import Session
 
+from dev_blackbox.core.cache import cacheable
+from dev_blackbox.core.const import CacheKey, CacheTTL
 from dev_blackbox.core.enum import PlatformEnum
 from dev_blackbox.domain.calculator import calculate_contribution_level
 from dev_blackbox.service.model.event_activity_model import (
@@ -24,7 +26,7 @@ class EventActivityService:
         self.jira_event_repository = JiraEventRepository(session)
         self.slack_message_repository = SlackMessageRepository(session)
 
-    # @cacheable(CacheKey.EVENT_ACTIVITY, CacheTTL.HOURS_1)
+    @cacheable(CacheKey.EVENT_ACTIVITY, CacheTTL.HOURS_1)
     def get_event_contribution(self, query: EventContributionQuery) -> EventContribution:
         github = self._get_github_event_count_by_date(query)
         jira = self._get_jira_event_count_by_date(query)
