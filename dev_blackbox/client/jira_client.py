@@ -3,6 +3,8 @@ from functools import lru_cache
 
 from jira import JIRA, Issue, User
 from jira.client import ResultList
+from jira.exceptions import JIRAError
+from tenacity import retry, wait_exponential, stop_after_attempt, retry_if_exception_type
 
 from dev_blackbox.client.model.jira_api_model import IssueJQL
 
@@ -24,10 +26,20 @@ class JiraClient:
         logger.debug(f"Creating JiraClient for server: {server}")
         return cls(server, username, api_token)
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(),
+        retry=retry_if_exception_type((JIRAError,)),
+    )
     def fetch_assignable_users(self, project: str) -> ResultList[User]:
         logger.info(f"Fetching assignable users for project: {project}")
         return self.jira.search_assignable_users_for_projects("", projectKeys=project)
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(),
+        retry=retry_if_exception_type((JIRAError,)),
+    )
     def fetch_search_issues(
         self,
         jql: IssueJQL,
@@ -44,6 +56,11 @@ class JiraClient:
             maxResults=max_results,
         )
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(),
+        retry=retry_if_exception_type((JIRAError,)),
+    )
     def fetch_issue(self, issue_key: str) -> Issue:
         logger.info(f"Fetching issue: {issue_key}")
         return self.jira.issue(issue_key)
