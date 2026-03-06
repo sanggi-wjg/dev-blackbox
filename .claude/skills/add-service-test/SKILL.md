@@ -1,11 +1,11 @@
 ---
-name: create-service-test
+name: add-service-test
 description: Service 레이어의 테스트 코드를 작성합니다. 대상 Service 파일의 메서드를 분석하여 테스트 클래스와 테스트 케이스를 생성합니다.
 disable-model-invocation: true
 allowed-tools: Read, Glob, Grep, Write, Edit, Bash
 ---
 
-# create-service-test
+# add-service-test
 
 Service 레이어의 테스트 코드를 작성하는 스킬.
 대상 Service 파일의 메서드를 분석하여 테스트 클래스와 테스트 케이스를 생성한다.

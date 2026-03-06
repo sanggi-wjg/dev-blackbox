@@ -1,11 +1,11 @@
 ---
-name: create-repository-test
+name: add-repository-test
 description: Repository 레이어의 테스트 코드를 작성합니다. 대상 Repository의 CRUD 메서드를 분석하여 DB 연동 테스트를 생성합니다.
 disable-model-invocation: true
 allowed-tools: Read, Glob, Grep, Write, Edit, Bash
 ---
 
-# create-repository-test
+# add-repository-test
 
 Repository 레이어(`dev_blackbox/storage/rds/repository/`)의 테스트 코드를 작성하는 스킬.
 대상 Repository의 메서드를 분석하여 실제 DB(Testcontainers) 기반 테스트를 생성한다.

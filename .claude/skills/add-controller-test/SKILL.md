@@ -1,11 +1,11 @@
 ---
-name: create-controller-test
+name: add-controller-test
 description: Controller 레이어의 테스트 코드를 작성합니다. FastAPI TestClient를 사용한 통합 테스트로, 엔드포인트의 라우팅, DTO 변환, 상태 코드, 예외 처리를 검증합니다.
 disable-model-invocation: true
 allowed-tools: Read, Glob, Grep, Write, Edit, Bash
 ---
 
-# create-controller-test
+# add-controller-test
 
 Controller 레이어의 통합 테스트를 작성하는 스킬.
 FastAPI `TestClient` + Testcontainers로 실제 DB를 사용하며, 인증은 `dependency_overrides`로 우회한다.
@@ -92,134 +92,110 @@ class {컨트롤러명}Test:  # 예: TaskControllerTest
 
     def test_{동작_설명}(self, ...):  # 정상 케이스
 
-    def test_{조건}
-
-    _
-    {결과_설명}(self, ...):  # 엣지/예외 케이스
+    def test_{조건}_{결과_설명}(self, ...):  # 엣지/예외 케이스
 ```
 
 ### 조회 엔드포인트 (GET) 템플릿
 
 ```python
-def test_{리소스}
-
-
-_목록_조회(
+def test_{리소스}_목록_조회(
     self,
     auth_client: TestClient,
-authenticated_user: AuthenticatedUser,
-{entity}
-_fixture,
+    authenticated_user: AuthenticatedUser,
+    {entity}_fixture,
 ):
-# given
-{entity}
-_fixture(user_id=authenticated_user.id, ...)
+    # given
+    {entity}_fixture(user_id=authenticated_user.id, ...)
 
-# when
-response = auth_client.get("/api/v1/{리소스}")
+    # when
+    response = auth_client.get("/api/v1/{리소스}")
 
-# then
-assert response.status_code == 200
-data = response.json()
-assert len(data) == 1
-assert data[0]["{필드}"] == expected_value
+    # then
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 1
+    assert data[0]["{필드}"] == expected_value
 ```
 
 ### 생성 엔드포인트 (POST) 템플릿
 
 ```python
-def test_{리소스}
-
-
-_생성(
+def test_{리소스}_생성(
     self,
     auth_client: TestClient,
-authenticated_user: AuthenticatedUser,
+    authenticated_user: AuthenticatedUser,
 ):
-# given
-request_body = {
-    "title": "새 항목",
-    ...
-}
+    # given
+    request_body = {
+        "title": "새 항목",
+        ...
+    }
 
-# when
-response = auth_client.post("/api/v1/{리소스}", json=request_body)
+    # when
+    response = auth_client.post("/api/v1/{리소스}", json=request_body)
 
-# then
-assert response.status_code == 201
-data = response.json()
-assert data["title"] == request_body["title"]
+    # then
+    assert response.status_code == 201
+    data = response.json()
+    assert data["title"] == request_body["title"]
 ```
 
 ### 수정 엔드포인트 (PUT/PATCH) 템플릿
 
 ```python
-def test_{리소스}
-
-
-_수정(
+def test_{리소스}_수정(
     self,
     auth_client: TestClient,
-authenticated_user: AuthenticatedUser,
-{entity}
-_fixture,
+    authenticated_user: AuthenticatedUser,
+    {entity}_fixture,
 ):
-# given
-entity = {entity}
-_fixture(user_id=authenticated_user.id, ...)
-request_body = {
-    "title": "수정된 제목",
-    ...
-}
+    # given
+    entity = {entity}_fixture(user_id=authenticated_user.id, ...)
+    request_body = {
+        "title": "수정된 제목",
+        ...
+    }
 
-# when
-response = auth_client.put(f"/api/v1/{리소스}/{entity.id}", json=request_body)
+    # when
+    response = auth_client.put(f"/api/v1/{리소스}/{entity.id}", json=request_body)
 
-# then
-assert response.status_code == 200
-data = response.json()
-assert data["title"] == request_body["title"]
+    # then
+    assert response.status_code == 200
+    data = response.json()
+    assert data["title"] == request_body["title"]
 ```
 
 ### 삭제 엔드포인트 (DELETE) 템플릿
 
 ```python
-def test_{리소스}
-
-
-_삭제(
+def test_{리소스}_삭제(
     self,
     auth_client: TestClient,
-authenticated_user: AuthenticatedUser,
-{entity}
-_fixture,
+    authenticated_user: AuthenticatedUser,
+    {entity}_fixture,
 ):
-# given
-entity = {entity}
-_fixture(user_id=authenticated_user.id)
+    # given
+    entity = {entity}_fixture(user_id=authenticated_user.id)
 
-# when
-response = auth_client.delete(f"/api/v1/{리소스}/{entity.id}")
+    # when
+    response = auth_client.delete(f"/api/v1/{리소스}/{entity.id}")
 
-# then
-assert response.status_code == 204
+    # then
+    assert response.status_code == 204
 ```
 
 ### 예외 케이스 템플릿
 
 ```python
-def test_존재하지_않는_{리소스}
+def test_존재하지_않는_{리소스}_수정시_404(self, auth_client: TestClient):
+    # given
+    request_body = {...}
 
+    # when
+    response = auth_client.put("/api/v1/{리소스}/999999", json=request_body)
 
-_수정시_404(self, auth_client: TestClient):
-# given
-request_body = {...}
-
-# when
-response = auth_client.put("/api/v1/{리소스}/999999", json=request_body)
-
-# then
-assert response.status_code == 404
+    # then
+    assert response.status_code == 404
 ```
 
 ## 테스트 케이스 설계 원칙
