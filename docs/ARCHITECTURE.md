@@ -20,6 +20,7 @@ dev_blackbox/
 │   ├── command/                 # Command 객체 (쓰기 작업 입력)
 │   ├── query/                   # Query 객체 (조회 조건)
 │   └── model/                   # Service Model (실질적 변환 로직이 있는 경우만)
+├── domain/                      # 도메인 로직 (순수 계산 함수)
 ├── storage/rds/                 # Repository + Entity (SQLAlchemy)
 ├── client/                      # 외부 API 클라이언트 (GitHub, Jira, Slack)
 ├── agent/                       # LLM 에이전트 (Ollama + LlamaIndex)
