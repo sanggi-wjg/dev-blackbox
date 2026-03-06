@@ -16,5 +16,6 @@ __pycache__/
 *.md
 
 htmlcov/
+playground/
 .coverage*
 coverage*
