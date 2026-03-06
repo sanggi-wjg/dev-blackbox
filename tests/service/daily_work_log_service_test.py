@@ -4,7 +4,9 @@ from typing import Callable
 from sqlalchemy.orm import Session
 
 from dev_blackbox.core.enum import PlatformEnum
+from dev_blackbox.service.command.daily_work_log_command import SaveDailyWorkLogCommand
 from dev_blackbox.service.daily_work_log_service import DailyWorkLogService
+from dev_blackbox.service.query.daily_work_log_query import DailyWorkLogQuery
 from dev_blackbox.storage.rds.entity.daily_work_log import DailyWorkLog
 from dev_blackbox.storage.rds.entity.platform_work_log import PlatformWorkLog
 from dev_blackbox.storage.rds.entity.user import User
@@ -27,7 +29,8 @@ class DailyWorkLogServiceTest:
         service = DailyWorkLogService(db_session)
 
         # when
-        result = service.get_daily_work_log(user.id, target_date)
+        query = DailyWorkLogQuery(user_id=user.id, target_date=target_date)
+        result = service.get_daily_work_log(query)
 
         # then
         assert result == work_log
@@ -42,7 +45,8 @@ class DailyWorkLogServiceTest:
         service = DailyWorkLogService(db_session)
 
         # when
-        result = service.get_daily_work_log(user.id, date(2025, 1, 1))
+        query = DailyWorkLogQuery(user_id=user.id, target_date=date(2025, 1, 1))
+        result = service.get_daily_work_log(query)
 
         # then
         assert result is None
@@ -73,7 +77,8 @@ class DailyWorkLogServiceTest:
         service = DailyWorkLogService(db_session)
 
         # when
-        result = service.save_daily_work_log(user.id, target_date)
+        command = SaveDailyWorkLogCommand(user_id=user.id, target_date=target_date)
+        result = service.save_daily_work_log(command)
 
         # then
         assert "# GITHUB" in result.content
@@ -91,7 +96,8 @@ class DailyWorkLogServiceTest:
         service = DailyWorkLogService(db_session)
 
         # when
-        result = service.save_daily_work_log(user.id, date(2025, 1, 1))
+        command = SaveDailyWorkLogCommand(user_id=user.id, target_date=date(2025, 1, 1))
+        result = service.save_daily_work_log(command)
 
         # then
         assert result.content == ""

@@ -66,11 +66,13 @@
 - 작업이 기존 Skill의 범위에 해당하면 해당 Skill의 가이드라인을 따를 것.
 - 현재 사용 가능한 Skills:
     - `create-table` — DB 테이블 및 Entity/Repository 생성
-    - `create-service-test` — Service 레이어 테스트 코드 생성
-    - `create-repository-test` — Repository 레이어 테스트 코드 생성
-    - `create-test` — 인프라 의존성 없는 레이어(util, core, client/model) 테스트 코드 생성
-    - `create-task-test` — Task 레이어 테스트 코드 생성
-    - `create-controller-test` — Controller 레이어 통합 테스트 코드 생성
+    - `create-endpoint` — API 엔드포인트 (Controller, DTO, Param, 라우터 등록) 생성
+    - `create-service` — Service 레이어 (Service, Command, Query, 예외) 생성
+    - `add-service-test` — Service 레이어 테스트 코드 생성
+    - `add-repository-test` — Repository 레이어 테스트 코드 생성
+    - `add-test` — 인프라 의존성 없는 레이어(util, core, client/model) 테스트 코드 생성
+    - `add-controller-test` — Controller 레이어 통합 테스트 코드 생성
+    - `update-docs` — 코드 변경사항 분석 후 관련 문서(docs/, CLAUDE.md) 업데이트
 
 ---
 
