@@ -14,6 +14,11 @@ from dev_blackbox.core.exception import (
     UserNotFoundException,
     GitHubUserSecretNotSetException,
 )
+from dev_blackbox.service.command.github_event_command import SaveGitHubEventsCommand
+from dev_blackbox.service.query.github_event_query import (
+    GitHubEventsByEventTypesQuery,
+    GitHubEventsByUserQuery,
+)
 from dev_blackbox.storage.rds.entity import User
 from dev_blackbox.storage.rds.entity.github_event import GitHubEvent
 from dev_blackbox.storage.rds.repository import (
@@ -35,50 +40,34 @@ class GitHubEventService:
         self.github_user_secret_repository = GitHubUserSecretRepository(session)
         self.encrypt_service = get_encrypt_service()
 
-    def get_events_by_user_id(self, user_id: int) -> list[GitHubEvent]:
-        return self.github_event_repository.find_all_by_user_id(user_id)
-
-    def get_github_events(
-        self,
-        user_id: int,
-        target_date: date,
-    ) -> list[GitHubEvent]:
-        return self.github_event_repository.find_all_by_user_id_and_target_date(
-            user_id, target_date
-        )
+    def get_events_by_user_id(self, query: GitHubEventsByUserQuery) -> list[GitHubEvent]:
+        return self.github_event_repository.find_all_by_user_id(query.user_id)
 
     def get_github_events_by_event_types(
         self,
-        user_id: int,
-        target_date: date,
-        event_types: list[str],
+        query: GitHubEventsByEventTypesQuery,
     ) -> list[GitHubEvent]:
         return self.github_event_repository.find_all_by_user_id_and_target_date_and_event_types(
-            user_id,
-            target_date,
-            event_types,
+            query.user_id,
+            query.target_date,
+            query.event_types,
         )
 
-    def save_github_events(
-        self,
-        user_id: int,
-        target_date: date | None = None,
-    ) -> list[GitHubEvent]:
-        user = self.user_repository.find_by_id(user_id)
+    def save_github_events(self, command: SaveGitHubEventsCommand) -> list[GitHubEvent]:
+        user = self.user_repository.find_by_id(command.user_id)
         if user is None:
-            raise UserNotFoundException(user_id)
+            raise UserNotFoundException(command.user_id)
 
         # target_date가 없으면 유저 타임존 기준 어제 날짜로 설정
-        if target_date is None:
-            target_date = get_yesterday(user.tz_info)
+        target_date = command.target_date or get_yesterday(user.tz_info)
 
         # 기존 데이터 삭제 후 갱신하도록
-        self.github_event_repository.delete_by_user_id_and_target_date(user_id, target_date)
+        self.github_event_repository.delete_by_user_id_and_target_date(command.user_id, target_date)
 
         # 없으면 에러
         github_user_secret = self.github_user_secret_repository.find_by_user_id(user_id=user.id)
         if github_user_secret is None:
-            raise GitHubUserSecretNotSetException(user_id)
+            raise GitHubUserSecretNotSetException(command.user_id)
 
         # 복호화 하고
         decrypted_token = self.encrypt_service.decrypt(github_user_secret.personal_access_token)
@@ -121,9 +110,9 @@ class GitHubEventService:
         )
         events = github_events.events
         if not events:
-            logger.warning(f"No events found for {github_username}. (user_id: {user.id})")
+            logger.warning(f"이벤트 없음: {github_username} (user_id: {user.id})")
 
-        logger.info(f"Collected {len(events)} events for {github_username}. (user_id: {user.id})")
+        logger.info(f"이벤트 {len(events)}건 수집: {github_username} (user_id: {user.id})")
         return events
 
     def fetch_github_commit_by_event(
@@ -140,5 +129,5 @@ class GitHubEventService:
             repository_url=github_event.repo.url,
             sha=payload.head,
         )
-        logger.info(f"Collected commit info for {github_event.id}.")
+        logger.info(f"커밋 정보 수집 완료: {github_event.id}")
         return commit

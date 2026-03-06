@@ -12,8 +12,12 @@ from dev_blackbox.core.exception import (
     GitHubUserSecretNotSetException,
     UserNotFoundException,
 )
+from dev_blackbox.service.command.github_event_command import SaveGitHubEventsCommand
 from dev_blackbox.service.github_event_service import GitHubEventService
-from dev_blackbox.storage.rds.entity import GitHubEvent
+from dev_blackbox.service.query.github_event_query import (
+    GitHubEventsByEventTypesQuery,
+    GitHubEventsByUserQuery,
+)
 from tests.fixtures.github_fixture import create_github_event_model
 
 
@@ -34,7 +38,8 @@ class GitHubEventServiceTest:
         service = GitHubEventService(db_session)
 
         # when
-        result = service.get_events_by_user_id(user.id)
+        query = GitHubEventsByUserQuery(user_id=user.id)
+        result = service.get_events_by_user_id(query)
 
         # then
         assert result == [event]
@@ -45,55 +50,8 @@ class GitHubEventServiceTest:
         service = GitHubEventService(db_session)
 
         # when
-        result = service.get_events_by_user_id(user.id)
-
-        # then
-        assert result == []
-
-    def test_get_github_events(
-        self,
-        db_session,
-        user_fixture,
-        github_user_secret_fixture,
-        github_event_fixture,
-    ):
-        # given
-        target_date = date(2025, 1, 1)
-        another_date = date(2025, 1, 2)
-
-        user = user_fixture()
-        secret = github_user_secret_fixture(user_id=user.id)
-        event = github_event_fixture(
-            user_id=user.id,
-            github_user_secret_id=secret.id,
-            target_date=target_date,
-            event_id="event-id",
-        )
-        github_event_fixture(
-            user_id=user.id,
-            github_user_secret_id=secret.id,
-            target_date=another_date,
-            event_id="another-event-id",
-        )
-
-        service = GitHubEventService(db_session)
-
-        # when
-        result = service.get_github_events(user.id, target_date)
-
-        # then
-        assert result == [event]
-
-    def test_get_github_events_이벤트가_없으면_빈_리스트(self, db_session, user_fixture):
-        # given
-        user = user_fixture()
-        service = GitHubEventService(db_session)
-
-        # when
-        result = service.get_github_events(
-            user.id,
-            date(2025, 1, 1),
-        )
+        query = GitHubEventsByUserQuery(user_id=user.id)
+        result = service.get_events_by_user_id(query)
 
         # then
         assert result == []
@@ -125,7 +83,10 @@ class GitHubEventServiceTest:
         service = GitHubEventService(db_session)
 
         # when
-        result = service.get_github_events_by_event_types(user.id, target_date, ["PushEvent"])
+        query = GitHubEventsByEventTypesQuery(
+            user_id=user.id, target_date=target_date, event_types=["PushEvent"]
+        )
+        result = service.get_github_events_by_event_types(query)
 
         # then
         assert result == [push_event]
@@ -140,7 +101,10 @@ class GitHubEventServiceTest:
         service = GitHubEventService(db_session)
 
         # when
-        result = service.get_github_events_by_event_types(user.id, date(2025, 1, 1), ["PushEvent"])
+        query = GitHubEventsByEventTypesQuery(
+            user_id=user.id, target_date=date(2025, 1, 1), event_types=["PushEvent"]
+        )
+        result = service.get_github_events_by_event_types(query)
 
         # then
         assert result == []
@@ -152,7 +116,8 @@ class GitHubEventServiceTest:
 
         # when & then
         with pytest.raises(UserNotFoundException):
-            service.save_github_events(9999, target_date)
+            command = SaveGitHubEventsCommand(user_id=9999, target_date=target_date)
+            service.save_github_events(command)
 
     def test_save_github_events_시크릿이_없으면_예외(self, db_session, user_fixture):
         # given
@@ -162,7 +127,8 @@ class GitHubEventServiceTest:
 
         # when & then
         with pytest.raises(GitHubUserSecretNotSetException):
-            service.save_github_events(user.id, target_date)
+            command = SaveGitHubEventsCommand(user_id=user.id, target_date=target_date)
+            service.save_github_events(command)
 
     def test_save_github_events_이벤트가_없으면_빈_리스트(
         self,
@@ -188,7 +154,8 @@ class GitHubEventServiceTest:
         )
 
         # when
-        result = service.save_github_events(user.id, target_date)
+        command = SaveGitHubEventsCommand(user_id=user.id, target_date=target_date)
+        result = service.save_github_events(command)
 
         # then
         assert result == []
@@ -226,7 +193,8 @@ class GitHubEventServiceTest:
         )
 
         # when
-        result = service.save_github_events(user.id, target_date)
+        command = SaveGitHubEventsCommand(user_id=user.id, target_date=target_date)
+        result = service.save_github_events(command)
 
         # then
         assert len(result) == 1

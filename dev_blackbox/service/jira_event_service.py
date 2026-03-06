@@ -52,7 +52,7 @@ class JiraEventService:
             raise JiraUserNotAssignedException(user_id)
         if not jira_user.has_project():
             raise JiraUserProjectNotAssignedException(user_id)
-        logger.info(f"Collecting events for user_id={user_id}, target_date={target_date}")
+        logger.info(f"이벤트 수집 시작: user_id={user_id}, target_date={target_date}")
 
         # 기존 데이터 삭제 후 갱신
         self.jira_event_repository.delete_by_user_id_and_target_date(user_id, target_date)
@@ -76,9 +76,7 @@ class JiraEventService:
             issue_model = JiraIssueModel.from_raw(issue.raw)
             issues.append(issue_model)
 
-        logger.info(
-            f"Collected {len(issues)} issues for user_id={user_id}, target_date={target_date}"
-        )
+        logger.info(f"이슈 {len(issues)}건 수집 완료: user_id={user_id}, target_date={target_date}")
         if not issues:
             return []
 

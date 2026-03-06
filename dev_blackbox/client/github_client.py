@@ -53,7 +53,7 @@ class GitHubClient:
                 response.raise_for_status()
                 return GithubEventModelList.model_validate({"events": response.json()})
         except httpx.HTTPError:
-            logger.warning(f"Failed to fetch events for {username}.")
+            logger.warning(f"이벤트 조회 실패: {username}")
             raise
 
     def fetch_events_by_date(
@@ -86,9 +86,7 @@ class GitHubClient:
             page += 1
             # 일정 페이징 요청 제한
             if page >= self.LIMIT_EVENTS_PAGE:
-                logger.warning(
-                    f"Reached maximum page {page} for date {target_date} in github events."
-                )
+                logger.warning(f"최대 페이지 도달: page={page}, target_date={target_date}")
                 break
 
         return GithubEventModelList(events=result)
@@ -112,5 +110,5 @@ class GitHubClient:
                 response.raise_for_status()
                 return GithubCommitModel.model_validate(response.json())
         except httpx.HTTPError:
-            logger.warning(f"Failed to fetch commit {sha} in {repository_url}.")
+            logger.warning(f"커밋 조회 실패: sha={sha}, repository_url={repository_url}")
             raise

@@ -50,13 +50,13 @@ scheduler = BackgroundScheduler(
 scheduler.add_job(health_check_task, "interval", minutes=5)
 scheduler.add_job(
     collect_events_and_summarize_work_log_task,
-    CronTrigger(hour=0, minute=0),  # 09:00 KST
+    CronTrigger(hour=9, minute=0, timezone="Asia/Seoul"),
 )
 scheduler.add_job(
     sync_jira_users_task,
-    CronTrigger(hour=15, minute=00),  # 00:00 KST
+    CronTrigger(hour=00, minute=00, timezone="Asia/Seoul"),
 )
 scheduler.add_job(
     sync_slack_users_task,
-    CronTrigger(hour=15, minute=10),  # 00:10 KST
+    CronTrigger(hour=00, minute=10, timezone="Asia/Seoul"),
 )

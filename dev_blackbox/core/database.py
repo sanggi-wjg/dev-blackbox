@@ -15,20 +15,6 @@ _REPOSITORY_SUFFIX = "Repository"
 _MAX_FRAME_DEPTH = 30
 
 
-def _extract_repository_comment() -> str | None:
-    frame = sys._getframe(1)  # noqa: SLF001
-    for _ in range(_MAX_FRAME_DEPTH):
-        if frame is None:
-            break
-        local_self = frame.f_locals.get("self")
-        if local_self is not None:
-            cls_name = type(local_self).__name__
-            if cls_name.endswith(_REPOSITORY_SUFFIX):
-                return f"{cls_name}.{frame.f_code.co_name}"
-        frame = frame.f_back
-    return None
-
-
 engine = create_engine(
     url=settings.database.dsn,
     pool_size=settings.database.pool_size,  # 풀에 유지할 연결 수
@@ -40,15 +26,6 @@ engine = create_engine(
     echo=settings.database.debug,
     echo_pool=settings.database.debug,
 )
-
-
-@event.listens_for(engine, "before_cursor_execute", retval=True)
-def _add_query_comment(_conn, _cursor, statement, parameters, _context, _executemany):
-    """실행되는 SQL에 Repository 출처를 코멘트로 추가한다."""
-    comment = _extract_repository_comment()
-    if comment:
-        statement = f"/* {comment} */ {statement}"
-    return statement, parameters
 
 
 session_factory = sessionmaker(
@@ -70,7 +47,7 @@ def get_db() -> Generator[Session, None, None]:
         db.commit()
     except Exception:
         db.rollback()
-        logger.exception("Exception occurred during database transaction.")
+        logger.exception("데이터베이스 트랜잭션 중 예외 발생.")
         raise
     finally:
         db.close()
@@ -91,7 +68,30 @@ def get_db_session() -> Generator[Session, None, None]:
         db.commit()
     except Exception:
         db.rollback()
-        logger.exception("Exception occurred during database transaction.")
+        logger.exception("데이터베이스 트랜잭션 중 예외 발생.")
         raise
     finally:
         db.close()
+
+
+def _extract_repository_comment() -> str | None:
+    frame = sys._getframe(1)  # noqa: SLF001
+    for _ in range(_MAX_FRAME_DEPTH):
+        if frame is None:
+            break
+        local_self = frame.f_locals.get("self")
+        if local_self is not None:
+            cls_name = type(local_self).__name__
+            if cls_name.endswith(_REPOSITORY_SUFFIX):
+                return f"{cls_name}.{frame.f_code.co_name}"
+        frame = frame.f_back
+    return None
+
+
+@event.listens_for(engine, "before_cursor_execute", retval=True)
+def _add_query_comment(_conn, _cursor, statement, parameters, _context, _executemany):
+    """실행되는 SQL에 Repository 출처를 코멘트로 추가한다."""
+    comment = _extract_repository_comment()
+    if comment:
+        statement = f"/* {comment} */ {statement}"
+    return statement, parameters

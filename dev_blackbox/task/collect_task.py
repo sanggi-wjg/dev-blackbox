@@ -13,13 +13,16 @@ from dev_blackbox.agent.model.prompt import (
 from dev_blackbox.core.const import EMPTY_ACTIVITY_MESSAGE, LockKey
 from dev_blackbox.core.database import get_db_session
 from dev_blackbox.core.enum import PlatformEnum
+from dev_blackbox.service.command.daily_work_log_command import SaveDailyWorkLogCommand
+from dev_blackbox.service.command.github_event_command import SaveGitHubEventsCommand
+from dev_blackbox.service.command.platform_work_log_command import SavePlatformWorkLogCommand
+from dev_blackbox.service.daily_work_log_service import DailyWorkLogService
 from dev_blackbox.service.github_event_service import GitHubEventService
 from dev_blackbox.service.jira_event_service import JiraEventService
+from dev_blackbox.service.platform_work_log_service import PlatformWorkLogService
+from dev_blackbox.service.query.github_event_query import GitHubEventsByEventTypesQuery
 from dev_blackbox.service.slack_message_service import SlackMessageService
 from dev_blackbox.service.user_service import UserService
-from dev_blackbox.service.command.daily_work_log_command import SaveDailyWorkLogCommand
-from dev_blackbox.service.daily_work_log_service import DailyWorkLogService
-from dev_blackbox.service.platform_work_log_service import PlatformWorkLogService
 from dev_blackbox.task.context.user_context import UserContext
 from dev_blackbox.util.datetime_util import get_yesterday
 from dev_blackbox.util.distributed_lock import distributed_lock
@@ -32,7 +35,7 @@ def collect_events_and_summarize_work_log_task():
         LockKey.COLLECT_EVENTS_AND_SUMMARIZE_WORK_LOG_TASK, timeout=300
     ) as acquired:
         if not acquired:
-            logger.warning("collect_platform_task is already running, skipping...")
+            logger.warning("수집/요약 태스크가 이미 실행 중, 건너뜀...")
             return
 
         with get_db_session() as session:
@@ -51,7 +54,7 @@ def collect_events_and_summarize_work_log_by_user_task(user_id: int, target_date
     )
     with distributed_lock(lock_key, timeout=300) as acquired:
         if not acquired:
-            logger.warning("collect_platform_task is already running, skipping...")
+            logger.warning("수집/요약 태스크가 이미 실행 중, 건너뜀...")
             return
 
         with get_db_session() as session:
@@ -86,7 +89,7 @@ def _save_empty_work_log(
 ):
     with get_db_session() as session:
         service = PlatformWorkLogService(session)
-        service.save_platform_work_log(
+        command = SavePlatformWorkLogCommand(
             user_id=user.id,
             target_date=target_date,
             platform=platform,
@@ -94,6 +97,7 @@ def _save_empty_work_log(
             model_name="",
             prompt="",
         )
+        service.save_platform_work_log(command)
 
 
 def _collect_and_summarize(user: UserContext, target_date: date):
@@ -159,14 +163,18 @@ def _collect_github_events(user_id: int, target_date: date) -> str:
     # 모든 이벤트 저장
     with get_db_session() as session:
         service = GitHubEventService(session)
-        service.save_github_events(user_id, target_date)
+        command = SaveGitHubEventsCommand(user_id=user_id, target_date=target_date)
+        service.save_github_events(command)
 
     # 요약 대상 이벤트만 조회
     with get_db_session() as session:
         service = GitHubEventService(session)
-        summary_events = service.get_github_events_by_event_types(
-            user_id, target_date, GitHubEventService.SUMMARY_EVENT_TYPES
+        query = GitHubEventsByEventTypesQuery(
+            user_id=user_id,
+            target_date=target_date,
+            event_types=GitHubEventService.SUMMARY_EVENT_TYPES,
         )
+        summary_events = service.get_github_events_by_event_types(query)
         texts = []
         for event in summary_events:
             if event.commit_model is not None:
@@ -233,7 +241,7 @@ def _summarize_platform(
 
     with get_db_session() as session:
         service = PlatformWorkLogService(session)
-        service.save_platform_work_log(
+        command = SavePlatformWorkLogCommand(
             user_id=user.id,
             target_date=target_date,
             platform=platform,
@@ -241,3 +249,4 @@ def _summarize_platform(
             model_name=llm_config.model,
             prompt=prompt.template,
         )
+        service.save_platform_work_log(command)

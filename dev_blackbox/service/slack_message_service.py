@@ -53,7 +53,7 @@ class SlackMessageService:
         slack_user = user.slack_user
         if not slack_user:
             raise SlackUserNotAssignedException(user_id)
-        logger.info(f"Collecting Slack messages for user_id={user_id}, target_date={target_date}")
+        logger.info(f"Slack 메시지 수집 시작: user_id={user_id}, target_date={target_date}")
 
         # 기존 데이터 삭제 후 갱신
         self.slack_message_repository.delete_by_user_id_and_target_date(user_id, target_date)
@@ -82,8 +82,8 @@ class SlackMessageService:
                 messages, target_oldest, target_latest
             )
             thread_ts_set = {m.thread_ts for m in messages_with_thread if m.thread_ts is not None}
-            logger.info(f"Collected {len(messages_no_thread)} Slack messages without thread.")
-            logger.info(f"Collected {len(messages_with_thread)} Slack messages with thread.")
+            logger.info(f"스레드 없는 메시지 {len(messages_no_thread)}건 수집")
+            logger.info(f"스레드 있는 메시지 {len(messages_with_thread)}건 수집")
 
             for msg in messages_no_thread:
                 new_messages.append(
@@ -127,7 +127,7 @@ class SlackMessageService:
                 time.sleep(2)  # rate limit
             time.sleep(2)  # rate limit
         logger.info(
-            f"Collected {len(new_messages)} Slack messages for user_id={user_id}, target_date={target_date}"
+            f"Slack 메시지 {len(new_messages)}건 수집 완료: user_id={user_id}, target_date={target_date}"
         )
         return self.slack_message_repository.save_all(new_messages)
 

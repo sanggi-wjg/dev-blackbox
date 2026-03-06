@@ -16,6 +16,7 @@ from dev_blackbox.controller.config.security_config import AuthToken, CurrentUse
 from dev_blackbox.core.database import get_db
 from dev_blackbox.core.enum import PlatformEnum
 from dev_blackbox.service.platform_work_log_service import PlatformWorkLogService
+from dev_blackbox.service.query.platform_work_log_query import PlatformWorkLogQuery
 from dev_blackbox.task.collect_task import collect_events_and_summarize_work_log_by_user_task
 from dev_blackbox.util.idempotent_request import idempotent_request, save_idempotent_response
 
@@ -34,10 +35,8 @@ async def get_platform_work_logs(
     db: Session = Depends(get_db),
 ):
     service = PlatformWorkLogService(db)
-    sources = service.get_platform_work_logs_with_sources(
-        user_id=current_user.id,
-        target_date=param.target_date,
-    )
+    query = PlatformWorkLogQuery(user_id=current_user.id, target_date=param.target_date)
+    sources = service.get_platform_work_logs_with_sources(query)
 
     result = []
     for wl in sources.work_logs:

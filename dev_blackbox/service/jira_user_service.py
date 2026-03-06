@@ -34,16 +34,18 @@ class JiraUserService:
             jira_users = self.jira_user_repository.find_all_by_jira_secret_id(secret.id)
             projects = {u.project for u in jira_users if u.project}
             if not projects:
-                logger.info(f"No projects found for secret_id={secret.id}, skipping sync")
+                logger.info(f"프로젝트 없음: secret_id={secret.id}, 동기화 건너뜀")
                 continue
 
             for project in projects:
                 try:
                     self.sync_jira_users(secret.id, project)
-                    logger.info(f"Synced jira users for secret_id={secret.id}, project={project}")
+                    logger.info(
+                        f"Jira 사용자 동기화 완료: secret_id={secret.id}, project={project}"
+                    )
                 except Exception:
                     logger.exception(
-                        f"Failed to sync jira users for secret_id={secret.id}, project={project}"
+                        f"Jira 사용자 동기화 실패: secret_id={secret.id}, project={project}"
                     )
 
     def sync_jira_users(self, jira_secret_id: int, project: str) -> list[JiraUser]:

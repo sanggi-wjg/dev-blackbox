@@ -11,12 +11,12 @@ logger = logging.getLogger(__name__)
 def sync_jira_users_task():
     with distributed_lock(LockKey.SYNC_JIRA_USERS_TASK) as acquired:
         if not acquired:
-            logger.warning("sync_jira_users_task is already running, skipping...")
+            logger.warning("Jira 사용자 동기화 태스크가 이미 실행 중, 건너뜀...")
             return
 
-        logger.info("sync_jira_users_task started...")
+        logger.info("Jira 사용자 동기화 태스크 시작...")
 
         with get_db_session() as session:
             JiraUserService(session).sync_all_jira_users()
 
-        logger.info("sync_jira_users_task completed.")
+        logger.info("Jira 사용자 동기화 태스크 완료.")

@@ -21,9 +21,15 @@ class DailyWorkLogService:
         )
 
     def save_daily_work_log(self, command: SaveDailyWorkLogCommand) -> DailyWorkLog:
+        # 기존 일일 요약 삭제 후 새로 저장
+        self.daily_work_log_repository.delete_by_user_id_and_target_date(
+            user_id=command.user_id,
+            target_date=command.target_date,
+        )
+
         platform_work_logs = self.platform_work_log_repository.find_all_by_user_id_and_target_date(
-            command.user_id,
-            command.target_date,
+            user_id=command.user_id,
+            target_date=command.target_date,
         )
         merged_work_log_text = "\n\n".join(
             work_log.markdown_text for work_log in platform_work_logs
@@ -31,10 +37,6 @@ class DailyWorkLogService:
         if not merged_work_log_text:
             merged_work_log_text = ""
 
-        # 기존 일일 요약 삭제 후 새로 저장
-        self.daily_work_log_repository.delete_by_user_id_and_target_date(
-            user_id=command.user_id, target_date=command.target_date
-        )
         daily_work_log = DailyWorkLog.create(
             user_id=command.user_id,
             target_date=command.target_date,

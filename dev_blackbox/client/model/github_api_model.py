@@ -1,6 +1,6 @@
 from datetime import date
 from functools import cached_property
-from typing import Literal, TypeAlias
+from typing import Literal
 from zoneinfo import ZoneInfo
 
 from pydantic import BaseModel
@@ -109,7 +109,7 @@ class GitHubCreateEventPayloadModel(BaseModel):
 
 class GitHubDeleteEventPayloadModel(BaseModel):
     full_ref: str
-    master_branch: str
+    master_branch: str | None = None
     pusher_type: str
     ref: str
     ref_type: str

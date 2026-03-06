@@ -11,6 +11,11 @@ from dev_blackbox.core.exception import (
     SlackUserSecretMismatchException,
     UserNotFoundException,
 )
+from dev_blackbox.service.command.slack_user_command import (
+    AssignSlackUserCommand,
+    UnassignSlackUserCommand,
+)
+from dev_blackbox.service.query.slack_user_query import SlackUserQuery
 from dev_blackbox.service.slack_user_service import SlackUserService
 from dev_blackbox.storage.rds.entity.slack_secret import SlackSecret
 from dev_blackbox.storage.rds.entity.slack_user import SlackUser
@@ -33,7 +38,7 @@ class SlackUserServiceTest:
         service = SlackUserService(db_session)
 
         # when
-        result = service.get_slack_users()
+        result = service.get_slack_users(SlackUserQuery())
 
         # then
         assert slack_user in result
@@ -52,7 +57,7 @@ class SlackUserServiceTest:
         service = SlackUserService(db_session)
 
         # when
-        result = service.get_slack_users(slack_secret_id=secret1.id)
+        result = service.get_slack_users(SlackUserQuery(slack_secret_id=secret1.id))
 
         # then
         assert result == [user1]
@@ -65,7 +70,7 @@ class SlackUserServiceTest:
         service = SlackUserService(db_session)
 
         # when
-        result = service.get_slack_users()
+        result = service.get_slack_users(SlackUserQuery())
 
         # then
         assert result == []
@@ -200,7 +205,10 @@ class SlackUserServiceTest:
         service = SlackUserService(db_session)
 
         # when
-        result = service.assign_user(user.id, secret.id, slack_user.id)
+        command = AssignSlackUserCommand(
+            user_id=user.id, slack_secret_id=secret.id, slack_user_id=slack_user.id
+        )
+        result = service.assign_user(command)
 
         # then
         assert result.user_id == user.id
@@ -217,8 +225,11 @@ class SlackUserServiceTest:
         service = SlackUserService(db_session)
 
         # when & then
+        command = AssignSlackUserCommand(
+            user_id=9999, slack_secret_id=secret.id, slack_user_id=slack_user.id
+        )
         with pytest.raises(UserNotFoundException):
-            service.assign_user(9999, secret.id, slack_user.id)
+            service.assign_user(command)
 
     def test_assign_user_slack_user가_없으면_예외(
         self,
@@ -232,8 +243,11 @@ class SlackUserServiceTest:
         service = SlackUserService(db_session)
 
         # when & then
+        command = AssignSlackUserCommand(
+            user_id=user.id, slack_secret_id=secret.id, slack_user_id=9999
+        )
         with pytest.raises(SlackUserNotFoundException):
-            service.assign_user(user.id, secret.id, 9999)
+            service.assign_user(command)
 
     def test_assign_user_시크릿_불일치_예외(
         self,
@@ -250,8 +264,11 @@ class SlackUserServiceTest:
         service = SlackUserService(db_session)
 
         # when & then
+        command = AssignSlackUserCommand(
+            user_id=user.id, slack_secret_id=secret2.id, slack_user_id=slack_user.id
+        )
         with pytest.raises(SlackUserSecretMismatchException):
-            service.assign_user(user.id, secret2.id, slack_user.id)
+            service.assign_user(command)
 
     # ── unassign_user ──
 
@@ -272,7 +289,8 @@ class SlackUserServiceTest:
         service = SlackUserService(db_session)
 
         # when
-        result = service.unassign_user(user.id, slack_user.id)
+        command = UnassignSlackUserCommand(user_id=user.id, slack_user_id=slack_user.id)
+        result = service.unassign_user(command)
 
         # then
         assert result.user_id is None
@@ -285,8 +303,9 @@ class SlackUserServiceTest:
         service = SlackUserService(db_session)
 
         # when & then
+        command = UnassignSlackUserCommand(user_id=9999, slack_user_id=1)
         with pytest.raises(UserNotFoundException):
-            service.unassign_user(9999, 1)
+            service.unassign_user(command)
 
     def test_unassign_user_slack_user가_없으면_예외(
         self,
@@ -298,5 +317,6 @@ class SlackUserServiceTest:
         service = SlackUserService(db_session)
 
         # when & then
+        command = UnassignSlackUserCommand(user_id=user.id, slack_user_id=9999)
         with pytest.raises(SlackUserNotFoundException):
-            service.unassign_user(user.id, 9999)
+            service.unassign_user(command)

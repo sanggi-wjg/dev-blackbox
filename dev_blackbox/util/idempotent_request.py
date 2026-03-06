@@ -17,8 +17,7 @@ def _build_cache_key(request: Request, idempotency_key: str) -> str:
 
 def idempotent_request(
     idempotency_key: Annotated[
-        str,
-        Header(alias="Idempotency-Key", description="Request ID for idempotency"),
+        str, Header(alias="Idempotency-Key", description="Request ID for idempotency")
     ],
     request: Request,
 ) -> str:
@@ -52,7 +51,7 @@ def idempotent_request(
     except ConflictRequestException, CompletedRequestException:
         raise
     except Exception as e:
-        logger.warning(f"Redis unavailable for idempotency check: {e}")
+        logger.warning(f"멱등성 검사 중 Redis 사용 불가: {e}")
 
     return idempotency_key
 
@@ -72,4 +71,4 @@ def save_idempotent_response(
             ex=CacheTTL.IDEMPOTENT_REQUEST,
         )
     except Exception as e:
-        logger.warning(f"Failed to cache idempotent response: {e}")
+        logger.warning(f"멱등성 응답 캐시 저장 실패: {e}")

@@ -22,7 +22,7 @@ class SlackClient:
 
     @classmethod
     def create(cls, bot_token: str) -> "SlackClient":
-        logger.debug("Creating SlackClient")
+        logger.debug("SlackClient 생성")
         return cls(bot_token)
 
     @retry(
@@ -31,7 +31,7 @@ class SlackClient:
         retry=retry_if_exception_type((SlackApiError,)),
     )
     def fetch_users(self, filter_bot: bool = True) -> list[dict[str, Any]]:
-        logger.debug("Fetching users")
+        logger.debug("사용자 목록 조회")
 
         response = self.client.users_list()
         if not response.get("ok"):
@@ -77,7 +77,7 @@ class SlackClient:
             if not cursor:
                 break
 
-        logger.info(f"Fetched {len(channels)} channels")
+        logger.info(f"채널 {len(channels)}개 조회 완료")
         return channels
 
     @retry(
@@ -114,7 +114,7 @@ class SlackClient:
                 limit=200,
                 cursor=cursor,
             )
-            logger.debug(f"Fetched {len(response.get('messages', []))} messages")
+            logger.debug(f"메시지 {len(response.get('messages', []))}건 조회")
 
             for msg in response.get("messages", []):
                 if msg.get("subtype") is None:
@@ -134,7 +134,7 @@ class SlackClient:
             if not cursor:
                 break
 
-        logger.info(f"Fetched {len(messages)} messages")
+        logger.info(f"메시지 {len(messages)}건 조회 완료")
         return messages
 
     @retry(
@@ -164,7 +164,7 @@ class SlackClient:
                 limit=100,
                 cursor=cursor,
             )
-            logger.debug(f"Fetched {len(response.get('messages', []))} replies")
+            logger.debug(f"스레드 답글 {len(response.get('messages', []))}건 조회")
 
             for msg in response.get("messages", []):
                 if not include_parent and msg.get("ts") == thread_ts:
@@ -185,7 +185,7 @@ class SlackClient:
             if not cursor:
                 break
 
-        logger.info(f"Fetched {len(replies)} replies")
+        logger.info(f"스레드 답글 {len(replies)}건 조회 완료")
         return replies
 
 
