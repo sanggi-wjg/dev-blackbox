@@ -1,6 +1,6 @@
 from datetime import date
 from functools import cached_property
-from typing import Literal
+from typing import Literal, TypeAlias
 from zoneinfo import ZoneInfo
 
 from pydantic import BaseModel
@@ -13,7 +13,13 @@ class GithubEventModel(BaseModel):
     actor: GitHubActorModel
     repo: GithubRepositoryModel
     type: Literal["PushEvent", "PullRequestEvent", "CreateEvent", "DeleteEvent"] | str
-    payload: GithubPushEventPayloadModel | GithubPullRequestEventPayload | dict
+    payload: (
+        GithubPushEventPayloadModel
+        | GithubPullRequestEventPayload
+        | GitHubCreateEventPayloadModel
+        | GitHubDeleteEventPayloadModel
+        | dict
+    )
     public: bool
     created_at: str
     org: dict | None = None
@@ -22,12 +28,24 @@ class GithubEventModel(BaseModel):
         return get_date_from_iso_format(self.created_at, tz_info=tz_info)
 
     @cached_property
-    def typed_payload(self) -> GithubPushEventPayloadModel | GithubPullRequestEventPayload | dict:
+    def typed_payload(
+        self,
+    ) -> (
+        GithubPushEventPayloadModel
+        | GithubPullRequestEventPayload
+        | GitHubCreateEventPayloadModel
+        | GitHubDeleteEventPayloadModel
+        | dict
+    ):
         match self.type:
             case "PushEvent":
                 return GithubPushEventPayloadModel.model_validate(self.payload)
             case "PullRequestEvent":
                 return GithubPullRequestEventPayload.model_validate(self.payload)
+            case "CreateEvent":
+                return GitHubCreateEventPayloadModel.model_validate(self.payload)
+            case "DeleteEvent":
+                return GitHubDeleteEventPayloadModel.model_validate(self.payload)
             case _:
                 return self.payload
 
@@ -78,6 +96,23 @@ class GithubPushEventPayloadModel(BaseModel):
     ref: str
     head: str
     before: str
+
+
+class GitHubCreateEventPayloadModel(BaseModel):
+    description: str | None = None
+    full_ref: str
+    master_branch: str
+    pusher_type: str
+    ref: str
+    ref_type: str
+
+
+class GitHubDeleteEventPayloadModel(BaseModel):
+    full_ref: str
+    master_branch: str
+    pusher_type: str
+    ref: str
+    ref_type: str
 
 
 class GithubRepositoryModel(BaseModel):

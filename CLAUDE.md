@@ -70,6 +70,7 @@
     - `create-repository-test` — Repository 레이어 테스트 코드 생성
     - `create-test` — 인프라 의존성 없는 레이어(util, core, client/model) 테스트 코드 생성
     - `create-task-test` — Task 레이어 테스트 코드 생성
+    - `create-controller-test` — Controller 레이어 통합 테스트 코드 생성
 
 ---
 

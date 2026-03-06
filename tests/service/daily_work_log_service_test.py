@@ -47,46 +47,6 @@ class DailyWorkLogServiceTest:
         # then
         assert result is None
 
-    # ── get_daily_work_logs ──
-
-    def test_get_daily_work_logs(
-        self,
-        db_session: Session,
-        user_fixture: Callable[..., User],
-        daily_work_log_fixture: Callable[..., DailyWorkLog],
-    ):
-        # given
-        user = user_fixture()
-        log1 = daily_work_log_fixture(
-            user_id=user.id, target_date=date(2025, 1, 1), content="Day 1"
-        )
-        log2 = daily_work_log_fixture(
-            user_id=user.id, target_date=date(2025, 1, 2), content="Day 2"
-        )
-        service = DailyWorkLogService(db_session)
-
-        # when
-        result = service.get_daily_work_logs(user.id)
-
-        # then
-        # target_date DESC 정렬
-        assert result == [log2, log1]
-
-    def test_get_daily_work_logs_비어있으면_빈_리스트(
-        self,
-        db_session: Session,
-        user_fixture: Callable[..., User],
-    ):
-        # given
-        user = user_fixture()
-        service = DailyWorkLogService(db_session)
-
-        # when
-        result = service.get_daily_work_logs(user.id)
-
-        # then
-        assert result == []
-
     # ── save_daily_work_log ──
 
     def test_save_daily_work_log(

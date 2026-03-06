@@ -203,12 +203,13 @@ def jira_user_fixture(
         url: str = "https://test.atlassian.net/user",
         project: str | None = None,
     ) -> JiraUser:
+        encrypt_service = get_encrypt_service()
         jira_user = JiraUser.create(
             jira_secret_id=jira_secret_id,
             account_id=account_id,
             is_active=True,
-            display_name=display_name,
-            email_address=email_address,
+            display_name=encrypt_service.encrypt(display_name),
+            email_address=encrypt_service.encrypt(email_address),
             url=url,
             project=project,
             user_id=user_id,
@@ -262,13 +263,14 @@ def slack_user_fixture(
         real_name: str = "Test User",
         email: str | None = "slack@dev.com",
     ) -> SlackUser:
+        encrypt_service = get_encrypt_service()
         slack_user = SlackUser.create(
             slack_secret_id=slack_secret_id,
             member_id=member_id,
             is_active=True,
-            display_name=display_name,
-            real_name=real_name,
-            email=email,
+            display_name=encrypt_service.encrypt(display_name),
+            real_name=encrypt_service.encrypt(real_name),
+            email=encrypt_service.encrypt(email) if email else None,
             user_id=user_id,
         )
         db_session.add(slack_user)

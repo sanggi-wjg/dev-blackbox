@@ -22,9 +22,6 @@ class DailyWorkLogService:
     ) -> DailyWorkLog | None:
         return self.daily_work_log_repository.find_by_user_id_and_target_date(user_id, target_date)
 
-    def get_daily_work_logs(self, user_id: int) -> list[DailyWorkLog]:
-        return self.daily_work_log_repository.find_all_by_user_id(user_id)
-
     def save_daily_work_log(
         self,
         user_id: int,
