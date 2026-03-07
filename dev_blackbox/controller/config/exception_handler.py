@@ -68,9 +68,9 @@ def register_exception_handlers(app: FastAPI) -> None:
         logger.warning(e)
 
         return JSONResponse(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             content={
-                "status": f"{status.HTTP_422_UNPROCESSABLE_ENTITY} UNPROCESSABLE_ENTITY",
+                "status": f"{status.HTTP_422_UNPROCESSABLE_CONTENT} UNPROCESSABLE_CONTENT",
                 "error": "Request Already Completed",
                 "message": e.message,
                 "response": e.cached_response,
