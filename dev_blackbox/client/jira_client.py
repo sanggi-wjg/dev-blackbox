@@ -23,7 +23,7 @@ class JiraClient:
 
     @classmethod
     def create(cls, server: str, username: str, api_token: str) -> "JiraClient":
-        logger.debug(f"Creating JiraClient for server: {server}")
+        logger.debug(f"JiraClient 생성: server={server}")
         return cls(server, username, api_token)
 
     @retry(
@@ -32,7 +32,7 @@ class JiraClient:
         retry=retry_if_exception_type((JIRAError,)),
     )
     def fetch_assignable_users(self, project: str) -> ResultList[User]:
-        logger.info(f"Fetching assignable users for project: {project}")
+        logger.info(f"할당 가능 사용자 조회: project={project}")
         return self.jira.search_assignable_users_for_projects("", projectKeys=project)
 
     @retry(
@@ -46,9 +46,7 @@ class JiraClient:
         start_at: int = 0,
         max_results: int = 50,
     ) -> ResultList[Issue]:
-        logger.info(
-            f"Fetching issues by jql: {jql}, start_at: {start_at}, max_results: {max_results}"
-        )
+        logger.info(f"이슈 조회: jql={jql}, start_at={start_at}, max_results={max_results}")
         return self.jira.search_issues(
             jql.build(),
             expand="changelog",
@@ -62,7 +60,7 @@ class JiraClient:
         retry=retry_if_exception_type((JIRAError,)),
     )
     def fetch_issue(self, issue_key: str) -> Issue:
-        logger.info(f"Fetching issue: {issue_key}")
+        logger.info(f"이슈 단건 조회: issue_key={issue_key}")
         return self.jira.issue(issue_key)
 
 

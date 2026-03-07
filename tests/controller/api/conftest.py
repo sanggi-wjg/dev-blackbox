@@ -1,6 +1,7 @@
 from typing import Generator
 
 import pytest
+from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from dev_blackbox.controller.config.model.authenticated_user import AuthenticatedUser
@@ -12,7 +13,9 @@ from main import app
 
 
 @pytest.fixture()
-def authenticated_user(db_session: Session) -> AuthenticatedUser:
+def authenticated_user(
+    db_session: Session,
+) -> AuthenticatedUser:
     password_service = get_password_service()
     user = User.create(
         name="test",
@@ -38,3 +41,11 @@ def _override_dependencies(
     app.dependency_overrides[get_current_user] = lambda: authenticated_user
     yield
     app.dependency_overrides.clear()
+
+
+@pytest.fixture()
+def auth_client(
+    client: TestClient,
+) -> TestClient:
+    client.headers = {"Authorization": "Bearer fake-token"}
+    return client

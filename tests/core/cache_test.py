@@ -9,7 +9,7 @@ from dev_blackbox.core.cache import (
     cache_put,
     cache_evict,
 )
-from dev_blackbox.core.const import CacheTTL, CacheKey
+from dev_blackbox.core.const import CacheKey, CacheTTL
 
 
 def test_resolve_cache_key():
@@ -49,13 +49,11 @@ class CacheableTest:
         expected_value = {"name": "test_user"}
         mock_fn = MagicMock(return_value=expected_value)
 
-        @cacheable(key=CacheKey.WORK_LOG_PLATFORM, ttl=CacheTTL.DEFAULT)
+        @cacheable(key=CacheKey.TEST_CACHE, ttl=CacheTTL.DEFAULT)
         def get_work_log(user_id: int, target_date: str) -> dict:
             return mock_fn(user_id, target_date)
 
-        expected_key = resolve_cache_key(
-            CacheKey.WORK_LOG_PLATFORM, get_work_log, user_id, target_date
-        )
+        expected_key = resolve_cache_key(CacheKey.TEST_CACHE, get_work_log, user_id, target_date)
 
         # when
         result = get_work_log(user_id, target_date)
@@ -72,7 +70,7 @@ class CacheableTest:
         expected_value = {"name": "test_user"}
         call_count = MagicMock()
 
-        @cacheable(key=CacheKey.WORK_LOG_PLATFORM, ttl=CacheTTL.DEFAULT)
+        @cacheable(key=CacheKey.TEST_CACHE, ttl=CacheTTL.DEFAULT)
         def get_work_log(user_id: int, target_date: str) -> dict:
             call_count()
             return expected_value
@@ -92,13 +90,11 @@ class CacheableTest:
         target_date = "2025-01-01"
         expected_ttl = CacheTTL.SECONDS_30
 
-        @cacheable(key=CacheKey.WORK_LOG_PLATFORM, ttl=expected_ttl)
+        @cacheable(key=CacheKey.TEST_CACHE, ttl=expected_ttl)
         def get_work_log(user_id: int, target_date: str) -> dict:
             return {"data": "value"}
 
-        expected_key = resolve_cache_key(
-            CacheKey.WORK_LOG_PLATFORM, get_work_log, user_id, target_date
-        )
+        expected_key = resolve_cache_key(CacheKey.TEST_CACHE, get_work_log, user_id, target_date)
 
         # when
         get_work_log(user_id, target_date)
@@ -117,13 +113,11 @@ class CachePutTest:
         expected_value = {"updated": True}
         mock_fn = MagicMock(return_value=expected_value)
 
-        @cache_put(key=CacheKey.WORK_LOG_PLATFORM, ttl=CacheTTL.DEFAULT)
+        @cache_put(key=CacheKey.TEST_CACHE, ttl=CacheTTL.DEFAULT)
         def update_work_log(user_id: int, target_date: str) -> dict:
             return mock_fn(user_id, target_date)
 
-        expected_key = resolve_cache_key(
-            CacheKey.WORK_LOG_PLATFORM, update_work_log, user_id, target_date
-        )
+        expected_key = resolve_cache_key(CacheKey.TEST_CACHE, update_work_log, user_id, target_date)
 
         # when
         result = update_work_log(user_id, target_date)
@@ -139,15 +133,13 @@ class CachePutTest:
         target_date = "2025-01-01"
         call_count = 0
 
-        @cache_put(key=CacheKey.WORK_LOG_PLATFORM, ttl=CacheTTL.DEFAULT)
+        @cache_put(key=CacheKey.TEST_CACHE, ttl=CacheTTL.DEFAULT)
         def update_work_log(user_id: int, target_date: str) -> dict:
             nonlocal call_count
             call_count += 1
             return {"version": call_count}
 
-        expected_key = resolve_cache_key(
-            CacheKey.WORK_LOG_PLATFORM, update_work_log, user_id, target_date
-        )
+        expected_key = resolve_cache_key(CacheKey.TEST_CACHE, update_work_log, user_id, target_date)
         expected_value = {"version": 2}
 
         update_work_log(user_id, target_date)  # 첫 호출 — version 1 캐시
@@ -169,13 +161,11 @@ class CacheEvictTest:
         target_date = "2025-01-01"
         mock_fn = MagicMock(return_value=None)
 
-        @cache_evict(key=CacheKey.WORK_LOG_PLATFORM)
+        @cache_evict(key=CacheKey.TEST_CACHE)
         def delete_work_log(user_id: int, target_date: str) -> None:
             return mock_fn(user_id, target_date)
 
-        expected_key = resolve_cache_key(
-            CacheKey.WORK_LOG_PLATFORM, delete_work_log, user_id, target_date
-        )
+        expected_key = resolve_cache_key(CacheKey.TEST_CACHE, delete_work_log, user_id, target_date)
 
         cache_service = CacheService(fake_redis)
         cache_service.set(expected_key, {"data": "old"})

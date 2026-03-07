@@ -8,6 +8,11 @@ from dev_blackbox.core.exception import (
     SlackUserSecretMismatchException,
     UserNotFoundException,
 )
+from dev_blackbox.service.command.slack_user_command import (
+    AssignSlackUserCommand,
+    UnassignSlackUserCommand,
+)
+from dev_blackbox.service.query.slack_user_query import SlackUserQuery
 from dev_blackbox.service.slack_secret_service import SlackSecretService
 from dev_blackbox.storage.rds.entity.slack_user import SlackUser
 from dev_blackbox.storage.rds.repository import SlackUserRepository, UserRepository
@@ -23,9 +28,9 @@ class SlackUserService:
         self.slack_secret_service = SlackSecretService(session)
         self.encrypt_service = get_encrypt_service()
 
-    def get_slack_users(self, slack_secret_id: int | None = None) -> list[SlackUser]:
-        if slack_secret_id is not None:
-            return self.slack_user_repository.find_all_by_slack_secret_id(slack_secret_id)
+    def get_slack_users(self, query: SlackUserQuery) -> list[SlackUser]:
+        if query.slack_secret_id is not None:
+            return self.slack_user_repository.find_all_by_slack_secret_id(query.slack_secret_id)
         return self.slack_user_repository.find_all()
 
     def sync_all_slack_users(self) -> None:
@@ -33,9 +38,9 @@ class SlackUserService:
         for secret in secrets:
             try:
                 self.sync_slack_users(secret.id)
-                logger.info(f"Synced slack users for secret_id={secret.id}")
+                logger.info(f"Slack 사용자 동기화 완료: secret_id={secret.id}")
             except Exception:
-                logger.exception(f"Failed to sync slack users for secret_id={secret.id}")
+                logger.exception(f"Slack 사용자 동기화 실패: secret_id={secret.id}")
 
     def sync_slack_users(self, slack_secret_id: int) -> list[SlackUser]:
         secret = self.slack_secret_service.get_secret_by_id_or_throw(slack_secret_id)
@@ -79,29 +84,29 @@ class SlackUserService:
 
         return self.slack_user_repository.save_all(new_slack_users)
 
-    def assign_user(self, user_id: int, slack_secret_id: int, slack_user_id: int) -> SlackUser:
-        user = self.user_repository.find_by_id(user_id)
+    def assign_user(self, command: AssignSlackUserCommand) -> SlackUser:
+        user = self.user_repository.find_by_id(command.user_id)
         if user is None:
-            raise UserNotFoundException(user_id)
+            raise UserNotFoundException(command.user_id)
 
-        self.slack_secret_service.get_secret_by_id_or_throw(slack_secret_id)
+        self.slack_secret_service.get_secret_by_id_or_throw(command.slack_secret_id)
 
-        slack_user = self.slack_user_repository.find_by_id(slack_user_id)
+        slack_user = self.slack_user_repository.find_by_id(command.slack_user_id)
         if slack_user is None:
-            raise SlackUserNotFoundException(slack_user_id)
+            raise SlackUserNotFoundException(command.slack_user_id)
 
-        if slack_user.slack_secret_id != slack_secret_id:
-            raise SlackUserSecretMismatchException(slack_user_id, slack_secret_id)
+        if slack_user.slack_secret_id != command.slack_secret_id:
+            raise SlackUserSecretMismatchException(command.slack_user_id, command.slack_secret_id)
 
-        return slack_user.assign_user(user_id)
+        return slack_user.assign_user(command.user_id)
 
-    def unassign_user(self, user_id: int, slack_user_id: int) -> SlackUser:
-        user = self.user_repository.find_by_id(user_id)
+    def unassign_user(self, command: UnassignSlackUserCommand) -> SlackUser:
+        user = self.user_repository.find_by_id(command.user_id)
         if user is None:
-            raise UserNotFoundException(user_id)
+            raise UserNotFoundException(command.user_id)
 
-        slack_user = self.slack_user_repository.find_by_id(slack_user_id)
+        slack_user = self.slack_user_repository.find_by_id(command.slack_user_id)
         if slack_user is None:
-            raise SlackUserNotFoundException(slack_user_id)
+            raise SlackUserNotFoundException(command.slack_user_id)
 
         return slack_user.unassign_user()

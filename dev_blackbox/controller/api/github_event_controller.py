@@ -8,6 +8,7 @@ from dev_blackbox.controller.api.dto.github_event_dto import (
 from dev_blackbox.controller.config.security_config import CurrentUser, AuthToken
 from dev_blackbox.core.database import get_db
 from dev_blackbox.service.github_event_service import GitHubEventService
+from dev_blackbox.service.query.github_event_query import GitHubEventsByUserQuery
 
 router = APIRouter(prefix="/api/v1/github-events", tags=["GitHub Event"])
 
@@ -23,5 +24,6 @@ def get_events_by_user_id(
     db: Session = Depends(get_db),
 ):
     service = GitHubEventService(db)
-    events = service.get_events_by_user_id(current_user.id)
+    query = GitHubEventsByUserQuery(user_id=current_user.id)
+    events = service.get_events_by_user_id(query)
     return [GitHubEventResponseDto.from_entity(e) for e in events]

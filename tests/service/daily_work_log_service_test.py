@@ -4,7 +4,9 @@ from typing import Callable
 from sqlalchemy.orm import Session
 
 from dev_blackbox.core.enum import PlatformEnum
+from dev_blackbox.service.command.daily_work_log_command import SaveDailyWorkLogCommand
 from dev_blackbox.service.daily_work_log_service import DailyWorkLogService
+from dev_blackbox.service.query.daily_work_log_query import DailyWorkLogQuery
 from dev_blackbox.storage.rds.entity.daily_work_log import DailyWorkLog
 from dev_blackbox.storage.rds.entity.platform_work_log import PlatformWorkLog
 from dev_blackbox.storage.rds.entity.user import User
@@ -27,7 +29,8 @@ class DailyWorkLogServiceTest:
         service = DailyWorkLogService(db_session)
 
         # when
-        result = service.get_daily_work_log(user.id, target_date)
+        query = DailyWorkLogQuery(user_id=user.id, target_date=target_date)
+        result = service.get_daily_work_log(query)
 
         # then
         assert result == work_log
@@ -42,50 +45,11 @@ class DailyWorkLogServiceTest:
         service = DailyWorkLogService(db_session)
 
         # when
-        result = service.get_daily_work_log(user.id, date(2025, 1, 1))
+        query = DailyWorkLogQuery(user_id=user.id, target_date=date(2025, 1, 1))
+        result = service.get_daily_work_log(query)
 
         # then
         assert result is None
-
-    # ── get_daily_work_logs ──
-
-    def test_get_daily_work_logs(
-        self,
-        db_session: Session,
-        user_fixture: Callable[..., User],
-        daily_work_log_fixture: Callable[..., DailyWorkLog],
-    ):
-        # given
-        user = user_fixture()
-        log1 = daily_work_log_fixture(
-            user_id=user.id, target_date=date(2025, 1, 1), content="Day 1"
-        )
-        log2 = daily_work_log_fixture(
-            user_id=user.id, target_date=date(2025, 1, 2), content="Day 2"
-        )
-        service = DailyWorkLogService(db_session)
-
-        # when
-        result = service.get_daily_work_logs(user.id)
-
-        # then
-        # target_date DESC 정렬
-        assert result == [log2, log1]
-
-    def test_get_daily_work_logs_비어있으면_빈_리스트(
-        self,
-        db_session: Session,
-        user_fixture: Callable[..., User],
-    ):
-        # given
-        user = user_fixture()
-        service = DailyWorkLogService(db_session)
-
-        # when
-        result = service.get_daily_work_logs(user.id)
-
-        # then
-        assert result == []
 
     # ── save_daily_work_log ──
 
@@ -113,7 +77,8 @@ class DailyWorkLogServiceTest:
         service = DailyWorkLogService(db_session)
 
         # when
-        result = service.save_daily_work_log(user.id, target_date)
+        command = SaveDailyWorkLogCommand(user_id=user.id, target_date=target_date)
+        result = service.save_daily_work_log(command)
 
         # then
         assert "# GITHUB" in result.content
@@ -131,7 +96,8 @@ class DailyWorkLogServiceTest:
         service = DailyWorkLogService(db_session)
 
         # when
-        result = service.save_daily_work_log(user.id, date(2025, 1, 1))
+        command = SaveDailyWorkLogCommand(user_id=user.id, target_date=date(2025, 1, 1))
+        result = service.save_daily_work_log(command)
 
         # then
         assert result.content == ""

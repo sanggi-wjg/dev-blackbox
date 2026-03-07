@@ -31,7 +31,7 @@ class GitHubEventRepository:
         stmt = (
             select(GitHubEvent)
             .where(GitHubEvent.user_id == user_id)
-            .order_by(GitHubEvent.target_date.asc())
+            .order_by(GitHubEvent.target_date.asc(), GitHubEvent.id.asc())
         )
         return list(self.session.scalars(stmt))
 

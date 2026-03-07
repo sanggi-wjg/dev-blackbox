@@ -11,13 +11,13 @@ logger = logging.getLogger(__name__)
 def sync_slack_users_task():
     with distributed_lock(LockKey.SYNC_SLACK_USERS_TASK) as acquired:
         if not acquired:
-            logger.warning("sync_slack_users_task is already running, skipping...")
+            logger.warning("Slack 사용자 동기화 태스크가 이미 실행 중, 건너뜀...")
             return
 
-        logger.info("sync_slack_users_task started...")
+        logger.info("Slack 사용자 동기화 태스크 시작...")
 
         with get_db_session() as session:
             service = SlackUserService(session)
             service.sync_all_slack_users()
 
-        logger.info("sync_slack_users_task completed.")
+        logger.info("Slack 사용자 동기화 태스크 완료.")

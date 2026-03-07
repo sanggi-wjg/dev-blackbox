@@ -10,9 +10,17 @@ class GitHubEventOrderField(StrEnum):
     ID = "id"
 
 
-class GitHubEventQuery(BaseModel):
-    user_id: int | None = None
-    target_date: date | None = None
+class GitHubEventsByUserQuery(BaseModel):
+    user_id: int
+    order_by: list[tuple[GitHubEventOrderField, OrderDirection]] = [
+        (GitHubEventOrderField.ID, OrderDirection.ASC)
+    ]
+
+
+class GitHubEventsByEventTypesQuery(BaseModel):
+    user_id: int
+    target_date: date
+    event_types: list[str]
     order_by: list[tuple[GitHubEventOrderField, OrderDirection]] = [
         (GitHubEventOrderField.ID, OrderDirection.ASC)
     ]

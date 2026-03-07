@@ -28,7 +28,7 @@ def distributed_lock(
     Example:
         with distributed_lock(LockKey.SYNC_JIRA_USERS_TASK, timeout=300) as acquired:
             if not acquired:
-                logger.warning("Task is already running, skipping...")
+                logger.warning("태스크가 이미 실행 중, 건너뜀...")
                 return
             # 락 획득 성공, 작업 수행
             do_work()
@@ -41,14 +41,14 @@ def distributed_lock(
     try:
         acquired = lock.acquire(blocking=blocking_timeout > 0)
     except Exception as e:
-        logger.exception(f"Error acquiring lock {lock_key}: {e}")
+        logger.exception(f"락 획득 중 오류 발생: lock_key={lock_key}, error={e}")
         yield False
         return
 
     if acquired:
-        logger.debug(f"Lock acquired: {lock_key}")
+        logger.debug(f"락 획득 성공: {lock_key}")
     else:
-        logger.info(f"Failed to acquire lock (already held): {lock_key}")
+        logger.info(f"락 획득 실패 (이미 점유 중): {lock_key}")
 
     try:
         yield acquired
@@ -56,7 +56,7 @@ def distributed_lock(
         if acquired:
             try:
                 lock.release()
-                logger.debug(f"Lock released: {lock_key}")
+                logger.debug(f"락 해제 완료: {lock_key}")
             except Exception as e:
                 # 이미 만료되었거나 다른 이유로 해제 실패
-                logger.warning(f"Failed to release lock {lock_key}: {e}")
+                logger.warning(f"락 해제 실패: lock_key={lock_key}, error={e}")

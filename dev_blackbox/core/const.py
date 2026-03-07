@@ -14,8 +14,14 @@ class CacheTTL(IntEnum):
 
 
 class CacheKey(StrEnum):
-    WORK_LOG_PLATFORM = "work-logs-platforms:users:{user_id}:target_date:{target_date}"
+    WORK_LOG_PLATFORM_QUERY = (
+        "work-logs-platforms:users:{query.user_id}:target_date:{query.target_date}"
+    )
+    WORK_LOG_PLATFORM_COMMAND = (
+        "work-logs-platforms:users:{command.user_id}:target_date:{command.target_date}"
+    )
     EVENT_ACTIVITY = "event-activities:users:{query.user_id}:from:{query.from_date}:to:{query.to_date}:platforms:{query.platforms}:group_by:{query.group_by}"
+    TEST_CACHE = "test:users:{user_id}:target_date:{target_date}"
 
 
 class LockKey(StrEnum):
