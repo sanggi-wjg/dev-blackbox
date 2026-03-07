@@ -131,16 +131,15 @@ def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(RequestValidationError)
     async def entity_request_validation_error(request: Request, e: RequestValidationError):
         logger.warning(e)
-        body = {
-            "status": f"{status.HTTP_400_BAD_REQUEST} BAD_REQUEST",
-            "error": "Request Validation Error",
-            "message": "Request validation failed, please check the request parameters.",
-            "details": e.errors(),
-            "path": request.url.path,
-            "requestedAt": datetime.now(UTC.utc).isoformat(),
-        }
 
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
-            content=body,
+            content={
+                "status": f"{status.HTTP_400_BAD_REQUEST} BAD_REQUEST",
+                "error": "Request Validation Error",
+                "message": "Request validation failed, please check the request parameters.",
+                "details": e.errors(),
+                "path": request.url.path,
+                "requestedAt": datetime.now(UTC.utc).isoformat(),
+            },
         )
