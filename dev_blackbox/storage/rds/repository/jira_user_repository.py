@@ -23,18 +23,6 @@ class JiraUserRepository:
         stmt = select(JiraUser).where(JiraUser.id == jira_user_id)
         return self.session.scalar(stmt)
 
-    def find_by_user_id(self, user_id: int) -> JiraUser | None:
-        stmt = select(JiraUser).where(JiraUser.user_id == user_id)
-        return self.session.scalar(stmt)
-
-    def find_by_account_id(self, account_id: str) -> JiraUser | None:
-        stmt = select(JiraUser).where(JiraUser.account_id == account_id)
-        return self.session.scalar(stmt)
-
-    def find_by_account_ids(self, account_ids: list[str]) -> list[JiraUser]:
-        stmt = select(JiraUser).where(JiraUser.account_id.in_(account_ids))
-        return list(self.session.scalars(stmt))
-
     def find_by_jira_secret_id_and_account_ids(
         self,
         jira_secret_id: int,

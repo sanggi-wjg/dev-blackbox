@@ -22,11 +22,6 @@ class GitHubEventRepository:
         self.session.flush()
         return github_events
 
-    def delete_all(self, github_events: list[GitHubEvent]) -> None:
-        for event in github_events:
-            self.session.delete(event)
-        self.session.flush()
-
     def find_all_by_user_id(self, user_id: int) -> list[GitHubEvent]:
         stmt = (
             select(GitHubEvent)
@@ -92,7 +87,3 @@ class GitHubEventRepository:
             .order_by(GitHubEvent.id.asc())
         )
         return list(self.session.scalars(stmt))
-
-    def exists_by_event_id(self, event_id: str) -> bool:
-        stmt = select(GitHubEvent.id).where(GitHubEvent.event_id == event_id)
-        return self.session.scalar(stmt) is not None

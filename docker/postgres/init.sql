@@ -446,7 +446,7 @@ CREATE TRIGGER tr_task_updated_at
 EXECUTE FUNCTION update_updated_at_column();
 
 CREATE INDEX idx_task_001 ON task (user_id, is_archived);
-CREATE INDEX idx_task_002 ON task (user_id, status);
+CREATE INDEX idx_task_002 ON task (user_id, status, display_order);
 CREATE INDEX idx_task_003 ON task (created_at DESC);
 
 COMMENT ON TABLE task IS '사용자 태스크 테이블';
