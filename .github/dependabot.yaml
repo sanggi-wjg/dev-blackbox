@@ -17,4 +17,4 @@ updates:
     groups: # 관련 액션들을 하나의 PR로 묶기
       actions:
         patterns:
-          - "actions/*"
+          - "*"
