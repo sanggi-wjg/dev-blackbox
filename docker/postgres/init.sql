@@ -423,18 +423,23 @@ COMMENT ON COLUMN slack_message.thread_ts IS '스레드 부모 타임스탬프';
 -- task 테이블 (태스크 관리)
 CREATE TABLE IF NOT EXISTS task
 (
-    id            BIGSERIAL PRIMARY KEY,
-    user_id       BIGINT       NOT NULL,
-    title         VARCHAR(255) NOT NULL DEFAULT '',
-    content       TEXT         NOT NULL DEFAULT '',
-    tags          VARCHAR(255) NULL,
-    status        VARCHAR(50)  NOT NULL,
-    is_archived   BOOLEAN      NOT NULL DEFAULT FALSE,
-    display_order INT          NOT NULL DEFAULT 0,
+    id             BIGSERIAL PRIMARY KEY,
+    user_id        BIGINT       NOT NULL,
+    title          VARCHAR(255) NOT NULL DEFAULT '',
+    content        TEXT         NOT NULL DEFAULT '',
+    tags           VARCHAR(255) NULL,
+    status         VARCHAR(50)  NOT NULL,
+    is_archived    BOOLEAN      NOT NULL DEFAULT FALSE,
+    display_order  INT          NOT NULL DEFAULT 0,
 
-    created_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
-    updated_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
-    archived_at   TIMESTAMPTZ  NULL,
+    jira_issue_id  VARCHAR(100) NULL,
+    jira_issue_key VARCHAR(100) NULL,
+    jira_issue_url VARCHAR(512) NULL,
+    jira_synced_at TIMESTAMPTZ  NULL,
+
+    created_at     TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at     TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    archived_at    TIMESTAMPTZ  NULL,
 
     CONSTRAINT fk_task_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE RESTRICT
 );
@@ -458,4 +463,7 @@ COMMENT ON COLUMN task.tags IS '태그 (쉼표 구분 문자열)';
 COMMENT ON COLUMN task.status IS '태스크 상태';
 COMMENT ON COLUMN task.is_archived IS '아카이브 여부';
 COMMENT ON COLUMN task.display_order IS '표시 순서';
+COMMENT ON COLUMN task.jira_issue_id IS '연동된 Jira 이슈 ID';
+COMMENT ON COLUMN task.jira_issue_key IS '연동된 Jira 이슈 키';
+COMMENT ON COLUMN task.jira_synced_at IS 'Jira 연동 시각';
 COMMENT ON COLUMN task.archived_at IS '아카이브 시각';

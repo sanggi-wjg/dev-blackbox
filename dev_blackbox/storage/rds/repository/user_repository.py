@@ -1,6 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
 
+from dev_blackbox.storage.rds.entity import jira_user
 from dev_blackbox.storage.rds.entity.user import User
 
 
@@ -29,6 +30,20 @@ class UserRepository:
             .where(User.id == user_id, User.is_deleted.is_(False))
         )
         return self.session.scalar(stmt)
+
+    def find_all_with_jira(self) -> list[User]:
+        stmt = (
+            select(User)
+            .options(
+                joinedload(User.jira_user, innerjoin=True).joinedload(
+                    jira_user.JiraUser.jira_secret,
+                    innerjoin=True,
+                ),
+            )
+            .where(User.is_deleted.is_(False))
+            .order_by(User.id)
+        )
+        return list(self.session.scalars(stmt).unique())
 
     def find_by_name(self, name: str) -> User | None:
         stmt = select(User).where(User.name == name, User.is_deleted.is_(False))

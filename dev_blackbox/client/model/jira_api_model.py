@@ -1,61 +1,48 @@
 from datetime import date
+from enum import StrEnum
 from functools import cached_property
-from typing import Literal
 from zoneinfo import ZoneInfo
 
 from pydantic import BaseModel
 
 from dev_blackbox.util.datetime_util import get_date_from_iso_format
 
-JiraIssueStatus = Literal[
-    "Backlog",
-    "Open",
-    "In Progress",
-    "In Dev Review",
-    "Ready For QA",
-    "In QA",
-    "Ready For Release",
-    "Done",
-    "Closed",
-    # etc
-    "Cancelled",
-    "Hold",
-]
+
+class JiraIssueStatus(StrEnum):
+    BACKLOG = "Backlog"
+    OPEN = "Open"
+    IN_PROGRESS = "In Progress"
+    IN_DEV_REVIEW = "In Dev Review"
+    READY_FOR_QA = "Ready For QA"
+    IN_QA = "In QA"
+    READY_FOR_RELEASE = "Ready For Release"
+    DONE = "Done"
+    CLOSED = "Closed"
+    CANCELLED = "Cancelled"
+    HOLD = "Hold"
 
 
 class JiraStatusGroup:
-    ALL: list[JiraIssueStatus] = [
-        "Backlog",
-        "Open",
-        "In Progress",
-        "In Dev Review",
-        "Ready For QA",
-        "In QA",
-        "Ready For Release",
-        "Done",
-        "Closed",
-        "Cancelled",
-        "Hold",
-    ]
+    ALL: list[JiraIssueStatus] = list(JiraIssueStatus)
     IN_FLIGHT: list[JiraIssueStatus] = [
-        "In Progress",
-        "In Dev Review",
-        "Ready For QA",
-        "In QA",
-        "Ready For Release",
+        JiraIssueStatus.IN_PROGRESS,
+        JiraIssueStatus.IN_DEV_REVIEW,
+        JiraIssueStatus.READY_FOR_QA,
+        JiraIssueStatus.IN_QA,
+        JiraIssueStatus.READY_FOR_RELEASE,
     ]
     RESOLVED: list[JiraIssueStatus] = [
-        "Done",
-        "Closed",
+        JiraIssueStatus.DONE,
+        JiraIssueStatus.CLOSED,
     ]
     IN_FLIGHT_AND_RESOLVED: list[JiraIssueStatus] = [
-        "In Progress",
-        "In Dev Review",
-        "Ready For QA",
-        "In QA",
-        "Ready For Release",
-        "Done",
-        "Closed",
+        JiraIssueStatus.IN_PROGRESS,
+        JiraIssueStatus.IN_DEV_REVIEW,
+        JiraIssueStatus.READY_FOR_QA,
+        JiraIssueStatus.IN_QA,
+        JiraIssueStatus.READY_FOR_RELEASE,
+        JiraIssueStatus.DONE,
+        JiraIssueStatus.CLOSED,
     ]
 
 
@@ -64,6 +51,7 @@ class IssueJQL(BaseModel):
     assignee_account_id: str | None = None
     include_status: JiraIssueStatus | None = None
     include_statuses: list[JiraIssueStatus] | None = None
+    exclude_keys: list[str] | None = None
     updated_within: str | None = None
     updated_after: str | None = None  # 날짜 입력, 2026-01-16
     updated_before: str | None = None  # 날짜 입력, 2026-01-17
@@ -84,6 +72,10 @@ class IssueJQL(BaseModel):
         if self.include_statuses:
             quoted = [f"'{s}'" for s in self.include_statuses]
             conditions.append(f"status in ({', '.join(quoted)})")
+
+        if self.exclude_keys:
+            quoted = [f"'{k}'" for k in self.exclude_keys]
+            conditions.append(f"key not in ({', '.join(quoted)})")
 
         if self.updated_within:
             conditions.append(f"updatedDate >= {self.updated_within}")

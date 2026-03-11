@@ -7,6 +7,7 @@ from dev_blackbox.client.model.jira_api_model import (
     JiraChangelogItemModel,
     JiraCommentModel,
     JiraIssueModel,
+    JiraIssueStatus,
     JiraStatusGroup,
 )
 
@@ -72,7 +73,7 @@ def test_jql_assignee_조건():
 
 def test_jql_include_status_단일():
     # given
-    jql = IssueJQL(include_status="In Progress", order_by=None)
+    jql = IssueJQL(include_status=JiraIssueStatus.IN_PROGRESS, order_by=None)
 
     # when
     result = jql.build()
@@ -83,7 +84,7 @@ def test_jql_include_status_단일():
 
 def test_jql_include_statuses_복수():
     # given
-    jql = IssueJQL(include_statuses=["Done", "Closed"], order_by=None)
+    jql = IssueJQL(include_statuses=[JiraIssueStatus.DONE, JiraIssueStatus.CLOSED], order_by=None)
 
     # when
     result = jql.build()
@@ -121,7 +122,7 @@ def test_jql_모든_조건_조합():
     jql = IssueJQL(
         project="FMP",
         assignee_account_id="acc1",
-        include_status="In Progress",
+        include_status=JiraIssueStatus.IN_PROGRESS,
         updated_after="2026-03-06",
     )
 

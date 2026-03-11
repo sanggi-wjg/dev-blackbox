@@ -23,7 +23,7 @@ class JiraClient:
 
     @classmethod
     def create(cls, server: str, username: str, api_token: str) -> "JiraClient":
-        logger.debug(f"JiraClient 생성: server={server}")
+        logger.info(f"JiraClient 생성: server={server}")
         return cls(server, username, api_token)
 
     @retry(
@@ -46,9 +46,10 @@ class JiraClient:
         start_at: int = 0,
         max_results: int = 50,
     ) -> ResultList[Issue]:
-        logger.info(f"이슈 조회: jql={jql}, start_at={start_at}, max_results={max_results}")
+        query = jql.build()
+        logger.info(f"이슈 조회: jql_query={query}, start_at={start_at}, max_results={max_results}")
         return self.jira.search_issues(
-            jql.build(),
+            query,
             expand="changelog",
             startAt=start_at,
             maxResults=max_results,

@@ -10,6 +10,10 @@ from dev_blackbox.agent.model.prompt import (
     JIRA_ISSUE_SUMMARY_PROMPT,
     SLACK_MESSAGE_SUMMARY_PROMPT,
 )
+from dev_blackbox.client.model.github_api_model import (
+    GithubPullRequestEventPayload,
+    GithubPushEventPayloadModel,
+)
 from dev_blackbox.core.const import EMPTY_ACTIVITY_MESSAGE, LockKey
 from dev_blackbox.core.database import get_db_session
 from dev_blackbox.core.enum import PlatformEnum
@@ -23,6 +27,7 @@ from dev_blackbox.service.platform_work_log_service import PlatformWorkLogServic
 from dev_blackbox.service.query.github_event_query import GitHubEventsByEventTypesQuery
 from dev_blackbox.service.slack_message_service import SlackMessageService
 from dev_blackbox.service.user_service import UserService
+from dev_blackbox.storage.rds.entity.github_event import GitHubEvent
 from dev_blackbox.task.context.user_context import UserContext
 from dev_blackbox.util.datetime_util import get_yesterday
 from dev_blackbox.util.distributed_lock import distributed_lock
@@ -40,7 +45,7 @@ def collect_events_and_summarize_work_log_task():
 
         with get_db_session() as session:
             user_service = UserService(session)
-            users = user_service.get_users()  # fixme n+1
+            users = user_service.get_users()
             user_contexts = [UserContext.from_entity(user) for user in users]
 
         for user in user_contexts:
@@ -174,9 +179,10 @@ def _collect_github_events(user_id: int, target_date: date) -> str:
             target_date=target_date,
             event_types=GitHubEventService.SUMMARY_EVENT_TYPES,
         )
-        summary_events = service.get_github_events_by_event_types(query)
+        github_events = service.get_github_events_by_event_types(query)
+        github_events.sort(key=_github_event_sort_key)
         texts = []
-        for event in summary_events:
+        for event in github_events:
             if event.commit_model is not None:
                 texts.append(event.commit_model.commit_detail_text)
             elif event.event_type == "PullRequestEvent":
@@ -250,3 +256,18 @@ def _summarize_platform(
             prompt=prompt.template,
         )
         service.save_platform_work_log(command)
+
+
+def _github_event_sort_key(event: GitHubEvent) -> tuple[str, str, str]:
+    model = event.event_model
+    repo_name = model.repo.name
+    payload = model.typed_payload
+
+    if isinstance(payload, GithubPushEventPayloadModel):
+        branch = payload.ref
+    elif isinstance(payload, GithubPullRequestEventPayload):
+        branch = payload.pull_request.head.ref
+    else:
+        branch = ""
+
+    return event.event_type, repo_name, branch
