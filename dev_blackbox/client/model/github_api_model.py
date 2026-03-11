@@ -5,6 +5,7 @@ from zoneinfo import ZoneInfo
 
 from pydantic import BaseModel
 
+from dev_blackbox.core.const import GITHUB_COMMIT_MAX_PATCH_LENGTH
 from dev_blackbox.util.datetime_util import get_date_from_iso_format
 
 
@@ -172,9 +173,6 @@ class GithubCommitFileModel(BaseModel):
     patch: str | None = None
 
 
-_MAX_PATCH_LENGTH = 500
-
-
 class GithubCommitModel(BaseModel):
     sha: str
     node_id: str
@@ -199,8 +197,8 @@ class GithubCommitModel(BaseModel):
         for f in self.files:
             detail += f"{f.status}: {f.filename} +{f.additions}/-{f.deletions}"
             if f.patch:
-                patch = f.patch[:_MAX_PATCH_LENGTH]
-                if len(f.patch) > _MAX_PATCH_LENGTH:
+                patch = f.patch[:GITHUB_COMMIT_MAX_PATCH_LENGTH]
+                if len(f.patch) > GITHUB_COMMIT_MAX_PATCH_LENGTH:
                     patch += "\n... (truncated)"
                 detail += f"\n\n{patch}"
 
