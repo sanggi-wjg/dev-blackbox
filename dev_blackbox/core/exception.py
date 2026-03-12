@@ -61,6 +61,12 @@ class TaskNotFoundException(EntityNotFoundException):
         super().__init__(entity_name="Task", identifier=identifier)
 
 
+class ImageNotFoundException(EntityNotFoundException):
+
+    def __init__(self, identifier: Any):
+        super().__init__(entity_name="Image", identifier=identifier)
+
+
 ###############################
 # Service Exception
 ###############################

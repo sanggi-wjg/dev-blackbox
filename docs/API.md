@@ -52,6 +52,10 @@ REST API 엔드포인트 명세.
 | POST   | `/api/v1/platform-work-logs/sync`     | 수동 동기화 (멱등성 키 필요) | 202   |
 | GET    | `/api/v1/daily-work-logs`             | 일일 통합 업무 일지 조회    | 200   |
 | GET    | `/api/v1/event-activity/heatmap`      | 이벤트 활동 기여도 조회     | 200   |
+| POST   | `/api/v1/images`                      | 이미지 업로드           | 201   |
+| GET    | `/api/v1/images`                      | 이미지 목록 조회         | 200   |
+| GET    | `/api/v1/images/{image_id}`           | 이미지 조회 (바이너리 응답)  | 200   |
+| DELETE | `/api/v1/images/{image_id}`           | 이미지 삭제            | 204   |
 
 ### 관리자 API (`/admin-api/v1/*`, 관리자 권한 필요)
 

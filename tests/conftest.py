@@ -19,6 +19,7 @@ from dev_blackbox.storage.rds.entity.base import Base
 from dev_blackbox.storage.rds.entity.daily_work_log import DailyWorkLog
 from dev_blackbox.storage.rds.entity.github_event import GitHubEvent
 from dev_blackbox.storage.rds.entity.github_user_secret import GitHubUserSecret
+from dev_blackbox.storage.rds.entity.image import Image
 from dev_blackbox.storage.rds.entity.jira_event import JiraEvent
 from dev_blackbox.storage.rds.entity.jira_secret import JiraSecret
 from dev_blackbox.storage.rds.entity.jira_user import JiraUser
@@ -387,6 +388,31 @@ def task_fixture(
         db_session.add(task)
         db_session.flush()
         return task
+
+    return _create
+
+
+@pytest.fixture()
+def image_fixture(
+    db_session: Session,
+) -> Callable[..., Image]:
+
+    def _create(
+        user_id: int,
+        filename: str = "test.png",
+        content_type: str = "image/png",
+        data: bytes = b"fake-image-data",
+    ) -> Image:
+        image = Image.create(
+            user_id=user_id,
+            filename=filename,
+            content_type=content_type,
+            file_size=len(data),
+            data=data,
+        )
+        db_session.add(image)
+        db_session.flush()
+        return image
 
     return _create
 

@@ -16,6 +16,7 @@ erDiagram
     users ||--o{ slack_message: "1:N"
     users ||--o{ platform_work_log: "1:N"
     users ||--o{ daily_work_log: "1:N"
+    users ||--o{ image: "1:N"
     github_user_secret ||--o{ github_event: "1:N"
     jira_secret ||--o{ jira_user: "1:N"
     jira_user ||--o{ jira_event: "1:N"
@@ -171,5 +172,21 @@ erDiagram
         date target_date "복합UK(user+date)"
         text content
         vector embedding "1024차원, NULLABLE"
+    }
+```
+
+## 6. 이미지 도메인
+
+```mermaid
+erDiagram
+    users ||--o{ image : "1:N"
+
+    image {
+        bigserial id PK
+        bigint user_id FK
+        varchar filename
+        varchar content_type
+        bigint file_size
+        bytea data
     }
 ```

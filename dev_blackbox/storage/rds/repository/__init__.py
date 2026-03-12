@@ -5,6 +5,7 @@ from dev_blackbox.storage.rds.repository.github_event_repository import GitHubEv
 from dev_blackbox.storage.rds.repository.github_user_secret_repository import (
     GitHubUserSecretRepository,
 )
+from dev_blackbox.storage.rds.repository.image_repository import ImageRepository
 from dev_blackbox.storage.rds.repository.jira_event_repository import JiraEventRepository
 from dev_blackbox.storage.rds.repository.jira_secret_repository import JiraSecretRepository
 from dev_blackbox.storage.rds.repository.jira_user_repository import JiraUserRepository
@@ -21,6 +22,7 @@ __all__ = [
     "DailyWorkLogRepository",
     "GitHubUserSecretRepository",
     "GitHubEventRepository",
+    "ImageRepository",
     "JiraEventRepository",
     "JiraSecretRepository",
     "JiraUserRepository",

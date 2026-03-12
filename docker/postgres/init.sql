@@ -467,3 +467,37 @@ COMMENT ON COLUMN task.jira_issue_id IS '연동된 Jira 이슈 ID';
 COMMENT ON COLUMN task.jira_issue_key IS '연동된 Jira 이슈 키';
 COMMENT ON COLUMN task.jira_synced_at IS 'Jira 연동 시각';
 COMMENT ON COLUMN task.archived_at IS '아카이브 시각';
+
+
+-- image 테이블 (이미지 저장)
+CREATE TABLE IF NOT EXISTS image
+(
+    id           BIGSERIAL PRIMARY KEY,
+    user_id      BIGINT       NOT NULL,
+    filename     VARCHAR(255) NOT NULL,
+    content_type VARCHAR(100) NOT NULL,
+    file_size    BIGINT       NOT NULL,
+    data         BYTEA        NOT NULL,
+
+    created_at   TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at   TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT fk_image_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE RESTRICT
+);
+
+CREATE TRIGGER tr_image_updated_at
+    BEFORE UPDATE
+    ON image
+    FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+CREATE INDEX idx_image_001 ON image (user_id);
+CREATE INDEX idx_image_002 ON image (created_at DESC);
+
+COMMENT ON TABLE image IS '이미지 저장 테이블';
+COMMENT ON COLUMN image.id IS '이미지 ID';
+COMMENT ON COLUMN image.user_id IS '사용자 FK';
+COMMENT ON COLUMN image.filename IS '원본 파일명';
+COMMENT ON COLUMN image.content_type IS 'MIME 타입 (image/*)';
+COMMENT ON COLUMN image.file_size IS '파일 크기 (bytes)';
+COMMENT ON COLUMN image.data IS '이미지 바이너리 데이터 (BYTEA)';
