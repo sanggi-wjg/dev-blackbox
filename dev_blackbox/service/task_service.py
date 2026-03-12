@@ -1,6 +1,8 @@
 from sqlalchemy.orm import Session
 
-from dev_blackbox.core.exception import TaskNotFoundException
+from dev_blackbox.client.jira_client import get_jira_client
+from dev_blackbox.core.encrypt import get_encrypt_service
+from dev_blackbox.core.exception import TaskNotFoundException, UserNotFoundException
 from dev_blackbox.service.command.task_command import (
     CreateTaskCommand,
     DeleteTaskCommand,
@@ -8,9 +10,11 @@ from dev_blackbox.service.command.task_command import (
     UpdateTaskCommand,
     ArchiveTaskCommand,
     UnarchiveTaskCommand,
+    SyncJiraTaskCommand,
 )
 from dev_blackbox.service.query.task_query import TaskQuery
 from dev_blackbox.storage.rds.entity import Task
+from dev_blackbox.storage.rds.repository import UserRepository
 from dev_blackbox.storage.rds.repository.task_repository import TaskRepository
 
 
@@ -18,6 +22,8 @@ class TaskService:
 
     def __init__(self, session: Session):
         self.task_repository = TaskRepository(session)
+        self.encrypt_service = get_encrypt_service()
+        self.user_repository = UserRepository(session)
 
     def get_tasks(self, query: TaskQuery) -> list[Task]:
         return self.task_repository.find_all_by_user_id_and_filters(
@@ -42,6 +48,32 @@ class TaskService:
             display_order=command.display_order,
         )
         return self.task_repository.save(task)
+
+    def sync_to_jira(self, command: SyncJiraTaskCommand) -> Task:
+        task = self._get_task_or_throw(command.task_id, command.user_id)
+        if not task.is_synced_with_jira():
+            return task
+        if task.jira_issue_key is None or not task.content:
+            return task
+
+        user = self.user_repository.find_with_join_by_id(command.user_id)
+        if user is None:
+            raise UserNotFoundException(command.user_id)
+        if user.jira_user is None:
+            return task
+
+        jira_secret = user.jira_user.jira_secret
+        jira_client = get_jira_client(
+            jira_secret.url,
+            self.encrypt_service.decrypt(jira_secret.username),
+            self.encrypt_service.decrypt(jira_secret.api_token),
+        )
+        jira_client.update_issue_description(
+            issue_key=task.jira_issue_key,
+            description=task.content,
+        )
+        task.sync_jira()
+        return task
 
     def update_task(self, command: UpdateTaskCommand) -> Task:
         task = self._get_task_or_throw(command.task_id, command.user_id)

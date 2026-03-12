@@ -64,6 +64,16 @@ class JiraClient:
         logger.info(f"이슈 단건 조회: issue_key={issue_key}")
         return self.jira.issue(issue_key)
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(),
+        retry=retry_if_exception_type((JIRAError,)),
+    )
+    def update_issue_description(self, issue_key: str, description: str) -> None:
+        logger.info(f"이슈 설명 업데이트: issue_key={issue_key}")
+        issue = self.jira.issue(issue_key)
+        issue.update(fields={"description": description})
+
 
 @lru_cache(maxsize=10)
 def get_jira_client(server: str, username: str, api_token: str) -> JiraClient:

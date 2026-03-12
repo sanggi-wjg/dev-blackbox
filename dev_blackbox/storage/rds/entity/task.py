@@ -102,3 +102,15 @@ class Task(Base):
     def unarchive(self) -> "Task":
         self.is_archived = False
         return self
+
+    def sync_jira(self) -> "Task":
+        self.jira_synced_at = get_datetime_utc_now()
+        return self
+
+    def is_synced_with_jira(self) -> bool:
+        return all(
+            [
+                self.jira_issue_id is not None,
+                self.jira_issue_key is not None,
+            ]
+        )

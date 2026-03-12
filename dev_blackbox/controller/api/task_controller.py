@@ -17,6 +17,7 @@ from dev_blackbox.service.command.task_command import (
     CreateTaskCommand,
     DeleteTaskCommand,
     ReorderTasksCommand,
+    SyncJiraTaskCommand,
     UpdateTaskCommand,
     ArchiveTaskCommand,
     UnarchiveTaskCommand,
@@ -69,6 +70,26 @@ def create_task(
         display_order=request_dto.display_order,
     )
     task = service.create_task(command)
+    return TaskResponseDto.from_entity(task)
+
+
+@router.post(
+    "/{task_id}/jira-sync",
+    status_code=status.HTTP_200_OK,
+    response_model=TaskResponseDto,
+)
+def sync_jira_tasks(
+    task_id: int,
+    token: AuthToken,
+    current_user: CurrentUser,
+    db: Session = Depends(get_db),
+):
+    service = TaskService(db)
+    command = SyncJiraTaskCommand(
+        user_id=current_user.id,
+        task_id=task_id,
+    )
+    task = service.sync_to_jira(command)
     return TaskResponseDto.from_entity(task)
 
 

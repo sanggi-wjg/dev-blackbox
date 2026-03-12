@@ -1,7 +1,11 @@
+from unittest.mock import MagicMock
+
 from fastapi.testclient import TestClient
 
+from dev_blackbox.client.jira_client import JiraClient
 from dev_blackbox.controller.config.model.authenticated_user import AuthenticatedUser
 from dev_blackbox.core.enum import TaskStatusEnum
+from dev_blackbox.storage.rds.entity.task import Task
 
 
 class TaskControllerTest:
@@ -171,3 +175,73 @@ class TaskControllerTest:
         assert data[1]["display_order"] == 1
         assert data[2]["title"] == "첫 번째"
         assert data[2]["display_order"] == 2
+
+    def test_Jira_동기화(
+        self,
+        mocker,
+        auth_client: TestClient,
+        authenticated_user: AuthenticatedUser,
+        db_session,
+        jira_secret_fixture,
+        jira_user_fixture,
+    ):
+        # given
+        jira_secret = jira_secret_fixture()
+        jira_user_fixture(jira_secret_id=jira_secret.id, user_id=authenticated_user.id)
+
+        task = Task.create_from_jira(
+            user_id=authenticated_user.id,
+            title="Jira 태스크",
+            display_order=0,
+            jira_issue_id="10001",
+            jira_issue_key="PROJ-1",
+            jira_issue_url="https://test.atlassian.net/browse/PROJ-1",
+            content="태스크 설명",
+        )
+        db_session.add(task)
+        db_session.flush()
+
+        # mock
+        mock_client = MagicMock(spec=JiraClient)
+        mocker.patch(
+            "dev_blackbox.service.task_service.get_jira_client",
+            return_value=mock_client,
+        )
+
+        # when
+        response = auth_client.post(f"/api/v1/tasks/{task.id}/jira-sync")
+
+        # then
+        assert response.status_code == 200
+        data = response.json()
+        assert data["jira_issue_key"] == "PROJ-1"
+        assert data["jira_synced_at"] is not None
+        mock_client.update_issue_description.assert_called_once_with(
+            issue_key="PROJ-1",
+            description=task.content,
+        )
+
+    def test_Jira_동기화_Jira_연동_안된_태스크(
+        self,
+        auth_client: TestClient,
+        authenticated_user: AuthenticatedUser,
+        task_fixture,
+    ):
+        # given
+        task = task_fixture(user_id=authenticated_user.id, title="일반 태스크", content="내용")
+
+        # when
+        response = auth_client.post(f"/api/v1/tasks/{task.id}/jira-sync")
+
+        # then
+        assert response.status_code == 200
+        data = response.json()
+        assert data["jira_issue_key"] is None
+        assert data["jira_synced_at"] is None
+
+    def test_Jira_동기화_존재하지_않는_태스크_404(self, auth_client: TestClient):
+        # when
+        response = auth_client.post("/api/v1/tasks/999999/jira-sync")
+
+        # then
+        assert response.status_code == 404
