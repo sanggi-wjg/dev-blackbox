@@ -20,6 +20,9 @@ class TaskResponseDto(BaseModel):
     is_archived: bool
     display_order: int
     archived_at: datetime | None
+    jira_issue_key: str | None
+    jira_issue_url: str | None
+    jira_synced_at: datetime | None
     created_at: datetime
     updated_at: datetime
 
@@ -34,6 +37,9 @@ class TaskResponseDto(BaseModel):
             is_archived=entity.is_archived,
             display_order=entity.display_order,
             archived_at=entity.archived_at,
+            jira_issue_key=entity.jira_issue_key,
+            jira_issue_url=entity.jira_issue_url,
+            jira_synced_at=entity.jira_synced_at,
             created_at=entity.created_at,
             updated_at=entity.updated_at,
         )

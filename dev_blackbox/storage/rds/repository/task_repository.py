@@ -15,9 +15,18 @@ class TaskRepository:
         self.session.flush()
         return entity
 
+    def save_all(self, entities: list[Task]) -> list[Task]:
+        self.session.add_all(entities)
+        self.session.flush()
+        return entities
+
     def find_by_id_and_user_id(self, entity_id: int, user_id: int) -> Task | None:
         stmt = select(Task).where(Task.id == entity_id, Task.user_id == user_id)
         return self.session.scalar(stmt)
+
+    def find_all_has_jira_issue_key(self, user_id: int) -> list[Task]:
+        stmt = select(Task).where(Task.user_id == user_id, Task.jira_issue_key.isnot(None))
+        return list(self.session.scalars(stmt))
 
     def delete_by_id_and_user_id(self, entity_id: int, user_id: int) -> None:
         stmt = delete(Task).where(Task.id == entity_id, Task.user_id == user_id)

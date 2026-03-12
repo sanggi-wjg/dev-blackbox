@@ -19,6 +19,10 @@ class Task(Base):
     is_archived: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     display_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    jira_issue_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    jira_issue_key: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    jira_issue_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    jira_synced_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     user_id: Mapped[int] = mapped_column(
         BigInteger,
@@ -42,10 +46,37 @@ class Task(Base):
         return cls(
             user_id=user_id,
             title=title,
+            status=status,
             content=content,
             tags=tags,
-            status=status,
             display_order=display_order,
+            jira_issue_id=None,
+            jira_issue_key=None,
+            jira_issue_url=None,
+        )
+
+    @classmethod
+    def create_from_jira(
+        cls,
+        user_id: int,
+        title: str,
+        display_order: int,
+        jira_issue_id: str,
+        jira_issue_key: str,
+        jira_issue_url: str,
+        content: str = "",
+    ) -> "Task":
+        return cls(
+            user_id=user_id,
+            title=title,
+            status=TaskStatusEnum.BACKLOG,
+            content=content,
+            tags=None,
+            display_order=display_order,
+            jira_issue_id=jira_issue_id,
+            jira_issue_key=jira_issue_key,
+            jira_issue_url=jira_issue_url,
+            jira_synced_at=get_datetime_utc_now(),
         )
 
     def update(

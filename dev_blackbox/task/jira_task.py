@@ -2,6 +2,7 @@ import logging
 
 from dev_blackbox.core.const import LockKey
 from dev_blackbox.core.database import get_db_session
+from dev_blackbox.service.jira_task_service import JiraTaskService
 from dev_blackbox.service.jira_user_service import JiraUserService
 from dev_blackbox.util.distributed_lock import distributed_lock
 
@@ -20,3 +21,17 @@ def sync_jira_users_task():
             JiraUserService(session).sync_all_jira_users()
 
         logger.info("Jira 사용자 동기화 태스크 완료.")
+
+
+def sync_jira_backlog_task():
+    with distributed_lock(LockKey.SYNC_JIRA_BACKLOG_TASK) as acquired:
+        if not acquired:
+            logger.warning("Jira 백로그 동기화 태스크가 이미 실행 중, 건너뜀...")
+            return
+
+        logger.info("Jira 백로그 동기화 태스크 시작...")
+
+        with get_db_session() as session:
+            JiraTaskService(session).sync_jira_backlog()
+
+        logger.info("Jira 백로그 동기화 태스크 완료.")

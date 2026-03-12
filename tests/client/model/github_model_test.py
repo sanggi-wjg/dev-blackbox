@@ -17,8 +17,8 @@ from dev_blackbox.client.model.github_api_model import (
     GithubPullRequestModel,
     GithubPushEventPayloadModel,
     GithubRepositoryModel,
-    _MAX_PATCH_LENGTH,
 )
+from dev_blackbox.core.const import GITHUB_COMMIT_MAX_PATCH_LENGTH
 
 _ACTOR = GitHubActorModel(
     id=1,
@@ -328,7 +328,7 @@ def test_commit_detail_text_파일_패치_포함():
 
 def test_commit_detail_text_패치가_긴_경우_잘림():
     # given
-    long_patch = "x" * (_MAX_PATCH_LENGTH + 100)
+    long_patch = "x" * (GITHUB_COMMIT_MAX_PATCH_LENGTH + 100)
     files = [
         GithubCommitFileModel(
             sha="f2",
