@@ -1,6 +1,7 @@
 from dev_blackbox.storage.rds.entity.daily_work_log import DailyWorkLog
 from dev_blackbox.storage.rds.entity.github_event import GitHubEvent
 from dev_blackbox.storage.rds.entity.github_user_secret import GitHubUserSecret
+from dev_blackbox.storage.rds.entity.image import Image
 from dev_blackbox.storage.rds.entity.jira_event import JiraEvent
 from dev_blackbox.storage.rds.entity.jira_secret import JiraSecret
 from dev_blackbox.storage.rds.entity.jira_user import JiraUser
@@ -15,6 +16,7 @@ __all__ = [
     "DailyWorkLog",
     "GitHubEvent",
     "GitHubUserSecret",
+    "Image",
     "JiraEvent",
     "JiraSecret",
     "JiraUser",
