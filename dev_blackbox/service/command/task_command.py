@@ -12,6 +12,11 @@ class CreateTaskCommand(BaseModel):
     display_order: int
 
 
+class SyncJiraTaskCommand(BaseModel):
+    user_id: int
+    task_id: int
+
+
 class ReorderTasksCommand(BaseModel):
     user_id: int
     task_ids: list[int]

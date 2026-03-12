@@ -152,3 +152,4 @@ Layered Architecture (Controller → Service → Repository → Entity).
 - **JiraUser 할당**: `jira_user.user_id`와 `project`는 NULLABLE — Jira에서 동기화된 사용자는 `assign_user_and_project()`로 User와 프로젝트를 수동 할당해야 함. 미할당 시 Jira 데이터 수집이 건너뛰어짐
 - **SlackUser 할당**: `slack_user.user_id`는 NULLABLE — Slack에서 동기화된 사용자는 `assign_user()`로 User를 수동 할당해야 함. 미할당 시 Slack 데이터 수집이 건너뛰어짐
 - **인증 정보 암호화**: JiraSecret의 `username`/`api_token`, SlackSecret의 `bot_token`은 `EncryptService`로 암호화 후 DB 저장
+- **pyright용 None 체크**: 논리적으로 도달 불가능해 보이는 `is None` 체크라도 pyright 타입 내로잉을 위해 의도적으로 작성된 경우가 있음. 이는 정상 코드이므로 중복 체크로 판단하여 제거하지 말 것

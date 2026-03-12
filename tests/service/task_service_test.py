@@ -1,17 +1,22 @@
+from unittest.mock import MagicMock
+
 import pytest
 
+from dev_blackbox.client.jira_client import JiraClient
 from dev_blackbox.core.enum import TaskStatusEnum
-from dev_blackbox.core.exception import TaskNotFoundException
+from dev_blackbox.core.exception import TaskNotFoundException, UserNotFoundException
 from dev_blackbox.service.command.task_command import (
     ArchiveTaskCommand,
     CreateTaskCommand,
     DeleteTaskCommand,
     ReorderTasksCommand,
+    SyncJiraTaskCommand,
     UnarchiveTaskCommand,
     UpdateTaskCommand,
 )
 from dev_blackbox.service.query.task_query import TaskQuery
 from dev_blackbox.service.task_service import TaskService
+from dev_blackbox.storage.rds.entity.task import Task
 
 
 class TaskServiceTest:
@@ -252,3 +257,165 @@ class TaskServiceTest:
 
         # then
         assert result == [archived_task]
+
+    def test_sync_to_jira(
+        self, mocker, db_session, user_fixture, jira_secret_fixture, jira_user_fixture
+    ):
+        # given
+        user = user_fixture("task-sync-jira@dev.com")
+        jira_secret = jira_secret_fixture()
+        jira_user_fixture(jira_secret_id=jira_secret.id, user_id=user.id)
+
+        task = Task.create_from_jira(
+            user_id=user.id,
+            title="Jira 태스크",
+            display_order=0,
+            jira_issue_id="10001",
+            jira_issue_key="PROJ-1",
+            jira_issue_url="https://test.atlassian.net/browse/PROJ-1",
+            content="태스크 설명 내용",
+        )
+        db_session.add(task)
+        db_session.flush()
+
+        service = TaskService(db_session)
+        command = SyncJiraTaskCommand(task_id=task.id, user_id=user.id)
+
+        # mock
+        mock_client = MagicMock(spec=JiraClient)
+        mocker.patch(
+            "dev_blackbox.service.task_service.get_jira_client",
+            return_value=mock_client,
+        )
+
+        # when
+        result = service.sync_to_jira(command)
+
+        # then
+        assert result.jira_synced_at is not None
+        mock_client.update_issue_description.assert_called_once_with(
+            issue_key=task.jira_issue_key,
+            description=task.content,
+        )
+
+    def test_sync_to_jira_태스크가_존재하지_않으면_예외(self, db_session, user_fixture):
+        # given
+        user = user_fixture("task-sync-notfound@dev.com")
+        service = TaskService(db_session)
+        command = SyncJiraTaskCommand(task_id=9999, user_id=user.id)
+
+        # when & then
+        with pytest.raises(TaskNotFoundException):
+            service.sync_to_jira(command)
+
+    def test_sync_to_jira_Jira_연동_정보_없으면_API_호출_안함(
+        self, mocker, db_session, user_fixture, task_fixture
+    ):
+        # given
+        user = user_fixture("task-sync-nojira@dev.com")
+        task = task_fixture(user_id=user.id, title="일반 태스크", content="내용")
+
+        service = TaskService(db_session)
+        command = SyncJiraTaskCommand(task_id=task.id, user_id=user.id)
+
+        # mock
+        mock_get_jira_client = mocker.patch(
+            "dev_blackbox.service.task_service.get_jira_client",
+        )
+
+        # when
+        result = service.sync_to_jira(command)
+
+        # then
+        assert result == task
+        mock_get_jira_client.assert_not_called()
+
+    def test_sync_to_jira_content가_비어있으면_API_호출_안함(
+        self, mocker, db_session, user_fixture
+    ):
+        # given
+        user = user_fixture("task-sync-nocontent@dev.com")
+        task = Task.create_from_jira(
+            user_id=user.id,
+            title="Jira 태스크",
+            display_order=0,
+            jira_issue_id="10002",
+            jira_issue_key="PROJ-2",
+            jira_issue_url="https://test.atlassian.net/browse/PROJ-2",
+            content="",
+        )
+        db_session.add(task)
+        db_session.flush()
+
+        service = TaskService(db_session)
+        command = SyncJiraTaskCommand(task_id=task.id, user_id=user.id)
+
+        # mock
+        mock_get_jira_client = mocker.patch(
+            "dev_blackbox.service.task_service.get_jira_client",
+        )
+
+        # when
+        result = service.sync_to_jira(command)
+
+        # then
+        assert result == task
+        mock_get_jira_client.assert_not_called()
+
+    def test_sync_to_jira_User가_존재하지_않으면_예외(self, mocker, db_session):
+        # given
+        # user_id=9999로 Task를 직접 생성 (FK 제약 우회를 위해 flush하지 않음)
+        task = Task.create_from_jira(
+            user_id=9999,
+            title="Jira 태스크",
+            display_order=0,
+            jira_issue_id="10003",
+            jira_issue_key="PROJ-3",
+            jira_issue_url="https://test.atlassian.net/browse/PROJ-3",
+            content="태스크 설명",
+        )
+        # TaskRepository.find_by_id_and_user_id를 mock하여 FK 제약 회피
+        mocker.patch.object(
+            TaskService,
+            "_get_task_or_throw",
+            return_value=task,
+        )
+
+        service = TaskService(db_session)
+        command = SyncJiraTaskCommand(task_id=1, user_id=9999)
+
+        # when & then
+        with pytest.raises(UserNotFoundException):
+            service.sync_to_jira(command)
+
+    def test_sync_to_jira_JiraUser가_할당되지_않으면_API_호출_안함(
+        self, mocker, db_session, user_fixture
+    ):
+        # given
+        user = user_fixture("task-sync-nojirauser@dev.com")
+        task = Task.create_from_jira(
+            user_id=user.id,
+            title="Jira 태스크",
+            display_order=0,
+            jira_issue_id="10004",
+            jira_issue_key="PROJ-4",
+            jira_issue_url="https://test.atlassian.net/browse/PROJ-4",
+            content="태스크 설명",
+        )
+        db_session.add(task)
+        db_session.flush()
+
+        service = TaskService(db_session)
+        command = SyncJiraTaskCommand(task_id=task.id, user_id=user.id)
+
+        # mock
+        mock_get_jira_client = mocker.patch(
+            "dev_blackbox.service.task_service.get_jira_client",
+        )
+
+        # when
+        result = service.sync_to_jira(command)
+
+        # then
+        assert result == task
+        mock_get_jira_client.assert_not_called()
