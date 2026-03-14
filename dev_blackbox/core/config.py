@@ -53,6 +53,8 @@ class LoggingConfig(BaseModel):
         "%(funcName)s:%(lineno)d — %(message)s"
     )
     date_format: str = "%Y-%m-%d %H:%M:%S"
+    handlers: list[str] = ["console", "file"]
+    log_file_dir: str = os.path.join(_PROJECT_ROOT, "logs")
 
 
 class Settings(BaseSettings):

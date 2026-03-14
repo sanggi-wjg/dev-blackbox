@@ -62,7 +62,7 @@ Controller 엔드포인트의 파라미터 바인딩 방식:
 
 - `client/` 디렉토리에 클라이언트 클래스 + `client/model/`에 Pydantic 모델
 - `GithubClient` — `httpx` 동기 HTTP, `create()` 팩토리 메서드
-- `JiraClient` — `jira` 라이브러리 (Basic Auth), `create()` 팩토리 메서드, `get_jira_client()` `@lru_cache` 팩토리
+- `JiraClient` — `jira` 라이브러리 (Basic Auth), `create()` 팩토리 메서드, `get_jira_client()` `@lru_cache` 팩토리, `max_retries=3`, `timeout=10`
 - `SlackClient` — `slack_sdk` 라이브러리, `create()` 팩토리 메서드, `get_slack_client()` `@lru_cache` 팩토리
 
 ## 인증/인가

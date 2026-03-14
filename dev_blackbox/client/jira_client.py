@@ -19,7 +19,7 @@ class JiraClient:
         username: str,
         api_token: str,
     ):
-        self.jira = JIRA(server=server, basic_auth=(username, api_token))
+        self.jira = JIRA(server=server, basic_auth=(username, api_token), max_retries=3, timeout=10)
 
     @classmethod
     def create(cls, server: str, username: str, api_token: str) -> "JiraClient":
