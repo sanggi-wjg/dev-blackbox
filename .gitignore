@@ -10,6 +10,9 @@ docker/postgres/data/
 playground/
 playground*
 
+# Logs
+logs/
+
 # Coverage
 htmlcov/
 .coverage*

@@ -34,6 +34,15 @@ Redis 기반 분산 락으로 동일 태스크 중복 실행 방지. Redis 불�
 - 스케줄 태스크: `LockKey` Enum 기반 전역 락
 - 수동 동기화: 사용자+날짜 조합 동적 락
 
+## 로깅
+
+`setup_logging()`으로 중앙 집중식 로깅을 설정한다 (`main.py` 최상단에서 호출).
+
+- **핸들러**: `console` (stdout) + `file` (RotatingFileHandler). `LoggingConfig.handlers`로 설정 가능
+- **파일 로그**: `logs/app.log` (기본 경로: 프로젝트 루트 `logs/`). `LoggingConfig.log_file_dir`로 변경 가능
+- **로테이션**: 파일당 최대 10MB, 최대 5개 백업 파일
+- **인코딩**: UTF-8
+
 ## 환경 설정
 
 Pydantic Settings 기반, `.env` 파일에서 로드 (중첩 구분자: `__`).
