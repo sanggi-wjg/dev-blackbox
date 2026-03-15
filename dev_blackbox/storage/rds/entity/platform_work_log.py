@@ -18,6 +18,7 @@ class PlatformWorkLog(Base):
     embedding: Mapped[list[float] | None] = mapped_column(Vector(1024), nullable=True)
     model_name: Mapped[str] = mapped_column(String(100), nullable=False)
     prompt: Mapped[str] = mapped_column(Text, nullable=False)
+    is_empty: Mapped[bool] = mapped_column(default=False, nullable=False)
 
     user_id: Mapped[int] = mapped_column(
         BigInteger,
@@ -37,7 +38,7 @@ class PlatformWorkLog(Base):
         content: str,
         model_name: str,
         prompt: str,
-        embedding: list[float] | None = None,
+        is_empty: bool,
     ) -> "PlatformWorkLog":
         return cls(
             user_id=user_id,
@@ -46,7 +47,8 @@ class PlatformWorkLog(Base):
             content=content,
             model_name=model_name,
             prompt=prompt,
-            embedding=embedding,
+            is_empty=is_empty,
+            embedding=None,
         )
 
     @property
@@ -55,4 +57,8 @@ class PlatformWorkLog(Base):
 
     def update_content(self, content: str) -> "PlatformWorkLog":
         self.content = content
+        return self
+
+    def update_embedding(self, embedding: list[float]) -> "PlatformWorkLog":
+        self.embedding = embedding
         return self

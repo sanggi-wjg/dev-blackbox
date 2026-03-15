@@ -76,6 +76,9 @@ class PlatformWorkLogService:
             content=command.content,
             model_name=command.model_name,
             prompt=command.prompt,
-            embedding=command.embedding,
+            is_empty=command.is_empty,
         )
         return self.platform_work_log_repository.save(platform_work_log)
+
+    def get_for_embedding_generation(self) -> list[PlatformWorkLog]:
+        return self.platform_work_log_repository.find_all_with_null_embedding()

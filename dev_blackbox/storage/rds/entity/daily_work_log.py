@@ -38,3 +38,7 @@ class DailyWorkLog(Base):
             content=content,
             embedding=embedding,
         )
+
+    def update_embedding(self, embedding: list[float]) -> "DailyWorkLog":
+        self.embedding = embedding
+        return self

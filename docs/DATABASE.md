@@ -38,8 +38,8 @@ PostgreSQL 데이터 모델, ORM 엔티티, 세션 관리.
 | SlackUser        | `slack_user`         | —                 | `(slack_secret_id, member_id)`, `user_id` | `assign_user()`/`unassign_user()`로 User 할당                |
 | SlackSecret      | `slack_secret`       | `SoftDeleteMixin` | —                                         | Slack 인증 정보 (bot_token 암호화 저장)                            |
 | SlackMessage     | `slack_message`      | —                 | —                                         | Slack 메시지 저장, `message` JSONB                             |
-| PlatformWorkLog  | `platform_work_log`  | —                 | `(user_id, target_date, platform)`        | `markdown_text` property, `update_content()`              |
-| DailyWorkLog     | `daily_work_log`     | —                 | `(user_id, target_date)`                  | 플랫폼별 WorkLog 병합 결과                                        |
+| PlatformWorkLog  | `platform_work_log`  | —                 | `(user_id, target_date, platform)`        | `markdown_text` property, `update_content()`, `update_embedding()` |
+| DailyWorkLog     | `daily_work_log`     | —                 | `(user_id, target_date)`                  | 플랫폼별 WorkLog 병합 결과, `update_embedding()`                   |
 | Image            | `image`              | —                 | —                                         | BYTEA 이미지 저장, 물리 삭제                                       |
 
 - 모든 FK는 `ON DELETE RESTRICT`
@@ -93,3 +93,11 @@ with get_db_session() as db:
 ### 인덱스
 
 인덱스 상세는 `docker/postgres/init.sql` 참고.
+
+#### HNSW 벡터 인덱스
+
+`platform_work_log`과 `daily_work_log`의 `embedding` 컬럼에 HNSW 인덱스가 설정되어 있다:
+
+- **연산자**: `vector_cosine_ops` (cosine distance)
+- **파라미터**: `m=16`, `ef_construction=64`
+- 시맨틱 검색 시 cosine similarity 기반 유사도 검색에 사용

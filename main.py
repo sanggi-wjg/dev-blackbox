@@ -28,6 +28,9 @@ from dev_blackbox.controller.api.user_controller import router as user_router
 from dev_blackbox.controller.api.auth_controller import router as auth_router
 from dev_blackbox.controller.api.event_activity_controller import router as event_activity_router
 from dev_blackbox.controller.api.image_controller import router as image_router
+from dev_blackbox.controller.api.search_controller import (
+    router as search_router,
+)
 from dev_blackbox.controller.admin.admin_jira_secret_controller import (
     router as admin_jira_secret_router,
 )
@@ -85,6 +88,7 @@ for router in [
     slack_user_router,
     platform_work_log_router,
     daily_work_log_router,
+    search_router,
     task_router,
     event_activity_router,
     image_router,

@@ -90,6 +90,7 @@ def _save_empty_work_log(
     user: UserContext,
     target_date: date,
     platform: PlatformEnum,
+    is_empty: bool,
     message: str = EMPTY_ACTIVITY_MESSAGE,
 ):
     with get_db_session() as session:
@@ -101,6 +102,7 @@ def _save_empty_work_log(
             content=message,
             model_name="",
             prompt="",
+            is_empty=is_empty,
         )
         service.save_platform_work_log(command)
 
@@ -119,7 +121,7 @@ def _collect_and_summarize(user: UserContext, target_date: date):
                     commit_message=commit_message,
                 )
             else:
-                _save_empty_work_log(user, target_date, PlatformEnum.GITHUB)
+                _save_empty_work_log(user, target_date, PlatformEnum.GITHUB, is_empty=True)
     except Exception as e:
         logger.exception(
             f"GitHub 데이터 수집/요약 실패: user_id={user.id}, target_date={target_date}, error={e}"
@@ -138,7 +140,7 @@ def _collect_and_summarize(user: UserContext, target_date: date):
                     issue_details=issue_details,
                 )
             else:
-                _save_empty_work_log(user, target_date, PlatformEnum.JIRA)
+                _save_empty_work_log(user, target_date, PlatformEnum.JIRA, is_empty=True)
     except Exception as e:
         logger.exception(
             f"Jira 데이터 수집/요약 실패: user_id={user.id}, target_date={target_date}, error={e}"
@@ -157,7 +159,7 @@ def _collect_and_summarize(user: UserContext, target_date: date):
                     message_details=message_details,
                 )
             else:
-                _save_empty_work_log(user, target_date, PlatformEnum.SLACK)
+                _save_empty_work_log(user, target_date, PlatformEnum.SLACK, is_empty=True)
     except Exception as e:
         logger.exception(
             f"Slack 데이터 수집/요약 실패: user_id={user.id}, target_date={target_date}, error={e}"
@@ -254,6 +256,7 @@ def _summarize_platform(
             content=summary_text,
             model_name=llm_config.model,
             prompt=prompt.template,
+            is_empty=False,
         )
         service.save_platform_work_log(command)
 

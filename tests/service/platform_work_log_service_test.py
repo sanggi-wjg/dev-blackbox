@@ -32,6 +32,7 @@ class PlatformWorkLogServiceTest:
             content="GitHub summary",
             model_name="llama3",
             prompt="Summarize commits",
+            is_empty=False,
         )
         result = service.save_platform_work_log(command)
 

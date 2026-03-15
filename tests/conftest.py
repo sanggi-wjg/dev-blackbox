@@ -326,6 +326,7 @@ def platform_work_log_fixture(
         content: str = "Test content",
         model_name: str = "test-model",
         prompt: str = "test-prompt",
+        is_empty: bool = False,
     ) -> PlatformWorkLog:
         work_log = PlatformWorkLog.create(
             user_id=user_id,
@@ -334,6 +335,7 @@ def platform_work_log_fixture(
             content=content,
             model_name=model_name,
             prompt=prompt,
+            is_empty=is_empty,
         )
         db_session.add(work_log)
         db_session.flush()
