@@ -80,5 +80,5 @@ class PlatformWorkLogService:
         )
         return self.platform_work_log_repository.save(platform_work_log)
 
-    def get_for_embedding_generation(self) -> list[PlatformWorkLog]:
-        return self.platform_work_log_repository.find_all_with_null_embedding()
+    def get_for_chunk_generation(self) -> list[PlatformWorkLog]:
+        return self.platform_work_log_repository.find_all_without_chunks()

@@ -1,6 +1,8 @@
 from pydantic import BaseModel
 
 
-class UpdatePlatformWorkLogEmbeddingCommand(BaseModel):
-    work_log_id: int
+class GeneratePlatformWorkLogEmbeddingCommand(BaseModel):
+    platform_work_log_id: int
+    chunk_index: int
+    chunk_text: str
     embedding: list[float]

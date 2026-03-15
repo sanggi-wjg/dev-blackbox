@@ -41,8 +41,9 @@ PostgreSQL 데이터 모델, ORM 엔티티, 세션 관리.
 | PlatformWorkLog  | `platform_work_log`  | —                 | `(user_id, target_date, platform)`        | `markdown_text` property, `update_content()`, `update_embedding()` |
 | DailyWorkLog     | `daily_work_log`     | —                 | `(user_id, target_date)`                  | 플랫폼별 WorkLog 병합 결과, `update_embedding()`                   |
 | Image            | `image`              | —                 | —                                         | BYTEA 이미지 저장, 물리 삭제                                       |
+| PlatformWorkLogChunk | `platform_work_log_chunk` | —            | —                                         | FK `ON DELETE CASCADE`, `update_embedding()`, 청크 임베딩 벡터 (1024차원) |
 
-- 모든 FK는 `ON DELETE RESTRICT`
+- 모든 FK는 `ON DELETE RESTRICT` (예외: `platform_work_log_chunk`는 `ON DELETE CASCADE` — 부모 삭제 시 청크 함께 삭제)
 - 관계도(ERD)는 [ERD.md](ERD.md) 참고
 - 컬럼 상세는 `storage/rds/entity/` 코드 또는 `docker/postgres/init.sql` 참고
 
@@ -96,7 +97,7 @@ with get_db_session() as db:
 
 #### HNSW 벡터 인덱스
 
-`platform_work_log`과 `daily_work_log`의 `embedding` 컬럼에 HNSW 인덱스가 설정되어 있다:
+`platform_work_log`, `daily_work_log`, `platform_work_log_chunk`의 `embedding` 컬럼에 HNSW 인덱스가 설정되어 있다:
 
 - **연산자**: `vector_cosine_ops` (cosine distance)
 - **파라미터**: `m=16`, `ef_construction=64`

@@ -39,13 +39,6 @@ class DailyWorkLogRepository:
         stmt = select(DailyWorkLog).where(DailyWorkLog.id == daily_work_log_id)
         return self.session.scalar(stmt)
 
-    def find_all_with_null_embedding(self) -> list[DailyWorkLog]:
-        stmt = select(DailyWorkLog).where(
-            DailyWorkLog.embedding.is_(None),
-            DailyWorkLog.content != "",
-        )
-        return list(self.session.scalars(stmt))
-
     def delete_by_user_id_and_target_date(self, user_id: int, target_date: date) -> None:
         stmt = delete(DailyWorkLog).where(
             DailyWorkLog.user_id == user_id,

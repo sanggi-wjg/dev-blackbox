@@ -201,20 +201,21 @@ collect_events_and_summarize_work_log_by_user_task(user_id, target_date)
        │
        ├── distributed_lock 획득
        │
-       ├── EmbeddingService.generate_embeddings_for_platform_work_logs()
+       ├── [청킹] EmbeddingService.generate_chunks_for_platform_work_logs()
        │       │
-       │       ├── PlatformWorkLogRepository.find_all_with_null_embedding()
-       │       ├── EmbeddingAgent.get_embedding(content)    ← Ollama (mxbai-embed-large)
-       │       └── PlatformWorkLog.update_embedding()       ← DB 저장
+       │       ├── 청크 미생성 PlatformWorkLog 조회
+       │       ├── chunk_content()                          ← 텍스트 청킹
+       │       └── PlatformWorkLogChunk 저장                         ← DB 저장
        │
-       └── EmbeddingService.generate_embeddings_for_daily_work_logs()
+       └── [임베딩] EmbeddingService.generate_embeddings_for_work_log_chunks()
                │
-               ├── DailyWorkLogRepository.find_all_with_null_embedding()
-               ├── EmbeddingAgent.get_embedding(content)    ← Ollama (mxbai-embed-large)
-               └── DailyWorkLog.update_embedding()          ← DB 저장
+               ├── 임베딩 미생성 PlatformWorkLogChunk 조회
+               ├── EmbeddingAgent.get_embedding(chunk_text)  ← Ollama
+               └── PlatformWorkLogChunk.update_embedding()           ← DB 저장
 ```
 
-- `embedding`이 NULL이고 `content`가 비어있지 않은 레코드만 대상
+- 청크 미생성 work_log를 조회하여 `chunk_content()`로 청킹 후 `PlatformWorkLogChunk`를 저장
+- `embedding`이 NULL인 청크만 임베딩 생성 대상
 - 각 레코드별 독립된 try-except로 개별 실패가 전체를 차단하지 않음
 - 생성된 임베딩은 시맨틱 검색(`GET /api/v1/search`)에서 cosine similarity로 활용
 

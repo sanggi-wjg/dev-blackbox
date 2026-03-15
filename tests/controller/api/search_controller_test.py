@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 from dev_blackbox.controller.config.model.authenticated_user import AuthenticatedUser
 from dev_blackbox.core.enum import PlatformEnum
 from dev_blackbox.storage.rds.entity.platform_work_log import PlatformWorkLog
+from dev_blackbox.storage.rds.entity.platform_work_log_chunk import PlatformWorkLogChunk
 
 
 class SearchControllerTest:
@@ -29,8 +30,16 @@ class SearchControllerTest:
             prompt="test-prompt",
             is_empty=False,
         )
-        log.update_embedding(embedding)
         db_session.add(log)
+        db_session.flush()
+
+        chunk = PlatformWorkLogChunk.create(
+            platform_work_log_id=log.id,
+            chunk_index=0,
+            chunk_text="인증 모듈 리팩터링",
+        )
+        chunk.update_embedding(embedding)
+        db_session.add(chunk)
         db_session.flush()
 
         mock_agent = MagicMock()

@@ -165,6 +165,41 @@ COMMENT ON COLUMN platform_work_log.prompt IS '요약 생성에 사용된 프롬
 COMMENT ON COLUMN platform_work_log.is_empty IS '원본 데이터 부족으로 요약이 생성되지 않았음을 나타내는 플래그';
 
 
+-- platform_work_log_chunk 테이블 (플랫폼 업무 일지 청크)
+CREATE TABLE IF NOT EXISTS platform_work_log_chunk
+(
+    id                   BIGSERIAL PRIMARY KEY,
+    platform_work_log_id BIGINT       NOT NULL,
+    chunk_index          INT          NOT NULL,
+    chunk_text           TEXT         NOT NULL,
+    embedding            vector(1024) NULL,
+
+    created_at           TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at           TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT fk_platform_work_log_chunk_platform_work_log
+        FOREIGN KEY (platform_work_log_id) REFERENCES platform_work_log (id) ON DELETE CASCADE
+);
+
+CREATE TRIGGER tr_platform_work_log_chunk_updated_at
+    BEFORE UPDATE
+    ON platform_work_log_chunk
+    FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+CREATE INDEX idx_platform_work_log_chunk_001 ON platform_work_log_chunk (platform_work_log_id);
+CREATE INDEX idx_platform_work_log_chunk_002 ON platform_work_log_chunk (created_at DESC);
+CREATE INDEX idx_platform_work_log_chunk_embedding ON platform_work_log_chunk
+    USING hnsw (embedding vector_cosine_ops)
+    WITH (m = 16, ef_construction = 64);
+
+COMMENT ON TABLE platform_work_log_chunk IS '플랫폼 업무 일지 청크 (시맨틱 검색용)';
+COMMENT ON COLUMN platform_work_log_chunk.platform_work_log_id IS '플랫폼 업무 일지 FK (CASCADE 삭제)';
+COMMENT ON COLUMN platform_work_log_chunk.chunk_index IS '청크 순서 (0-based)';
+COMMENT ON COLUMN platform_work_log_chunk.chunk_text IS '청크 텍스트';
+COMMENT ON COLUMN platform_work_log_chunk.embedding IS '청크 임베딩 벡터';
+
+
 -- daily_work_log 테이블 (통합 일일 요약)
 CREATE TABLE IF NOT EXISTS daily_work_log
 (

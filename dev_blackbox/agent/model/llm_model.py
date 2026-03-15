@@ -48,5 +48,5 @@ class EmbeddingOllamaConfig(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     base_url: str = "http://localhost:11434"
-    model: str = "mxbai-embed-large:latest"
+    model: str = "bge-m3:latest"
     request_timeout: float = 60.0

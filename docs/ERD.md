@@ -22,6 +22,7 @@ erDiagram
     jira_user ||--o{ jira_event: "1:N"
     slack_secret ||--o{ slack_user: "1:N"
     slack_user ||--o{ slack_message: "1:N"
+    platform_work_log ||--o{ platform_work_log_chunk : "1:N"
 ```
 
 ## 1. 사용자 도메인
@@ -154,6 +155,7 @@ erDiagram
 erDiagram
     users ||--o{ platform_work_log : "1:N"
     users ||--o{ daily_work_log : "1:N"
+    platform_work_log ||--o{ platform_work_log_chunk : "1:N"
 
     platform_work_log {
         bigserial id PK
@@ -172,6 +174,14 @@ erDiagram
         date target_date "복합UK(user+date)"
         text content
         vector embedding "1024차원, NULLABLE"
+    }
+
+    platform_work_log_chunk {
+        bigserial id PK
+        bigint platform_work_log_id FK
+        int chunk_index
+        text chunk_text
+        vector embedding "2560차원, NULLABLE"
     }
 ```
 

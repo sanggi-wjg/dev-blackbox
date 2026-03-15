@@ -32,8 +32,9 @@ async def search_platform_work_logs(
         user_id=current_user.id,
         query_text=param.query,
         limit=param.limit,
+        similarity=param.similarity,
     )
     results = service.search_platform_work_logs(query)
     return PlatformWorkLogSearchResponseDto(
-        results=[PlatformWorkLogSearchResultDto.from_projection(r) for r in results],
+        results=[PlatformWorkLogSearchResultDto.from_model(r) for r in results],
     )

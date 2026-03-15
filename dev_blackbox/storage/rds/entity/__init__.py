@@ -11,6 +11,7 @@ from dev_blackbox.storage.rds.entity.slack_secret import SlackSecret
 from dev_blackbox.storage.rds.entity.slack_user import SlackUser
 from dev_blackbox.storage.rds.entity.task import Task
 from dev_blackbox.storage.rds.entity.user import User
+from dev_blackbox.storage.rds.entity.platform_work_log_chunk import PlatformWorkLogChunk
 
 __all__ = [
     "DailyWorkLog",
@@ -21,6 +22,7 @@ __all__ = [
     "JiraSecret",
     "JiraUser",
     "PlatformWorkLog",
+    "PlatformWorkLogChunk",
     "SlackMessage",
     "SlackSecret",
     "SlackUser",
