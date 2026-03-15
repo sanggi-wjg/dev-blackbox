@@ -8,7 +8,7 @@
 
 | 항목     | 현재 구현                                                    |
 |--------|----------------------------------------------------------|
-| 임베딩 모델 | `qwen3-embedding:4b` (2560차원, Ollama), 청크 단위 임베딩        |
+| 임베딩 모델 | `qwen3-embedding:4b` (2560차원, Ollama), 청크 단위 임베딩         |
 | 벡터 인덱스 | HNSW (`m=16`, `ef_construction=64`, `vector_cosine_ops`) |
 | 검색 대상  | `PlatformWorkLog`만 검색 (`DailyWorkLog` 미검색)               |
 | 검색 방식  | 순수 벡터 cosine distance, top-k 반환                          |

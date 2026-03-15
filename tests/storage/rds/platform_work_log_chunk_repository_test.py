@@ -113,7 +113,7 @@ class PlatformWorkLogChunkRepositoryTest:
         results = repository.find_similar_by_embedding(
             user_id=user.id,
             query_embedding=embedding_a,
-            similarity=2.0,
+            similarity=-1.0,
             limit=10,
         )
 
