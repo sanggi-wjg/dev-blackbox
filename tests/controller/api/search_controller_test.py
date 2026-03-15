@@ -37,8 +37,8 @@ class SearchControllerTest:
             platform_work_log_id=log.id,
             chunk_index=0,
             chunk_text="인증 모듈 리팩터링",
+            embedding=embedding,
         )
-        chunk.update_embedding(embedding)
         db_session.add(chunk)
         db_session.flush()
 

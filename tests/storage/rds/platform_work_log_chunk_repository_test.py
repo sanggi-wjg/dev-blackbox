@@ -55,8 +55,8 @@ class PlatformWorkLogChunkRepositoryTest:
             platform_work_log_id=work_log.id,
             chunk_index=0,
             chunk_text="임베딩 있는 청크",
+            embedding=[0.1] * 1024,
         )
-        chunk_with_embedding.update_embedding([0.1] * 1024)
         chunk_without_embedding = PlatformWorkLogChunk.create(
             platform_work_log_id=work_log.id,
             chunk_index=1,
@@ -95,15 +95,14 @@ class PlatformWorkLogChunkRepositoryTest:
             platform_work_log_id=work_log.id,
             chunk_index=0,
             chunk_text="인증 관련 청크",
+            embedding=embedding_a,
         )
-        chunk_a.update_embedding(embedding_a)
-
         chunk_b = PlatformWorkLogChunk.create(
             platform_work_log_id=work_log.id,
             chunk_index=1,
             chunk_text="배포 관련 청크",
+            embedding=embedding_b,
         )
-        chunk_b.update_embedding(embedding_b)
 
         db_session.add_all([chunk_a, chunk_b])
         db_session.flush()
@@ -155,13 +154,11 @@ class PlatformWorkLogChunkRepositoryTest:
         db_session.flush()
 
         chunk_a = PlatformWorkLogChunk.create(
-            platform_work_log_id=log_a.id, chunk_index=0, chunk_text="A 청크"
+            platform_work_log_id=log_a.id, chunk_index=0, chunk_text="A 청크", embedding=embedding
         )
-        chunk_a.update_embedding(embedding)
         chunk_b = PlatformWorkLogChunk.create(
-            platform_work_log_id=log_b.id, chunk_index=0, chunk_text="B 청크"
+            platform_work_log_id=log_b.id, chunk_index=0, chunk_text="B 청크", embedding=embedding
         )
-        chunk_b.update_embedding(embedding)
         db_session.add_all([chunk_a, chunk_b])
         db_session.flush()
 

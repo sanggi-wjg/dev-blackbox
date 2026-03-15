@@ -187,8 +187,8 @@ class EmbeddingServiceTest:
             platform_work_log_id=work_log.id,
             chunk_index=0,
             chunk_text="이전 청크",
+            embedding=[0.5] * 1024,
         )
-        old_chunk.update_embedding([0.5] * 1024)
         db_session.add(old_chunk)
         db_session.flush()
         old_chunk_id = old_chunk.id

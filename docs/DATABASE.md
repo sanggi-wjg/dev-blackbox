@@ -27,21 +27,21 @@ PostgreSQL 데이터 모델, ORM 엔티티, 세션 관리.
 
 ## Entity 목록
 
-| Entity           | 테이블                  | Mixin             | UNIQUE 제약                                 | 비고                                                        |
-|------------------|----------------------|-------------------|-------------------------------------------|-----------------------------------------------------------|
-| User             | `users`              | `SoftDeleteMixin` | `email`                                   | Relationship: GitHubUserSecret, JiraUser, SlackUser (1:1) |
-| GitHubUserSecret | `github_user_secret` | —                 | `user_id`                                 | PAT 암호화 저장                                                |
-| GitHubEvent      | `github_event`       | —                 | `event_id`                                | `event`/`commit` JSONB 저장                                 |
-| JiraSecret       | `jira_secret`        | `SoftDeleteMixin` | —                                         | Jira 인증 정보 (username, api_token 암호화 저장)                   |
-| JiraUser         | `jira_user`          | —                 | `(jira_secret_id, account_id)`, `user_id` | `assign_user_and_project()`로 User 할당                      |
-| JiraEvent        | `jira_event`         | —                 | `issue_id`                                | `changelog` JSONB (target_date 기준 필터링)                    |
-| SlackUser        | `slack_user`         | —                 | `(slack_secret_id, member_id)`, `user_id` | `assign_user()`/`unassign_user()`로 User 할당                |
-| SlackSecret      | `slack_secret`       | `SoftDeleteMixin` | —                                         | Slack 인증 정보 (bot_token 암호화 저장)                            |
-| SlackMessage     | `slack_message`      | —                 | —                                         | Slack 메시지 저장, `message` JSONB                             |
-| PlatformWorkLog  | `platform_work_log`  | —                 | `(user_id, target_date, platform)`        | `markdown_text` property, `update_content()`, `update_embedding()` |
-| DailyWorkLog     | `daily_work_log`     | —                 | `(user_id, target_date)`                  | 플랫폼별 WorkLog 병합 결과, `update_embedding()`                   |
-| Image            | `image`              | —                 | —                                         | BYTEA 이미지 저장, 물리 삭제                                       |
-| PlatformWorkLogChunk | `platform_work_log_chunk` | —            | —                                         | FK `ON DELETE CASCADE`, `update_embedding()`, 청크 임베딩 벡터 (1024차원) |
+| Entity               | 테이블                       | Mixin             | UNIQUE 제약                                 | 비고                                                               |
+|----------------------|---------------------------|-------------------|-------------------------------------------|------------------------------------------------------------------|
+| User                 | `users`                   | `SoftDeleteMixin` | `email`                                   | Relationship: GitHubUserSecret, JiraUser, SlackUser (1:1)        |
+| GitHubUserSecret     | `github_user_secret`      | —                 | `user_id`                                 | PAT 암호화 저장                                                       |
+| GitHubEvent          | `github_event`            | —                 | `event_id`                                | `event`/`commit` JSONB 저장                                        |
+| JiraSecret           | `jira_secret`             | `SoftDeleteMixin` | —                                         | Jira 인증 정보 (username, api_token 암호화 저장)                          |
+| JiraUser             | `jira_user`               | —                 | `(jira_secret_id, account_id)`, `user_id` | `assign_user_and_project()`로 User 할당                             |
+| JiraEvent            | `jira_event`              | —                 | `issue_id`                                | `changelog` JSONB (target_date 기준 필터링)                           |
+| SlackUser            | `slack_user`              | —                 | `(slack_secret_id, member_id)`, `user_id` | `assign_user()`/`unassign_user()`로 User 할당                       |
+| SlackSecret          | `slack_secret`            | `SoftDeleteMixin` | —                                         | Slack 인증 정보 (bot_token 암호화 저장)                                   |
+| SlackMessage         | `slack_message`           | —                 | —                                         | Slack 메시지 저장, `message` JSONB                                    |
+| PlatformWorkLog      | `platform_work_log`       | —                 | `(user_id, target_date, platform)`        | `markdown_text` property, `update_content()`                     |
+| DailyWorkLog         | `daily_work_log`          | —                 | `(user_id, target_date)`                  | 플랫폼별 WorkLog 병합 결과                                               |
+| Image                | `image`                   | —                 | —                                         | BYTEA 이미지 저장, 물리 삭제                                              |
+| PlatformWorkLogChunk | `platform_work_log_chunk` | —                 | —                                         | FK `ON DELETE CASCADE`, `update_embedding()`, 청크 임베딩 벡터 (1024차원) |
 
 - 모든 FK는 `ON DELETE RESTRICT` (예외: `platform_work_log_chunk`는 `ON DELETE CASCADE` — 부모 삭제 시 청크 함께 삭제)
 - 관계도(ERD)는 [ERD.md](ERD.md) 참고
@@ -97,7 +97,7 @@ with get_db_session() as db:
 
 #### HNSW 벡터 인덱스
 
-`platform_work_log`, `daily_work_log`, `platform_work_log_chunk`의 `embedding` 컬럼에 HNSW 인덱스가 설정되어 있다:
+`platform_work_log_chunk`의 `embedding` 컬럼에 HNSW 인덱스가 설정되어 있다:
 
 - **연산자**: `vector_cosine_ops` (cosine distance)
 - **파라미터**: `m=16`, `ef_construction=64`

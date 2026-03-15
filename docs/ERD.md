@@ -163,7 +163,6 @@ erDiagram
         date target_date "복합UK(user+date+platform)"
         varchar platform
         text content
-        vector embedding "1024차원, NULLABLE"
         varchar model_name
         text prompt
     }
@@ -173,7 +172,6 @@ erDiagram
         bigint user_id FK
         date target_date "복합UK(user+date)"
         text content
-        vector embedding "1024차원, NULLABLE"
     }
 
     platform_work_log_chunk {

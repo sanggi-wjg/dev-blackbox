@@ -40,8 +40,8 @@ class SearchServiceTest:
             platform_work_log_id=log.id,
             chunk_index=0,
             chunk_text="인증 모듈 리팩터링 청크",
+            embedding=embedding,
         )
-        chunk.update_embedding(embedding)
         db_session.add(chunk)
         db_session.flush()
 
@@ -108,14 +108,14 @@ class SearchServiceTest:
             platform_work_log_id=log.id,
             chunk_index=0,
             chunk_text="첫 번째 청크",
+            embedding=embedding,
         )
-        chunk_a.update_embedding(embedding)
         chunk_b = PlatformWorkLogChunk.create(
             platform_work_log_id=log.id,
             chunk_index=1,
             chunk_text="두 번째 청크",
+            embedding=[0.9] + [0.1] + [0.0] * 1022,
         )
-        chunk_b.update_embedding([0.9] + [0.1] + [0.0] * 1022)
         db_session.add_all([chunk_a, chunk_b])
         db_session.flush()
 

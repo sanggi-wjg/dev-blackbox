@@ -35,7 +35,3 @@ class PlatformWorkLogChunk(Base):
             chunk_text=chunk_text,
             embedding=embedding,
         )
-
-    def update_embedding(self, embedding: list[float]) -> "PlatformWorkLogChunk":
-        self.embedding = embedding
-        return self

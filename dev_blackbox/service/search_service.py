@@ -1,11 +1,8 @@
-from collections import defaultdict
-
 from sqlalchemy.orm import Session
 
 from dev_blackbox.agent.embedding_agent import get_embedding_agent
 from dev_blackbox.service.model.search_model import PlatformWorkLogSearchResult
 from dev_blackbox.service.query.search_query import SearchQuery
-from dev_blackbox.storage.rds.entity import PlatformWorkLogChunk
 from dev_blackbox.storage.rds.repository import (
     PlatformWorkLogChunkRepository,
     PlatformWorkLogRepository,
