@@ -57,7 +57,7 @@ scheduler.add_job(
     generate_embeddings_task,
     CronTrigger(minute=0, timezone="Asia/Seoul"),
 )
-scheduler.add_job(sync_jira_backlog_task, "interval", minutes=5)
+scheduler.add_job(sync_jira_backlog_task, "interval", minutes=10)
 scheduler.add_job(
     sync_jira_users_task,
     CronTrigger(hour=00, minute=00, timezone="Asia/Seoul"),
