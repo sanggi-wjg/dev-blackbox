@@ -1,106 +1,78 @@
-def chunk_content(
-    content: str,
-    chunk_size: int = 2000,
-    overlap_size: int = 400,
-    split_separator: str = "\n\n",
-) -> list[str]:
+def chunk_work_log_content(content: str, chunk_size: int = 1000) -> list[str]:
+    """업무 일지 마크다운 구조에 특화된 청킹.
+
+    항목 단위로 분할하고, 섹션 헤더(### [...])를 각 청크에 주입한다.
+    """
     content = content.strip()
     if not content:
         return []
 
-    if len(content) <= chunk_size:
-        return [content]
+    sections = _split_into_sections(content)
 
-    sections = split_by_separator(content, split_separator)
+    # 섹션/항목 구조가 없는 단순 텍스트는 크기 기반 판단
+    if len(sections) == 1 and not sections[0][0] and "\n- " not in content:
+        if len(content) <= chunk_size:
+            return [content]
     chunks: list[str] = []
 
-    for section in sections:
-        if len(section) <= chunk_size:
-            chunks.append(section)
-        else:
-            chunks.extend(
-                split_section(section, chunk_size, overlap_size),
-            )
+    for header, body in sections:
+        if not body.strip():
+            continue
+
+        items = _split_into_items(body)
+        for item in items:
+            chunk = f"{header}\n{item}" if header else item
+            if len(chunk) <= chunk_size:
+                chunks.append(chunk)
+            else:
+                # fallback: 문자 단위 분할 (헤더 길이를 고려)
+                chunks.extend(_slice_by_chars(chunk, chunk_size, 0))
 
     return [chunk for chunk in chunks if chunk.strip()]
 
 
-def split_by_separator(content: str, separator: str) -> list[str]:
+def _split_into_sections(content: str) -> list[tuple[str, str]]:
+    """content를 (섹션 헤더, 섹션 본문) 쌍으로 분리한다."""
     lines = content.split("\n")
-    sections: list[str] = []
-    current_lines: list[str] = []
+    sections: list[tuple[str, str]] = []
+    current_header = ""
+    current_body_lines: list[str] = []
 
     for line in lines:
-        if line.startswith(separator) and current_lines:
-            sections.append("\n".join(current_lines))
-            current_lines = []
-        current_lines.append(line)
+        if line.startswith("### "):
+            if current_body_lines or current_header:
+                sections.append((current_header, "\n".join(current_body_lines)))
+            current_header = line
+            current_body_lines = []
+        else:
+            current_body_lines.append(line)
 
-    if current_lines:
-        sections.append("\n".join(current_lines))
+    if current_body_lines or current_header:
+        sections.append((current_header, "\n".join(current_body_lines)))
 
     return sections
 
 
-def split_section(
-    section: str,
-    max_chunk_chars: int,
-    overlap_chars: int,
-) -> list[str]:
-    """긴 섹션을 단락 → 줄 기준으로 재분할한다."""
-    # 단락 기준 분할 시도
-    paragraphs = section.split("\n\n")
-    if len(paragraphs) > 1:
-        return _merge_with_overlap(paragraphs, "\n\n", max_chunk_chars, overlap_chars)
+def _split_into_items(body: str) -> list[str]:
+    """섹션 본문을 최상위 항목(- 로 시작) 단위로 분리한다.
 
-    # 줄 기준 분할
-    lines = section.split("\n")
-    if len(lines) > 1:
-        return _merge_with_overlap(lines, "\n", max_chunk_chars, overlap_chars)
-
-    # 분할 불가능한 긴 텍스트 → 문자 단위 슬라이싱
-    return _slice_by_chars(section, max_chunk_chars, overlap_chars)
-
-
-def _merge_with_overlap(
-    parts: list[str],
-    separator: str,
-    max_chunk_chars: int,
-    overlap_chars: int,
-) -> list[str]:
+    들여쓰기된 하위 항목(  - )은 상위 항목에 포함된다.
     """
-    파트들을 max_chunk_chars 이내로 병합하고, 청크 간 overlap을 적용한다.
-    """
-    chunks: list[str] = []
-    current_parts: list[str] = []
-    current_len = 0
+    items: list[str] = []
+    current_lines: list[str] = []
 
-    for part in parts:
-        part_len = len(part)
-        added_len = part_len + (len(separator) if current_parts else 0)
+    for line in body.split("\n"):
+        if line.startswith("- ") and current_lines:
+            items.append("\n".join(current_lines))
+            current_lines = []
+        current_lines.append(line)
 
-        if current_len + added_len > max_chunk_chars and current_parts:
-            chunks.append(separator.join(current_parts))
-            # overlap: 뒤에서부터 overlap_chars만큼 유지
-            overlap_parts: list[str] = []
-            overlap_len = 0
-            for p in reversed(current_parts):
-                if overlap_len + len(p) > overlap_chars:
-                    break
-                overlap_parts.insert(0, p)
-                overlap_len += len(p) + len(separator)
-            current_parts = overlap_parts
-            current_len = sum(len(p) for p in current_parts) + len(separator) * max(
-                len(current_parts) - 1, 0
-            )
+    if current_lines:
+        item = "\n".join(current_lines)
+        if item.strip():
+            items.append(item)
 
-        current_parts.append(part)
-        current_len += added_len
-
-    if current_parts:
-        chunks.append(separator.join(current_parts))
-
-    return chunks
+    return items
 
 
 def _slice_by_chars(

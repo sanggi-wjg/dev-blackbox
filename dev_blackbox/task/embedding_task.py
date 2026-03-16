@@ -4,7 +4,7 @@ from typing import Generator
 from dev_blackbox.agent.embedding_agent import get_embedding_agent
 from dev_blackbox.core.const import LockKey
 from dev_blackbox.core.database import get_db_session
-from dev_blackbox.domain.chunker import chunk_content
+from dev_blackbox.domain.chunker import chunk_work_log_content
 from dev_blackbox.service.command.embedding_command import (
     GeneratePlatformWorkLogEmbeddingCommand,
 )
@@ -47,12 +47,7 @@ def _create_chunked_content(
     return (
         ChunkedWorkLogContentContext(
             platform_work_log_id=context.platform_work_log_id,
-            chunked_content=chunk_content(
-                content=context.content,
-                chunk_size=512,
-                overlap_size=50,
-                split_separator="- ",
-            ),
+            chunked_content=chunk_work_log_content(context.content),
         )
         for context in contexts
     )
