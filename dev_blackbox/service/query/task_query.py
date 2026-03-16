@@ -7,3 +7,4 @@ class TaskQuery(BaseModel):
     user_id: int
     statuses: list[TaskStatusEnum] | None = None
     is_archived: bool = False
+    query: str | None = None

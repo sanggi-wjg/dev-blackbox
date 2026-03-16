@@ -30,6 +30,7 @@ class TaskService:
             query.user_id,
             query.statuses,
             query.is_archived,
+            query.query,
         )
 
     def _get_task_or_throw(self, task_id: int, user_id: int) -> Task:

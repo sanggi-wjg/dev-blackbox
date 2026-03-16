@@ -1,4 +1,4 @@
-from sqlalchemy import delete, select
+from sqlalchemy import delete, or_, select
 from sqlalchemy.orm import Session
 
 from dev_blackbox.core.enum import TaskStatusEnum
@@ -49,9 +49,19 @@ class TaskRepository:
         user_id: int,
         statuses: list[TaskStatusEnum] | None = None,
         is_archived: bool = False,
+        query: str | None = None,
     ) -> list[Task]:
         stmt = select(Task).where(Task.user_id == user_id, Task.is_archived == is_archived)
         if statuses:
             stmt = stmt.where(Task.status.in_(statuses))
+        if query:
+            pattern = f"%{query}%"
+            stmt = stmt.where(
+                or_(
+                    Task.title.ilike(pattern),
+                    Task.content.ilike(pattern),
+                    Task.tags.ilike(pattern),
+                )
+            )
         stmt = stmt.order_by(Task.display_order.asc(), Task.id.asc())
         return list(self.session.scalars(stmt))
