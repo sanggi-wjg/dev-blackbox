@@ -2,82 +2,84 @@
 
 임베딩 기반 시맨틱 검색의 적중률(relevance)을 높이기 위한 개선 전략.
 
-> 현재 검색 구현은 `service/search_service.py`, `storage/rds/repository/platform_work_log_repository.py` 참고.
+> 현재 검색 구현은 `service/search_service.py`, `storage/rds/repository/platform_work_log_chunk_repository.py` 참고.
 
 ## 현재 상태
 
-| 항목     | 현재 구현                                                    |
-|--------|----------------------------------------------------------|
-| 임베딩 모델 | `qwen3-embedding:4b` (2560차원, Ollama), 청크 단위 임베딩         |
-| 벡터 인덱스 | HNSW (`m=16`, `ef_construction=64`, `vector_cosine_ops`) |
-| 검색 대상  | `PlatformWorkLog`만 검색 (`DailyWorkLog` 미검색)               |
-| 검색 방식  | 순수 벡터 cosine distance, top-k 반환                          |
-| 쿼리 전처리 | 없음 (raw text → 임베딩)                                      |
-| 필터링    | `user_id` + `embedding IS NOT NULL`만 적용                  |
-| 결과 필터링 | score threshold 없음 (관련성 낮아도 반환)                          |
+| 항목     | 현재 구현                                                                         |
+|--------|-------------------------------------------------------------------------------|
+| 임베딩 모델 | `bge-m3:latest` (1024차원, Ollama), 다국어 특화 모델                                   |
+| 청킹     | `chunk_size=512`, `overlap_size=50`, 섹션 인식 분할 (`"- "` 구분자)                    |
+| 벡터 인덱스 | HNSW (`m=16`, `ef_construction=64`, `vector_cosine_ops`)                      |
+| 검색 대상  | `PlatformWorkLogChunk` 청크 단위 검색, work_log_id 기준 중복 제거 (최소 distance 유지)        |
+| 검색 방식  | cosine distance 기반, similarity threshold 적용 후 top-k 반환                        |
+| 쿼리 전처리 | 없음 (raw text → 임베딩)                                                           |
+| 필터링    | `user_id` + `embedding IS NOT NULL` + similarity threshold + platform + 날짜 범위 |
+
+### 검색 흐름
+
+```
+GET /api/v1/search?query=...&limit=10&similarity=0.5&platform=GITHUB&from_date=...&to_date=...
+       │
+       ├── SearchParam → SearchQuery 변환
+       │
+       ├── EmbeddingAgent.get_embedding(query_text)  ← 쿼리 임베딩
+       │
+       ├── PlatformWorkLogChunkRepository.find_similar_by_embedding()
+       │       ├── user_id 필터
+       │       ├── cosine_distance < (1.0 - similarity)  ← threshold 적용
+       │       ├── platform 필터 (옵셔널)
+       │       ├── target_date >= from_date (옵셔널)
+       │       ├── target_date <= to_date (옵셔널)
+       │       └── limit * 3 (중복 제거 버퍼)
+       │
+       ├── work_log_id 기준 중복 제거 (최소 distance 유지)
+       │
+       ├── PlatformWorkLogRepository.find_all_by_id()  ← 원본 조회
+       │
+       └── PlatformWorkLogSearchResponseDto 반환 (score = 1.0 - distance)
+```
 
 ### 식별된 약점
 
 1. **Semantic Gap** — 짧은 쿼리와 긴 요약문 간 임베딩 공간 불일치
-2. **노이즈 반환** — score 임계값 없이 top-k만 반환하여 관련 없는 결과 포함
-3. **메타데이터 미활용** — 날짜 범위, 플랫폼 타입 필터 없음
-4. **단일 검색 전략** — 벡터 검색만 사용, 키워드 정확 매칭 불가
-5. **한국어 최적화 부족** — `mxbai-embed-large`는 다국어 특화 모델이 아님
+2. **단일 검색 전략** — 벡터 검색만 사용, 키워드 정확 매칭 불가
 
 ---
 
 ## 개선 전략
 
-### 1. Score Threshold 필터링
+### ~~1. Score Threshold 필터링~~ (구현 완료)
 
-**난이도**: 낮음 | **효과**: 중 | **우선순위**: 1
+`SearchParam.similarity` (0.0~1.0, 기본값 0.5)로 구현 완료.
 
-**문제**: 관련 없는 결과도 top-k에 포함되어 체감 품질 저하.
+Repository에서 `cosine_distance < (1.0 - similarity)` 조건으로 threshold 미달 결과를 필터링한다.
 
-**방안**: cosine distance 임계값 추가.
-
-```python
-# repository에서 distance threshold 적용
-.where(
-    PlatformWorkLog.embedding.cosine_distance(query_embedding) < threshold,
-)
-```
-
-**구현 범위**:
-
-- `SearchParam`에 `threshold` 파라미터 추가 (기본값 0.5)
-- `SearchQuery`에 `threshold` 필드 추가
-- `PlatformWorkLogRepository.find_similar_by_embedding()`에 threshold 조건 추가
-
-**검증**: 기존 검색 결과에서 score < 0.5인 결과를 분석하여 적절한 임계값 결정.
+- `SearchParam`: `similarity: float` (0.0~1.0, default=0.5)
+- `SearchQuery`: `similarity: float` 전달
+- `PlatformWorkLogChunkRepository.find_similar_by_embedding()`: distance threshold 적용
 
 ---
 
-### 2. 메타데이터 필터링
+### ~~2. 메타데이터 필터링~~ (구현 완료)
 
-**난이도**: 낮음 | **효과**: 중 | **우선순위**: 2
+`SearchParam`에 `platform`, `from_date`, `to_date` 옵셔널 파라미터로 구현 완료.
 
-**문제**: "지난주 GitHub 작업" 같은 범위 한정 검색 불가. 전체 데이터에서 검색하여 불필요한 결과 포함.
-
-**방안**: 날짜 범위, 플랫폼 타입 필터 추가.
+모든 필터는 옵셔널이며, 지정 시 기존 벡터 검색에 AND 조건으로 추가된다.
 
 ```
-GET /api/v1/search?query=배포&platform=GITHUB&date_from=2026-03-01&date_to=2026-03-15
+GET /api/v1/search?query=배포&platform=GITHUB&from_date=2026-03-01&to_date=2026-03-15
 ```
 
-**구현 범위**:
-
-- `SearchParam`에 `platform`, `date_from`, `date_to` 파라미터 추가
-- `SearchQuery`에 해당 필드 추가
-- Repository 쿼리에 WHERE 조건 추가
-
-**검증**: 필터 적용 전후 검색 결과 비교. 범위 한정 시 상위 결과의 관련성 향상 확인.
+- `SearchParam`: `platform: PlatformEnum | None`, `from_date: date | None`, `to_date: date | None`
+- `SearchQuery`: 동일 필드 전달
+- `PlatformWorkLogChunkRepository.find_similar_by_embedding()`: `PlatformWorkLog` JOIN에 조건 추가
 
 ---
 
 ### 3. HyDE (Hypothetical Document Embedding)
 
-**난이도**: 중 | **효과**: 상 | **우선순위**: 3
+**난이도**: 중 | **효과**: 상 | **우선순위**: 2
 
 **문제**: 사용자 쿼리 `"배포 이슈"` (2단어)와 임베딩된 긴 요약문 간 semantic gap. 같은 주제라도 벡터 거리가 멀 수 있음.
 
@@ -107,18 +109,18 @@ query_embedding = embedding_agent.get_embedding(hypothetical_doc)
 
 ### 4. Hybrid Search (키워드 + 벡터, RRF)
 
-**난이도**: 중 | **효과**: 상 | **우선순위**: 4
+**난이도**: 중 | **효과**: 상 | **우선순위**: 3
 
 **문제**: `"JIRA-1234"`, `"NPE"` 같은 정확한 키워드 매칭에서 벡터 검색의 한계.
 
 **방안**: PostgreSQL full-text search + pgvector 벡터 검색을 RRF (Reciprocal Rank Fusion)로 결합.
 
 ```sql
--- tsvector 컬럼 추가 (generated column)
-ALTER TABLE platform_work_log
-    ADD COLUMN content_tsv tsvector
-        GENERATED ALWAYS AS (to_tsvector('simple', content)) STORED;
-CREATE INDEX idx_platform_work_log_tsv ON platform_work_log USING gin(content_tsv);
+-- platform_work_log_chunk에 tsvector 컬럼 추가 (generated column)
+ALTER TABLE platform_work_log_chunk
+    ADD COLUMN chunk_text_tsv tsvector
+        GENERATED ALWAYS AS (to_tsvector('simple', chunk_text)) STORED;
+CREATE INDEX idx_platform_work_log_chunk_tsv ON platform_work_log_chunk USING gin(chunk_text_tsv);
 ```
 
 ```python
@@ -139,10 +141,10 @@ def reciprocal_rank_fusion(
 
 **구현 범위**:
 
-- `init.sql`에 `content_tsv` generated column + GIN 인덱스 추가
-- `PlatformWorkLogRepository`에 full-text search 메서드 추가
+- `init.sql`에 `chunk_text_tsv` generated column + GIN 인덱스 추가
+- `PlatformWorkLogChunkRepository`에 full-text search 메서드 추가
 - `SearchService`에 RRF 결합 로직 추가
-- 기존 Entity에 `content_tsv` 컬럼 매핑 (read-only)
+- `PlatformWorkLogChunk` Entity에 `chunk_text_tsv` 컬럼 매핑 (read-only)
 
 **검증**: 키워드 정확 매칭 쿼리 (이슈 번호, 에러명 등)에서 적중률 비교.
 
@@ -150,36 +152,19 @@ def reciprocal_rank_fusion(
 
 ---
 
-### 5. 임베딩 모델 교체 (다국어 특화)
+### ~~5. 임베딩 모델 교체 (다국어 특화)~~ (구현 완료)
 
-**난이도**: 낮음 | **효과**: 상 | **우선순위**: 5
+`bge-m3:latest` (1024차원, 다국어 특화) 모델로 교체 완료.
 
-**문제**: `mxbai-embed-large`는 영어 중심 모델. 한국어 업무 일지의 시맨틱 표현력이 부족할 수 있음.
-
-**방안**: 다국어 특화 임베딩 모델로 교체.
-
-| 모델                               | 차원   | 특징                            |
-|----------------------------------|------|-------------------------------|
-| `mxbai-embed-large` (현재)         | 1024 | 영어 중심, MTEB 중상위               |
-| `bge-m3`                         | 1024 | 다국어 특화, MTEB 최상위, Ollama 지원   |
-| `multilingual-e5-large-instruct` | 1024 | 다국어, instruction 기반, 쿼리 의도 반영 |
-| `nomic-embed-text`               | 768  | 경량, 한국어 양호, 차원 변경 필요          |
-
-**구현 범위**:
-
-- `EmbeddingOllamaConfig.model` 변경
-- 차원이 다른 모델 선택 시: Entity, `init.sql`, HNSW 인덱스 재생성
-- 기존 임베딩 데이터 재생성 (배치 마이그레이션)
-
-**검증**: 동일 쿼리셋에 대해 모델별 top-5 적중률 비교. 한국어 쿼리에 대한 결과 품질 평가.
-
-**주의**: 모델 교체 시 기존 임베딩과 호환되지 않으므로 전체 재임베딩 필요. `embedding` 컬럼을 NULL로 리셋 후 `generate_embeddings_task()`로 재생성.
+- `EmbeddingOllamaConfig.model`: `bge-m3:latest`
+- 임베딩 차원: 1024 (`Vector(1024)`)
+- HNSW 인덱스: `vector_cosine_ops`, `m=16`, `ef_construction=64`
 
 ---
 
 ### 6. HNSW 인덱스 튜닝
 
-**난이도**: 낮음 | **효과**: 저~중 | **우선순위**: 6
+**난이도**: 낮음 | **효과**: 저~중 | **우선순위**: 4
 
 **문제**: `ef_construction=64`는 보수적 설정. 데이터 증가 시 recall 저하 가능.
 
@@ -207,15 +192,15 @@ CREATE INDEX...WITH (m = 16, ef_construction = 128);
 
 ```
 Phase 1 (즉시 적용 — 코드 변경 최소) ─────────────────
-  #1 Score Threshold 필터링
-  #2 메타데이터 필터링 (날짜, 플랫폼)
+  ✅ Score Threshold 필터링 (구현 완료)
+  ✅ 임베딩 모델 교체 — bge-m3 (구현 완료)
+  ✅ 메타데이터 필터링 — platform, from_date, to_date (구현 완료)
 
 Phase 2 (적중률 핵심 개선) ────────────────────────────
   #3 HyDE (Hypothetical Document Embedding)
   #4 Hybrid Search (키워드 + 벡터, RRF)
 
 Phase 3 (기반 개선) ───────────────────────────────────
-  #5 임베딩 모델 교체 (bge-m3)
   #6 HNSW 인덱스 튜닝
 ```
 
@@ -225,3 +210,4 @@ Phase 3 (기반 개선) ──────────────────�
 - [RRF 논문](https://plg.uwaterloo.ca/~gvcormac/cormacksigir09-rrf.pdf) — Reciprocal Rank Fusion outperforms Condorcet and individual Rank Learning Methods
 - [pgvector HNSW 튜닝](https://github.com/pgvector/pgvector#hnsw) — ef_search, ef_construction 파라미터 가이드
 - [MTEB Leaderboard](https://huggingface.co/spaces/mteb/leaderboard) — 임베딩 모델 벤치마크 비교
+- [bge-m3](https://huggingface.co/BAAI/bge-m3) — 현재 사용 중인 다국어 임베딩 모델

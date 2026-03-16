@@ -179,7 +179,7 @@ erDiagram
         bigint platform_work_log_id FK
         int chunk_index
         text chunk_text
-        vector embedding "2560차원, NULLABLE"
+        vector embedding "1024차원, NULLABLE"
     }
 ```
 

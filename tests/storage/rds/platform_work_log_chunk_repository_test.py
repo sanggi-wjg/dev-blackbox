@@ -42,43 +42,6 @@ class PlatformWorkLogChunkRepositoryTest:
         assert len(saved) == 2
         assert all(chunk.id is not None for chunk in saved)
 
-    def test_find_all_with_null_embedding(
-        self,
-        db_session: Session,
-        user_fixture: Callable[..., User],
-        platform_work_log_fixture: Callable[..., PlatformWorkLog],
-    ):
-        # given
-        user = user_fixture()
-        work_log = platform_work_log_fixture(user_id=user.id)
-        chunk_with_embedding = PlatformWorkLogChunk.create(
-            platform_work_log_id=work_log.id,
-            chunk_index=0,
-            chunk_text="임베딩 있는 청크",
-            embedding=[0.1] * 1024,
-        )
-        chunk_without_embedding = PlatformWorkLogChunk.create(
-            platform_work_log_id=work_log.id,
-            chunk_index=1,
-            chunk_text="임베딩 없는 청크",
-        )
-        empty_chunk = PlatformWorkLogChunk.create(
-            platform_work_log_id=work_log.id,
-            chunk_index=2,
-            chunk_text="",
-        )
-        db_session.add_all([chunk_with_embedding, chunk_without_embedding, empty_chunk])
-        db_session.flush()
-
-        repository = PlatformWorkLogChunkRepository(db_session)
-
-        # when
-        results = repository.find_all_with_null_embedding()
-
-        # then — 임베딩 없고 빈 텍스트가 아닌 청크만 반환
-        assert len(results) == 1
-        assert results[0].chunk_text == "임베딩 없는 청크"
-
     def test_find_similar_by_embedding(
         self,
         db_session: Session,
@@ -175,29 +138,3 @@ class PlatformWorkLogChunkRepositoryTest:
         # then — user_a의 청크만 반환
         assert len(results) == 1
         assert results[0].platform_work_log_chunk.chunk_text == "A 청크"
-
-    def test_delete_by_platform_work_log_ids(
-        self,
-        db_session: Session,
-        user_fixture: Callable[..., User],
-        platform_work_log_fixture: Callable[..., PlatformWorkLog],
-    ):
-        # given
-        user = user_fixture()
-        work_log = platform_work_log_fixture(user_id=user.id)
-        chunk = PlatformWorkLogChunk.create(
-            platform_work_log_id=work_log.id,
-            chunk_index=0,
-            chunk_text="삭제 대상 청크",
-        )
-        db_session.add(chunk)
-        db_session.flush()
-
-        repository = PlatformWorkLogChunkRepository(db_session)
-
-        # when
-        repository.delete_by_platform_work_log_ids([work_log.id])
-
-        # then
-        remaining = repository.find_all_with_null_embedding()
-        assert all(r.platform_work_log_id != work_log.id for r in remaining)

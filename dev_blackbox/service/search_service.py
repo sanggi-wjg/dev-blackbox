@@ -1,7 +1,9 @@
+from collections import defaultdict
+
 from sqlalchemy.orm import Session
 
 from dev_blackbox.agent.embedding_agent import get_embedding_agent
-from dev_blackbox.service.model.search_model import PlatformWorkLogSearchResult
+from dev_blackbox.service.model.search_model import ChunkSearchResult, PlatformWorkLogSearchResult
 from dev_blackbox.service.query.search_query import SearchQuery
 from dev_blackbox.storage.rds.repository import (
     PlatformWorkLogChunkRepository,
@@ -27,14 +29,27 @@ class SearchService:
             query_embedding=query_embedding,
             limit=query.limit * 3,  # 결과 확보를 위해서
             similarity=query.similarity,
+            platform=query.platform,
+            from_date=query.from_date,
+            to_date=query.to_date,
         )
         if not chunk_results:
             return []
 
         # chunk로 나누어져 있어서 work_log_id 별로 min 필터링
         best_by_work_log: dict[int, float] = {}
+        chunk_search_results: dict[int, list[ChunkSearchResult]] = defaultdict(list)
+
         for result in chunk_results:
+            chunk = result.platform_work_log_chunk
             work_log_id = result.platform_work_log_chunk.platform_work_log_id
+            chunk_search_results[work_log_id].append(
+                ChunkSearchResult(
+                    chunk_index=chunk.chunk_index,
+                    chunk_text=chunk.chunk_text,
+                    distance=result.distance,
+                )
+            )
             best_by_work_log[work_log_id] = min(
                 result.distance, best_by_work_log.get(work_log_id, float("inf"))
             )
@@ -52,6 +67,8 @@ class SearchService:
             PlatformWorkLogSearchResult(
                 platform_work_log=work_log_map[work_log_id],
                 distance=distance,
+                chunk_results=chunk_search_results[work_log_id],
+                chunk_count=len(chunk_search_results[work_log_id]),
             )
             for work_log_id, distance in sorted_entries
             if work_log_id in work_log_map

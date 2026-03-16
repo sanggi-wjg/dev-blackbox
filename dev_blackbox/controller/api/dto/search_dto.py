@@ -1,8 +1,27 @@
 from datetime import date, datetime
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, Field
 
-from dev_blackbox.service.model.search_model import PlatformWorkLogSearchResult
+if TYPE_CHECKING:
+    from dev_blackbox.service.model.search_model import (
+        PlatformWorkLogSearchResult,
+        ChunkSearchResult,
+    )
+
+
+class PlatformWorkLogChunkSearchResultDto(BaseModel):
+    chunk_index: int
+    chunk_text: str
+    score: float
+
+    @classmethod
+    def from_model(cls, model: "ChunkSearchResult") -> "PlatformWorkLogChunkSearchResultDto":
+        return cls(
+            chunk_index=model.chunk_index,
+            chunk_text=model.chunk_text,
+            score=1 - model.distance,
+        )
 
 
 class PlatformWorkLogSearchResultDto(BaseModel):
@@ -13,6 +32,10 @@ class PlatformWorkLogSearchResultDto(BaseModel):
     score: float = Field(..., description="유사도 점수 (1에 가까울수록 유사)")
     created_at: datetime
     updated_at: datetime
+    chunk_result: list[PlatformWorkLogChunkSearchResultDto] = Field(
+        ..., description="유사한 청크 검색 결과 목록"
+    )
+    chunk_count: int = Field(..., description="유사한 청크 검색 결과 수")
 
     @classmethod
     def from_model(cls, model: "PlatformWorkLogSearchResult") -> "PlatformWorkLogSearchResultDto":
@@ -25,6 +48,10 @@ class PlatformWorkLogSearchResultDto(BaseModel):
             score=1.0 - model.distance,
             created_at=entity.created_at,
             updated_at=entity.updated_at,
+            chunk_result=[
+                PlatformWorkLogChunkSearchResultDto.from_model(r) for r in model.chunk_results
+            ],
+            chunk_count=model.chunk_count,
         )
 
 

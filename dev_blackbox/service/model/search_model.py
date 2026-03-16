@@ -1,11 +1,16 @@
-from typing import TYPE_CHECKING, NamedTuple
+from typing import NamedTuple
 
-if TYPE_CHECKING:
-    from dev_blackbox.storage.rds.entity import PlatformWorkLog, PlatformWorkLogChunk
+from dev_blackbox.storage.rds.entity import PlatformWorkLog
+
+
+class ChunkSearchResult(NamedTuple):
+    chunk_index: int
+    chunk_text: str
+    distance: float
 
 
 class PlatformWorkLogSearchResult(NamedTuple):
     platform_work_log: PlatformWorkLog
     distance: float
-    # chunk_results: list[PlatformWorkLogChunk]
-    # chunk_count: int
+    chunk_results: list[ChunkSearchResult]
+    chunk_count: int

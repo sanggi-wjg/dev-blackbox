@@ -33,6 +33,9 @@ async def search_platform_work_logs(
         query_text=param.query,
         limit=param.limit,
         similarity=param.similarity,
+        platform=param.platform,
+        from_date=param.from_date,
+        to_date=param.to_date,
     )
     results = service.search_platform_work_logs(query)
     return PlatformWorkLogSearchResponseDto(
