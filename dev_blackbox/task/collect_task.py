@@ -29,6 +29,7 @@ from dev_blackbox.service.slack_message_service import SlackMessageService
 from dev_blackbox.service.user_service import UserService
 from dev_blackbox.storage.rds.entity.github_event import GitHubEvent
 from dev_blackbox.task.context.user_context import UserContext
+from dev_blackbox.task.embedding_task import generate_platform_work_log_embeddings_task
 from dev_blackbox.util.datetime_util import get_yesterday
 from dev_blackbox.util.distributed_lock import distributed_lock
 
@@ -50,6 +51,8 @@ def collect_events_and_summarize_work_log_task():
 
         for user in user_contexts:
             _collect_events_and_summarize(user)
+
+        generate_platform_work_log_embeddings_task()
 
 
 def collect_events_and_summarize_work_log_by_user_task(user_id: int, target_date: date):

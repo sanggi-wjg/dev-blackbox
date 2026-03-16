@@ -4,7 +4,7 @@ from typing import Generator
 from dev_blackbox.agent.embedding_agent import get_embedding_agent
 from dev_blackbox.core.const import LockKey
 from dev_blackbox.core.database import get_db_session
-from dev_blackbox.domain.chunker import chunk_content
+from dev_blackbox.domain.chunker import chunk_work_log_content
 from dev_blackbox.service.command.embedding_command import (
     GeneratePlatformWorkLogEmbeddingCommand,
 )
@@ -19,8 +19,10 @@ from dev_blackbox.util.distributed_lock import distributed_lock
 logger = logging.getLogger(__name__)
 
 
-def generate_embeddings_task():
-    with distributed_lock(LockKey.GENERATE_EMBEDDINGS_TASK, timeout=600) as acquired:
+def generate_platform_work_log_embeddings_task():
+    with distributed_lock(
+        LockKey.GENERATE_PLATFORM_WORK_LOG_EMBEDDINGS_TASK, timeout=600
+    ) as acquired:
         if not acquired:
             logger.warning("임베딩 생성 태스크가 이미 실행 중, 건너뜀...")
             return
@@ -45,12 +47,7 @@ def _create_chunked_content(
     return (
         ChunkedWorkLogContentContext(
             platform_work_log_id=context.platform_work_log_id,
-            chunked_content=chunk_content(
-                content=context.content,
-                chunk_size=512,
-                overlap_size=50,
-                split_separator="- ",
-            ),
+            chunked_content=chunk_work_log_content(context.content),
         )
         for context in contexts
     )

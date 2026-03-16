@@ -44,6 +44,7 @@ def get_tasks(
         user_id=current_user.id,
         statuses=param.status,
         is_archived=param.is_archived,
+        query=param.query,
     )
     tasks = service.get_tasks(query)
     return [TaskResponseDto.from_entity(t) for t in tasks]

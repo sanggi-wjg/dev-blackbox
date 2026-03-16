@@ -13,7 +13,7 @@
 | `collect_events_and_summarize_work_log_task()` | 매일 00:00 UTC / 09:00 KST (cron) | 전체 사용자 데이터 수집 + LLM 요약 |
 | `sync_jira_users_task()`                       | 매일 15:00 UTC / 00:00 KST (cron) | Jira 사용자 동기화           |
 | `sync_slack_users_task()`                      | 매일 15:10 UTC / 00:10 KST (cron) | Slack 사용자 동기화          |
-| `generate_embeddings_task()`                   | 매시 정각 KST (cron)                | 업무 일지 임베딩 생성           |
+| `generate_platform_work_log_embeddings_task()` | 매시 정각 KST (cron)                | 업무 일지 임베딩 생성           |
 
 모든 태스크는 `distributed_lock()`으로 중복 실행을 방지한다.
 
@@ -197,7 +197,7 @@ collect_events_and_summarize_work_log_by_user_task(user_id, target_date)
 ## 임베딩 생성 파이프라인
 
 ```
-[APScheduler] generate_embeddings_task() (매시 정각 KST)
+[APScheduler] generate_platform_work_log_embeddings_task() (매시 정각 KST)
        │
        ├── distributed_lock 획득
        │
