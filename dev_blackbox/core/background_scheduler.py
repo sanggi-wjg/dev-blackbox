@@ -7,7 +7,7 @@ from apscheduler.triggers.cron import CronTrigger
 
 from dev_blackbox.core.config import get_settings
 from dev_blackbox.task.collect_task import collect_events_and_summarize_work_log_task
-from dev_blackbox.task.embedding_task import generate_embeddings_task
+from dev_blackbox.task.embedding_task import generate_platform_work_log_embeddings_task
 from dev_blackbox.task.health_task import health_check_task
 from dev_blackbox.task.jira_task import sync_jira_backlog_task, sync_jira_users_task
 from dev_blackbox.task.slack_task import sync_slack_users_task
@@ -54,7 +54,7 @@ scheduler.add_job(
     CronTrigger(hour=9, minute=0, timezone="Asia/Seoul"),
 )
 scheduler.add_job(
-    generate_embeddings_task,
+    generate_platform_work_log_embeddings_task,
     CronTrigger(minute=0, timezone="Asia/Seoul"),
 )
 scheduler.add_job(sync_jira_backlog_task, "interval", minutes=10)

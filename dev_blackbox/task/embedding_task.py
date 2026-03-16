@@ -19,8 +19,10 @@ from dev_blackbox.util.distributed_lock import distributed_lock
 logger = logging.getLogger(__name__)
 
 
-def generate_embeddings_task():
-    with distributed_lock(LockKey.GENERATE_EMBEDDINGS_TASK, timeout=600) as acquired:
+def generate_platform_work_log_embeddings_task():
+    with distributed_lock(
+        LockKey.GENERATE_PLATFORM_WORK_LOG_EMBEDDINGS_TASK, timeout=600
+    ) as acquired:
         if not acquired:
             logger.warning("임베딩 생성 태스크가 이미 실행 중, 건너뜀...")
             return

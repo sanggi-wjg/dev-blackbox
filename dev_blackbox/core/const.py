@@ -31,4 +31,4 @@ class LockKey(StrEnum):
     SYNC_JIRA_BACKLOG_TASK = "sync_jira_backlog_task"
     SYNC_SLACK_USERS_TASK = "sync_slack_users_task"
     COLLECT_EVENTS_AND_SUMMARIZE_WORK_LOG_TASK = "collect_events_and_summarize_work_log_task"
-    GENERATE_EMBEDDINGS_TASK = "generate_embeddings_task"
+    GENERATE_PLATFORM_WORK_LOG_EMBEDDINGS_TASK = "generate_platform_work_log_embeddings_task"
