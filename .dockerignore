@@ -13,6 +13,7 @@ __pycache__/
 .claude/
 .github/
 .test/
+.tests/
 *.md
 
 htmlcov/

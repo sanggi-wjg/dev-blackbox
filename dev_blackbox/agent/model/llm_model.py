@@ -2,7 +2,7 @@ from typing import Any
 
 from llama_index.core.llms import LLM
 from llama_index.llms.ollama import Ollama
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class OllamaConfig(BaseModel):
@@ -42,3 +42,11 @@ class SummaryOllamaConfig(OllamaConfig):
         "repeat_penalty": 1.2,
         "num_predict": 4096,
     }
+
+
+class EmbeddingOllamaConfig(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    base_url: str = "http://localhost:11434"
+    model: str = "bge-m3:latest"
+    request_timeout: float = 60.0

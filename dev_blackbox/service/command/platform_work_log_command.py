@@ -12,4 +12,4 @@ class SavePlatformWorkLogCommand(BaseModel):
     content: str
     model_name: str
     prompt: str
-    embedding: list[float] | None = None
+    is_empty: bool

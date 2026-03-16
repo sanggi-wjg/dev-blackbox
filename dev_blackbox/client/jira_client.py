@@ -28,7 +28,7 @@ class JiraClient:
 
     @retry(
         stop=stop_after_attempt(3),
-        wait=wait_exponential(),
+        wait=wait_exponential(multiplier=10, max=60),
         retry=retry_if_exception_type((JIRAError,)),
     )
     def fetch_assignable_users(self, project: str) -> ResultList[User]:
@@ -37,7 +37,7 @@ class JiraClient:
 
     @retry(
         stop=stop_after_attempt(3),
-        wait=wait_exponential(),
+        wait=wait_exponential(multiplier=10, max=60),
         retry=retry_if_exception_type((JIRAError,)),
     )
     def fetch_search_issues(
@@ -57,7 +57,7 @@ class JiraClient:
 
     @retry(
         stop=stop_after_attempt(3),
-        wait=wait_exponential(),
+        wait=wait_exponential(multiplier=10, max=60),
         retry=retry_if_exception_type((JIRAError,)),
     )
     def fetch_issue(self, issue_key: str) -> Issue:
@@ -66,7 +66,7 @@ class JiraClient:
 
     @retry(
         stop=stop_after_attempt(3),
-        wait=wait_exponential(),
+        wait=wait_exponential(multiplier=10, max=60),
         retry=retry_if_exception_type((JIRAError,)),
     )
     def update_issue_description(self, issue_key: str, description: str) -> None:

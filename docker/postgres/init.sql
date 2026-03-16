@@ -128,9 +128,9 @@ CREATE TABLE IF NOT EXISTS platform_work_log
     target_date DATE         NOT NULL,
     platform    VARCHAR(20)  NOT NULL,
     content     TEXT         NOT NULL DEFAULT '',
-    embedding   vector(1024) NULL,
     model_name  VARCHAR(100) NOT NULL,
     prompt      TEXT         NOT NULL,
+    is_empty    BOOLEAN      NOT NULL DEFAULT FALSE,
 
     created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     updated_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
@@ -155,9 +155,44 @@ COMMENT ON COLUMN platform_work_log.user_id IS '사용자 FK';
 COMMENT ON COLUMN platform_work_log.target_date IS '요약 대상 날짜';
 COMMENT ON COLUMN platform_work_log.platform IS '플랫폼 구분 (GITHUB, JIRA, SLACK 등)';
 COMMENT ON COLUMN platform_work_log.content IS 'LLM 생성 요약 텍스트';
-COMMENT ON COLUMN platform_work_log.embedding IS '요약 임베딩 벡터 (1024차원)';
 COMMENT ON COLUMN platform_work_log.model_name IS '사용 LLM 모델명';
 COMMENT ON COLUMN platform_work_log.prompt IS '요약 생성에 사용된 프롬프트';
+COMMENT ON COLUMN platform_work_log.is_empty IS '원본 데이터 부족으로 요약이 생성되지 않았음을 나타내는 플래그';
+
+
+-- platform_work_log_chunk 테이블 (플랫폼 업무 일지 청크)
+CREATE TABLE IF NOT EXISTS platform_work_log_chunk
+(
+    id                   BIGSERIAL PRIMARY KEY,
+    platform_work_log_id BIGINT       NOT NULL,
+    chunk_index          INT          NOT NULL,
+    chunk_text           TEXT         NOT NULL,
+    embedding            vector(1024) NULL,
+
+    created_at           TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at           TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT fk_platform_work_log_chunk_platform_work_log
+        FOREIGN KEY (platform_work_log_id) REFERENCES platform_work_log (id) ON DELETE CASCADE
+);
+
+CREATE TRIGGER tr_platform_work_log_chunk_updated_at
+    BEFORE UPDATE
+    ON platform_work_log_chunk
+    FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+CREATE INDEX idx_platform_work_log_chunk_001 ON platform_work_log_chunk (platform_work_log_id);
+CREATE INDEX idx_platform_work_log_chunk_002 ON platform_work_log_chunk (created_at DESC);
+CREATE INDEX idx_platform_work_log_chunk_embedding ON platform_work_log_chunk
+    USING hnsw (embedding vector_cosine_ops)
+    WITH (m = 16, ef_construction = 64);
+
+COMMENT ON TABLE platform_work_log_chunk IS '플랫폼 업무 일지 청크 (시맨틱 검색용)';
+COMMENT ON COLUMN platform_work_log_chunk.platform_work_log_id IS '플랫폼 업무 일지 FK (CASCADE 삭제)';
+COMMENT ON COLUMN platform_work_log_chunk.chunk_index IS '청크 순서 (0-based)';
+COMMENT ON COLUMN platform_work_log_chunk.chunk_text IS '청크 텍스트';
+COMMENT ON COLUMN platform_work_log_chunk.embedding IS '청크 임베딩 벡터';
 
 
 -- daily_work_log 테이블 (통합 일일 요약)
@@ -167,7 +202,6 @@ CREATE TABLE IF NOT EXISTS daily_work_log
     user_id     BIGINT       NOT NULL,
     target_date DATE         NOT NULL,
     content     TEXT         NOT NULL,
-    embedding   vector(1024) NULL,
 
     created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     updated_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
@@ -191,7 +225,6 @@ COMMENT ON TABLE daily_work_log IS '통합 일일 업무 요약';
 COMMENT ON COLUMN daily_work_log.user_id IS '사용자 FK';
 COMMENT ON COLUMN daily_work_log.target_date IS '요약 대상 날짜';
 COMMENT ON COLUMN daily_work_log.content IS '통합 요약 텍스트';
-COMMENT ON COLUMN daily_work_log.embedding IS '요약 임베딩 벡터 (1024차원)';
 
 
 -- jira_secret 테이블 (Jira 인증 정보)

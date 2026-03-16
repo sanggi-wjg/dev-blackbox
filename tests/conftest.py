@@ -24,6 +24,7 @@ from dev_blackbox.storage.rds.entity.jira_event import JiraEvent
 from dev_blackbox.storage.rds.entity.jira_secret import JiraSecret
 from dev_blackbox.storage.rds.entity.jira_user import JiraUser
 from dev_blackbox.storage.rds.entity.platform_work_log import PlatformWorkLog
+from dev_blackbox.storage.rds.entity.platform_work_log_chunk import PlatformWorkLogChunk
 from dev_blackbox.storage.rds.entity.slack_message import SlackMessage
 from dev_blackbox.storage.rds.entity.slack_secret import SlackSecret
 from dev_blackbox.storage.rds.entity.task import Task
@@ -326,6 +327,7 @@ def platform_work_log_fixture(
         content: str = "Test content",
         model_name: str = "test-model",
         prompt: str = "test-prompt",
+        is_empty: bool = False,
     ) -> PlatformWorkLog:
         work_log = PlatformWorkLog.create(
             user_id=user_id,
@@ -334,6 +336,7 @@ def platform_work_log_fixture(
             content=content,
             model_name=model_name,
             prompt=prompt,
+            is_empty=is_empty,
         )
         db_session.add(work_log)
         db_session.flush()
@@ -388,6 +391,28 @@ def task_fixture(
         db_session.add(task)
         db_session.flush()
         return task
+
+    return _create
+
+
+@pytest.fixture()
+def platform_work_log_chunk_fixture(
+    db_session: Session,
+) -> Callable[..., PlatformWorkLogChunk]:
+
+    def _create(
+        platform_work_log_id: int,
+        chunk_index: int = 0,
+        chunk_text: str = "Test chunk text",
+    ) -> PlatformWorkLogChunk:
+        chunk = PlatformWorkLogChunk.create(
+            platform_work_log_id=platform_work_log_id,
+            chunk_index=chunk_index,
+            chunk_text=chunk_text,
+        )
+        db_session.add(chunk)
+        db_session.flush()
+        return chunk
 
     return _create
 

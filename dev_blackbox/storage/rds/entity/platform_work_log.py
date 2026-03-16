@@ -1,6 +1,5 @@
 from datetime import date
 
-from pgvector.sqlalchemy import Vector
 from sqlalchemy import BigInteger, Date, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -15,9 +14,9 @@ class PlatformWorkLog(Base):
     target_date: Mapped[date] = mapped_column(Date, nullable=False)
     platform: Mapped[PlatformEnum] = mapped_column(String(20), nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False, default="")
-    embedding: Mapped[list[float] | None] = mapped_column(Vector(1024), nullable=True)
     model_name: Mapped[str] = mapped_column(String(100), nullable=False)
     prompt: Mapped[str] = mapped_column(Text, nullable=False)
+    is_empty: Mapped[bool] = mapped_column(default=False, nullable=False)
 
     user_id: Mapped[int] = mapped_column(
         BigInteger,
@@ -37,7 +36,7 @@ class PlatformWorkLog(Base):
         content: str,
         model_name: str,
         prompt: str,
-        embedding: list[float] | None = None,
+        is_empty: bool,
     ) -> "PlatformWorkLog":
         return cls(
             user_id=user_id,
@@ -46,7 +45,7 @@ class PlatformWorkLog(Base):
             content=content,
             model_name=model_name,
             prompt=prompt,
-            embedding=embedding,
+            is_empty=is_empty,
         )
 
     @property

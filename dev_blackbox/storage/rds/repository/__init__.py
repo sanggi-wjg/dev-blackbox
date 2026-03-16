@@ -17,6 +17,9 @@ from dev_blackbox.storage.rds.repository.slack_secret_repository import SlackSec
 from dev_blackbox.storage.rds.repository.slack_user_repository import SlackUserRepository
 from dev_blackbox.storage.rds.repository.task_repository import TaskRepository
 from dev_blackbox.storage.rds.repository.user_repository import UserRepository
+from dev_blackbox.storage.rds.repository.platform_work_log_chunk_repository import (
+    PlatformWorkLogChunkRepository,
+)
 
 __all__ = [
     "DailyWorkLogRepository",
@@ -27,6 +30,7 @@ __all__ = [
     "JiraSecretRepository",
     "JiraUserRepository",
     "PlatformWorkLogRepository",
+    "PlatformWorkLogChunkRepository",
     "SlackMessageRepository",
     "SlackSecretRepository",
     "SlackUserRepository",

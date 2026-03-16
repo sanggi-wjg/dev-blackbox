@@ -56,6 +56,7 @@ REST API 엔드포인트 명세.
 | GET    | `/api/v1/images`                      | 이미지 목록 조회         | 200   |
 | GET    | `/api/v1/images/{image_id}`           | 이미지 조회 (바이너리 응답)  | 200   |
 | DELETE | `/api/v1/images/{image_id}`           | 이미지 삭제            | 204   |
+| GET    | `/api/v1/search`                      | 시맨틱 검색 (업무 일지)    | 200   |
 
 ### 관리자 API (`/admin-api/v1/*`, 관리자 권한 필요)
 

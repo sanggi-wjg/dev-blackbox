@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from dev_blackbox.core.enum import PlatformEnum
 from dev_blackbox.storage.rds.entity.platform_work_log import PlatformWorkLog
+from dev_blackbox.storage.rds.entity.platform_work_log_chunk import PlatformWorkLogChunk
 
 
 class PlatformWorkLogRepository:
@@ -16,6 +17,10 @@ class PlatformWorkLogRepository:
         self.session.add(platform_work_log)
         self.session.flush()
         return platform_work_log
+
+    def find_all_by_id(self, ids: list[int]) -> list[PlatformWorkLog]:
+        stmt = select(PlatformWorkLog).where(PlatformWorkLog.id.in_(ids))
+        return list(self.session.scalars(stmt))
 
     def find_by_user_id_and_target_date_and_platform(
         self, user_id: int, target_date: date, platform: PlatformEnum
@@ -39,6 +44,25 @@ class PlatformWorkLogRepository:
                 PlatformWorkLog.target_date == target_date,
             )
             .order_by(PlatformWorkLog.platform.asc())
+        )
+        return list(self.session.scalars(stmt))
+
+    def find_by_id(self, platform_work_log_id: int) -> PlatformWorkLog | None:
+        stmt = select(PlatformWorkLog).where(PlatformWorkLog.id == platform_work_log_id)
+        return self.session.scalar(stmt)
+
+    def find_all_without_chunks(self) -> list[PlatformWorkLog]:
+        stmt = (
+            select(PlatformWorkLog)
+            .outerjoin(
+                PlatformWorkLogChunk,
+                PlatformWorkLogChunk.platform_work_log_id == PlatformWorkLog.id,
+            )
+            .where(
+                PlatformWorkLogChunk.id.is_(None),
+                PlatformWorkLog.is_empty.is_(False),
+                PlatformWorkLog.content != "",
+            )
         )
         return list(self.session.scalars(stmt))
 

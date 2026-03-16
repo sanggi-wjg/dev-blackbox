@@ -89,7 +89,7 @@
 - **ORM**: SQLAlchemy (psycopg2-binary)
 - **인증**: JWT (PyJWT, HS256) + OAuth2 Bearer Token
 - **비밀번호**: pwdlib (Argon2)
-- **LLM**: Ollama + LlamaIndex
+- **LLM**: Ollama + LlamaIndex (임베딩: mxbai-embed-large)
 - **스케줄러**: APScheduler (Redis JobStore)
 
 ## Commands

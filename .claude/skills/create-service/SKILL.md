@@ -124,6 +124,81 @@ class GitHubEventService:
         ...
 ```
 
+#### Service Model을 반환하는 경우
+
+Entity를 직접 반환하는 것이 기본이지만, **실질적 변환 로직이 있을 때**는 Service Model을 사용한다.
+Service Model은 `service/model/{도메인}_model.py`에 정의한다.
+
+##### Service Model 형태 선택 기준
+
+| 조건 | 권장 형태 |
+|------|----------|
+| Entity + 계산값 조합 (Entity가 메인 데이터) | **NamedTuple** |
+| 필드명 중복 가능성 있거나, Entity가 메인이 아닌 조합 데이터 | **BaseModel** |
+
+##### NamedTuple — Entity가 메인 데이터인 경우
+
+```python
+from typing import TYPE_CHECKING, NamedTuple
+
+if TYPE_CHECKING:
+    from dev_blackbox.storage.rds.entity import {엔티티}
+
+
+class {엔티티}SearchResult(NamedTuple):
+    {엔티티_소문자}: {엔티티}
+    distance: float
+```
+
+- Entity에 계산값(distance, score 등)을 붙여서 반환할 때 사용
+- Entity가 주 데이터이므로 Entity 필드를 첫 번째에 배치
+
+##### BaseModel — Entity가 메인이 아닌 조합 데이터
+
+```python
+from datetime import date
+
+from pydantic import BaseModel
+
+from dev_blackbox.core.enum import PlatformEnum
+
+
+class EventContributionByDate(BaseModel):
+    event_date: date
+    count: int
+    level: int
+    platforms: dict[PlatformEnum, int]
+
+
+class EventContributionSummary(BaseModel):
+    total_contributions: int
+    active_days: int
+    longest_streak: int
+    current_streak: int
+
+
+class EventContribution(BaseModel):
+    summary: EventContributionSummary
+    contributions: list[EventContributionByDate]
+```
+
+- 여러 소스를 조합하거나, Entity 없이 계산된 결과를 반환할 때 사용
+- 중첩 모델 가능 (상위 모델이 하위 모델을 포함)
+
+##### Service에서 Service Model 반환 예시
+
+```python
+def search_{도메인}(self, query: SearchQuery) -> list[{엔티티}SearchResult]:
+    projections = self.{도메인}_repository.find_similar_by_embedding(...)
+    return [
+        {엔티티}SearchResult(
+            {엔티티_소문자}=p.{엔티티_소문자},
+            distance=p.distance,
+        )
+        for p in projections
+    ]
+```
+
 #### 캐싱이 필요한 경우
 
 ```python
@@ -240,6 +315,8 @@ class {엔티티}{상황}Exception(ServiceException):
 | `get_{도메인}_by_{필터}_or_throw(필터값)` | `Entity` | 특정 필터 기준 조회, 없으면 예외 |
 | `get_{도메인}_by_{필터}_or_none(필터값)` | `Entity \| None` | 특정 필터 기준 조회, 없으면 None |
 | `get_{도메인들}(query)` | `list[Entity]` | 목록 조회 |
+| `search_{도메인}(query)` | `list[ServiceModel]` | 계산값 포함 검색 (Service Model 반환) |
+| `get_{집계}(query)` | `ServiceModel` | 조합/집계 결과 (Service Model 반환) |
 | `_get_{도메인}_or_throw(id)` | `Entity` | 내부 헬퍼 (다른 Service에서 직접 사용하지 않음) |
 
 ### 쓰기 메서드
@@ -280,6 +357,7 @@ class {엔티티}{상황}Exception(ServiceException):
 - [ ] Command/Query가 Pydantic `BaseModel`을 상속하는가
 - [ ] 사용자 소유 리소스의 Command/Query에 `user_id`가 포함되어 있는가
 - [ ] 예외 클래스가 `exception.py`의 올바른 섹션에 추가되었는가
-- [ ] Service가 Entity를 직접 반환하는가 (불필요한 Service Model 미사용)
+- [ ] Service가 Entity를 직접 반환하는가 (실질적 변환 로직이 없으면 Service Model 미사용)
+- [ ] Service Model이 필요한 경우: Entity가 메인이면 NamedTuple, 아니면 BaseModel을 사용하는가
 - [ ] 다른 Service 의존 시 생성자에서 `{Service}(session)`으로 생성하는가
 - [ ] `pyright`와 `black` 검사를 통과하는가

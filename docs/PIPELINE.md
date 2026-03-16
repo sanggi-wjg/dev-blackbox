@@ -13,6 +13,7 @@
 | `collect_events_and_summarize_work_log_task()` | 매일 00:00 UTC / 09:00 KST (cron) | 전체 사용자 데이터 수집 + LLM 요약 |
 | `sync_jira_users_task()`                       | 매일 15:00 UTC / 00:00 KST (cron) | Jira 사용자 동기화           |
 | `sync_slack_users_task()`                      | 매일 15:10 UTC / 00:10 KST (cron) | Slack 사용자 동기화          |
+| `generate_embeddings_task()`                   | 매시 정각 KST (cron)                | 업무 일지 임베딩 생성           |
 
 모든 태스크는 `distributed_lock()`으로 중복 실행을 방지한다.
 
@@ -192,6 +193,31 @@ collect_events_and_summarize_work_log_by_user_task(user_id, target_date)
        ▼
   DB 저장
 ```
+
+## 임베딩 생성 파이프라인
+
+```
+[APScheduler] generate_embeddings_task() (매시 정각 KST)
+       │
+       ├── distributed_lock 획득
+       │
+       ├── [청킹] EmbeddingService.generate_chunks_for_platform_work_logs()
+       │       │
+       │       ├── 청크 미생성 PlatformWorkLog 조회
+       │       ├── chunk_content()                          ← 텍스트 청킹
+       │       └── PlatformWorkLogChunk 저장                         ← DB 저장
+       │
+       └── [임베딩] EmbeddingService.generate_embeddings_for_work_log_chunks()
+               │
+               ├── 임베딩 미생성 PlatformWorkLogChunk 조회
+               ├── EmbeddingAgent.get_embedding(chunk_text)  ← Ollama
+               └── PlatformWorkLogChunk.update_embedding()           ← DB 저장
+```
+
+- 청크 미생성 work_log를 조회하여 `chunk_content()`로 청킹 후 `PlatformWorkLogChunk`를 저장
+- `embedding`이 NULL인 청크만 임베딩 생성 대상
+- 각 레코드별 독립된 try-except로 개별 실패가 전체를 차단하지 않음
+- 생성된 임베딩은 시맨틱 검색(`GET /api/v1/search`)에서 cosine similarity로 활용
 
 ## 설계 원칙
 

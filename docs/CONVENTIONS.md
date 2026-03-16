@@ -37,6 +37,7 @@ Controller 엔드포인트의 파라미터 바인딩 방식:
 - DTO는 같은 레이어의 다른 DTO만 참조 가능. `service/model/`을 import하지 말 것
 - DTO에 `from_entity()` / `from_model()` 팩토리 메서드로 변환 로직을 캡슐화. Controller에서 직접 필드를 매핑하지 말 것
 - Query Parameter는 `controller/api/param/`에 Pydantic 모델로 정의
+- 날짜 범위 파라미터 네이밍: `from_date` / `to_date` 사용 (`date_from`, `date_to` 등 다른 형식 금지)
 
 ## Service Command / Query
 
@@ -51,6 +52,12 @@ Controller 엔드포인트의 파라미터 바인딩 방식:
 - **실질적 변환 로직이 있을 때만 사용** (암호화/복호화, 관계 엔티티 조합 등)
 - 필드 단순 복사만 하는 경우 Service Model을 만들지 말 것 — Entity를 직접 반환
 - Service Model은 Entity, 다른 Service Model만 참조 가능. `controller/`의 DTO를 import하지 말 것
+
+## Projection
+
+- `storage/rds/projection/`에 NamedTuple로 정의
+- Repository에서 Entity와 계산된 값(e.g., distance)을 함께 반환할 때 사용
+- DTO의 `from_projection()` 팩토리 메서드로 변환
 
 ## Task Context
 

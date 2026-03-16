@@ -1568,14 +1568,14 @@ files = [
 
 [[package]]
 name = "llama-index-core"
-version = "0.14.16"
+version = "0.14.17"
 description = "Interface between LLMs and your data"
 optional = false
-python-versions = "<4.0,>=3.9"
+python-versions = "<4.0,>=3.10"
 groups = ["main"]
 files = [
-    {file = "llama_index_core-0.14.16-py3-none-any.whl", hash = "sha256:0cc273ebc44d51ad636217661a25f9cd02fb2d0440641430f105da3ae9f43a6b"},
-    {file = "llama_index_core-0.14.16.tar.gz", hash = "sha256:cf2b7e4b798cb5ebad19c935174c200595c7ecff84a83793540cc27b03636a52"},
+    {file = "llama_index_core-0.14.17-py3-none-any.whl", hash = "sha256:1a3fc4bdcc1f88d88bfca8b18d08a23ff950934fb133a6e8d157ecf8e9b8d8ce"},
+    {file = "llama_index_core-0.14.17.tar.gz", hash = "sha256:7bd868fbc550492eb83645c2117b5e9e65fcb6e42179745d1cfbd69512032e05"},
 ]
 
 [package.dependencies]
@@ -1627,14 +1627,14 @@ pytest-asyncio = ">=0.23.8"
 
 [[package]]
 name = "llama-index-instrumentation"
-version = "0.4.3"
+version = "0.5.0"
 description = "Instrumentation and Observability for LlamaIndex"
 optional = false
-python-versions = "<4.0,>=3.9"
+python-versions = "<4.0,>=3.10"
 groups = ["main"]
 files = [
-    {file = "llama_index_instrumentation-0.4.3-py3-none-any.whl", hash = "sha256:4669d5f6da4b478784a196489d4b58072cb2e6928c3781d2bddd34f36da9cac1"},
-    {file = "llama_index_instrumentation-0.4.3.tar.gz", hash = "sha256:6a8bd34b0c2fb9485971f952f3e5d63341eb87f8c55c82f2819a37e174494eb9"},
+    {file = "llama_index_instrumentation-0.5.0-py3-none-any.whl", hash = "sha256:aaab83cddd9dd434278891012d8995f47a3bc7ed1736a371db90965348c56a21"},
+    {file = "llama_index_instrumentation-0.5.0.tar.gz", hash = "sha256:eeb724648b25d149de882a5ac9e21c5acb1ce780da214bda2b075341af29ad8e"},
 ]
 
 [package.dependencies]
@@ -1659,14 +1659,14 @@ ollama = ">=0.5.3"
 
 [[package]]
 name = "llama-index-workflows"
-version = "2.16.0"
+version = "2.16.1"
 description = "An event-driven, async-first, step-based way to control the execution flow of AI applications like Agents."
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "llama_index_workflows-2.16.0-py3-none-any.whl", hash = "sha256:564f19987f6cbd6bca69581cc934a721a402c1cc773c58faea4fb0041350f77c"},
-    {file = "llama_index_workflows-2.16.0.tar.gz", hash = "sha256:be4df184498c649dc1558a074794402a3bb0eb59a83e28ff5cfe9885d9787187"},
+    {file = "llama_index_workflows-2.16.1-py3-none-any.whl", hash = "sha256:d58c74f59df3ae37765b7c214928639b8dc2596a68f03adb80b4981329dc4914"},
+    {file = "llama_index_workflows-2.16.1.tar.gz", hash = "sha256:2f6be223af407084eef064bcbec8f60ae4dd011d9a04631887ce986258fac58a"},
 ]
 
 [package.dependencies]
@@ -2792,14 +2792,14 @@ windows-terminal = ["colorama (>=0.4.6)"]
 
 [[package]]
 name = "pyjwt"
-version = "2.11.0"
+version = "2.12.1"
 description = "JSON Web Token implementation in Python"
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "pyjwt-2.11.0-py3-none-any.whl", hash = "sha256:94a6bde30eb5c8e04fee991062b534071fd1439ef58d2adc9ccb823e7bcd0469"},
-    {file = "pyjwt-2.11.0.tar.gz", hash = "sha256:35f95c1f0fbe5d5ba6e43f00271c275f7a1a4db1dab27bf708073b75318ea623"},
+    {file = "pyjwt-2.12.1-py3-none-any.whl", hash = "sha256:28ca37c070cad8ba8cd9790cd940535d40274d22f80ab87f3ac6a713e6e8454c"},
+    {file = "pyjwt-2.12.1.tar.gz", hash = "sha256:c74a7a2adf861c04d002db713dd85f84beb242228e671280bf709d765b03672b"},
 ]
 
 [package.extras]
@@ -2892,19 +2892,19 @@ testing = ["fields", "hunter", "process-tests", "pytest-xdist", "virtualenv"]
 
 [[package]]
 name = "pytest-env"
-version = "1.5.0"
+version = "1.6.0"
 description = "pytest plugin that allows you to add environment variables."
 optional = false
 python-versions = ">=3.10"
 groups = ["dev"]
 files = [
-    {file = "pytest_env-1.5.0-py3-none-any.whl", hash = "sha256:89a15686ac837c9cd009a8a2d52bd55865e2f23c82094247915dae4540c87161"},
-    {file = "pytest_env-1.5.0.tar.gz", hash = "sha256:db8994b9ce170f135a37acc09ac753a6fc697d15e691b576ed8d8ca261c40246"},
+    {file = "pytest_env-1.6.0-py3-none-any.whl", hash = "sha256:1e7f8a62215e5885835daaed694de8657c908505b964ec8097a7ce77b403d9a3"},
+    {file = "pytest_env-1.6.0.tar.gz", hash = "sha256:ac02d6fba16af54d61e311dd70a3c61024a4e966881ea844affc3c8f0bf207d3"},
 ]
 
 [package.dependencies]
 pytest = ">=9.0.2"
-python-dotenv = ">=1.2.1"
+python-dotenv = ">=1.2.2"
 
 [package.extras]
 testing = ["covdefaults (>=2.3)", "coverage (>=7.13.4)", "pytest-mock (>=3.15.1)"]
@@ -3385,14 +3385,14 @@ type = ["importlib_metadata (>=7.0.2) ; python_version < \"3.10\"", "jaraco.deve
 
 [[package]]
 name = "slack-sdk"
-version = "3.40.1"
+version = "3.41.0"
 description = "The Slack API Platform SDK for Python"
 optional = false
 python-versions = ">=3.7"
 groups = ["main"]
 files = [
-    {file = "slack_sdk-3.40.1-py2.py3-none-any.whl", hash = "sha256:cd8902252979aa248092b0d77f3a9ea3cc605bc5d53663ad728e892e26e14a65"},
-    {file = "slack_sdk-3.40.1.tar.gz", hash = "sha256:a215333bc251bc90abf5f5110899497bf61a3b5184b6d9ee35d73ebf09ec3fd0"},
+    {file = "slack_sdk-3.41.0-py2.py3-none-any.whl", hash = "sha256:bb18dcdfff1413ec448e759cf807ec3324090993d8ab9111c74081623b692a89"},
+    {file = "slack_sdk-3.41.0.tar.gz", hash = "sha256:eb61eb12a65bebeca9cb5d36b3f799e836ed2be21b456d15df2627cfe34076ca"},
 ]
 
 [package.extras]

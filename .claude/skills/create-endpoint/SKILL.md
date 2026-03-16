@@ -48,54 +48,112 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
-from dev_blackbox.controller.api.dto.{리소스}_dto import (
+from dev_blackbox.controller.api.dto.
+
+{리소스}
+_dto
+import
+
+(
     {리소스}ResponseDto,
-    Create{리소스}RequestDto,  # POST가 있는 경우
+Create{리소스}RequestDto,  # POST가 있는 경우
 )
-from dev_blackbox.controller.api.param.{리소스}_param import {리소스}Param  # Query Parameter가 있는 경우
+from dev_blackbox.controller.api.param.
+
+{리소스}
+_param
+import
+
+{리소스}
+Param  # Query Parameter가 있는 경우
 from dev_blackbox.controller.config.security_config import AuthToken, CurrentUser
 from dev_blackbox.core.database import get_db
-from dev_blackbox.service.{서비스}_service import {서비스}Service
-from dev_blackbox.service.command.{리소스}_command import Create{리소스}Command  # POST가 있는 경우
-from dev_blackbox.service.query.{리소스}_query import {리소스}Query  # Query 객체가 있는 경우
+from dev_blackbox.service.
+
+{서비스}
+_service
+import
+
+{서비스}
+Service
+from dev_blackbox.service.command.
+
+{리소스}
+_command
+import Create
+
+{리소스}
+Command  # POST가 있는 경우
+from dev_blackbox.service.query.
+
+{리소스}
+_query
+import
+
+{리소스}
+Query  # Query 객체가 있는 경우
 
 router = APIRouter(prefix="/api/v1/{리소스-kebab}", tags=["{태그명}"])
 
 
 @router.get(
     "",
-    response_model=list[{리소스}ResponseDto],
+    response_model=list[{리소스}
+
+
+ResponseDto],
 )
+
 async def get_{리소스들}(
-    token: AuthToken,
-    current_user: CurrentUser,
-    param: Annotated[{리소스}Param, Query()],
-    db: Session = Depends(get_db),
+    token: AuthToken
+
+,
+current_user: CurrentUser,
+param: Annotated[{리소스}
+Param, Query()],
+db: Session = Depends(get_db),
 ):
-    service = {서비스}Service(db)
-    query = {리소스}Query(user_id=current_user.id, ...)
-    entities = service.get_{리소스들}(query)
-    return [{리소스}ResponseDto.from_entity(entity) for entity in entities]
+service = {서비스}
+Service(db)
+query = {리소스}
+Query(user_id=current_user.id, ...)
+entities = service.get_
+{리소스들}(query)
+return [{리소스}ResponseDto.from_entity(entity)
+for entity in entities]
 
 
 @router.post(
     "",
-    response_model={리소스}ResponseDto,
-    status_code=status.HTTP_201_CREATED,
+    response_model={리소스}
+
+
+ResponseDto,
+status_code = status.HTTP_201_CREATED,
 )
+
 async def create_{리소스}(
-    request: Create{리소스}RequestDto,
-    token: AuthToken,
-    current_user: CurrentUser,
-    db: Session = Depends(get_db),
+    request: Create
+
+
+{리소스}
+RequestDto,
+token: AuthToken,
+current_user: CurrentUser,
+db: Session = Depends(get_db),
 ):
-    service = {서비스}Service(db)
-    command = Create{리소스}Command(
-        user_id=current_user.id,
-        ...  # request 필드를 command로 변환
-    )
-    entity = service.create_{리소스}(command)
-    return {리소스}ResponseDto.from_entity(entity)
+service = {서비스}
+Service(db)
+command = Create
+{리소스}
+Command(
+    user_id=current_user.id,
+    ...  # request 필드를 command로 변환
+)
+entity = service.create_
+{리소스}(command)
+return {리소스}
+ResponseDto.from_entity(entity)
 
 
 @router.delete(
@@ -104,13 +162,17 @@ async def create_{리소스}(
     response_model=None,
 )
 async def delete_{리소스}(
-    {entity_id}: int,
-    token: AuthToken,
-    current_user: CurrentUser,
-    db: Session = Depends(get_db),
+    {entity_id}: int
+
+,
+token: AuthToken,
+current_user: CurrentUser,
+db: Session = Depends(get_db),
 ):
-    service = {서비스}Service(db)
-    service.delete_{리소스}(current_user.id, {entity_id})
+service = {서비스}
+Service(db)
+service.delete_
+{리소스}(current_user.id, {entity_id})
 ```
 
 #### 관리자 API Controller 템플릿
@@ -123,10 +185,12 @@ router = APIRouter(prefix="/admin-api/v1/{리소스-kebab}", tags=["Admin {태�
 
 @router.get(...)
 async def get_{리소스들}(
-    current_admin_user: CurrentAdminUser,  # token 불필요, CurrentAdminUser만 사용
-    db: Session = Depends(get_db),
+    current_admin_user: CurrentAdminUser
+
+,  # token 불필요, CurrentAdminUser만 사용
+db: Session = Depends(get_db),
 ):
-    ...
+...
 ```
 
 #### Controller 컨벤션
@@ -154,7 +218,12 @@ from typing import TYPE_CHECKING
 from pydantic import BaseModel
 
 if TYPE_CHECKING:
-    from dev_blackbox.storage.rds.entity.{테이블명} import {엔티티명}
+    from dev_blackbox.storage.rds.entity.
+
+    {테이블명}
+    import
+
+    {엔티티명}
 
 
 class {리소스}ResponseDto(BaseModel):
@@ -165,12 +234,13 @@ class {리소스}ResponseDto(BaseModel):
 
     @classmethod
     def from_entity(cls, entity: {엔티티명}) -> {리소스}ResponseDto:
-        return cls(
-            id=entity.id,
-            # 필드 매핑...
-            created_at=entity.created_at,
-            updated_at=entity.updated_at,
-        )
+
+    return cls(
+        id=entity.id,
+        # 필드 매핑...
+        created_at=entity.created_at,
+        updated_at=entity.updated_at,
+    )
 ```
 
 #### Request DTO (POST/PUT/PATCH가 있는 경우)
@@ -185,15 +255,76 @@ class Create{리소스}RequestDto(BaseModel):
     optional_field: str | None = None
 ```
 
+#### Service Model을 반환하는 경우 — `from_model()` 패턴
+
+Service가 Entity가 아닌 **Service Model**(NamedTuple 또는 Pydantic BaseModel)을 반환하는 경우,
+DTO에 `from_entity()` 대신 `from_model()`을 정의한다.
+
+```python
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+from pydantic import BaseModel, Field
+
+if TYPE_CHECKING:
+    from dev_blackbox.service.model.
+
+    {도메인}
+    _model
+    import
+
+    {서비스모델}
+
+
+class {리소스}ResponseDto(BaseModel):
+    id: int
+    score: float = Field(..., description="유사도 점수")
+
+    # ...
+
+    @classmethod
+    def from_model(cls, model: {서비스모델}) -> {리소스}ResponseDto:
+
+    entity = model.
+    {엔티티_필드}
+    return cls(
+        id=entity.id,
+        score=1.0 - model.distance,  # 계산 로직 포함 가능
+        # ...
+    )
+```
+
+- Service Model의 import도 `TYPE_CHECKING` 블록 안에 배치
+- 중첩 Service Model은 중첩 `from_model()` 호출로 변환
+
+```python
+@classmethod
+def from_model(cls, model: EventContribution) -> EventContributionResponseDto:
+    return cls(
+        summary=EventContributionSummaryResponseDto.from_model(model.summary),
+        contributions=[
+            EventContributionByDateResponseDto.from_model(c) for c in model.contributions
+        ],
+    )
+```
+
+#### `from_entity()` vs `from_model()` 선택 기준
+
+| Service 반환 타입                           | DTO 팩토리 메서드     |
+|-----------------------------------------|-----------------|
+| Entity 직접 반환                            | `from_entity()` |
+| Service Model (NamedTuple/BaseModel) 반환 | `from_model()`  |
+
 #### DTO 컨벤션
 
 - 파일 최상단에 `from __future__ import annotations` 선언
-- Entity import는 `TYPE_CHECKING` 블록 안에 배치 (순환 참조 방지)
-- Response DTO에 `from_entity()` 클래스 메서드 필수
+- Entity / Service Model import는 `TYPE_CHECKING` 블록 안에 배치 (순환 참조 방지)
+- Response DTO에 `from_entity()` 또는 `from_model()` 클래스 메서드 필수 (Service 반환 타입에 따라 선택)
 - 암호화된 필드가 있으면 `from_entity(entity, encrypt_service)` 시그니처 사용
 - 민감 정보 마스킹이 필요하면 `@field_validator`로 `mask()` 적용
 - Request DTO의 필수 문자열 필드는 `NotBlankStr` 타입 사용
-- `from_entity()` 반환 타입은 클래스명 문자열이 아닌 클래스 직접 참조 (파일 상단 `from __future__ import annotations` 덕분에 가능)
+- `from_entity()` / `from_model()` 반환 타입은 클래스명 문자열이 아닌 클래스 직접 참조 (파일 상단 `from __future__ import annotations` 덕분에 가능)
 
 ### 3. Query Parameter (GET 필터가 필요한 경우) — `dev_blackbox/controller/api/param/{리소스}_param.py`
 
@@ -218,10 +349,18 @@ class {리소스}Param(BaseModel):
 
 ```python
 # import 추가 (알파벳순 또는 도메인 그룹 기준)
-from dev_blackbox.controller.api.{리소스}_controller import router as {리소스}_router
+from dev_blackbox.controller.api.
+
+{리소스}
+_controller
+import router as
+
+{리소스}
+_router
 
 # Api 섹션에 추가
-app.include_router({리소스}_router)
+app.include_router({리소스}
+_router)
 ```
 
 #### 등록 컨벤션
@@ -288,8 +427,8 @@ app.include_router({리소스}_router)
 - [ ] 인증이 `CurrentUser` 또는 `CurrentAdminUser`로 처리되는가
 - [ ] Query Parameter가 `Annotated[Param, Query()]`로 바인딩되었는가 (`Depends()` 미사용)
 - [ ] Service가 엔드포인트 함수 내에서 `Service(db)`로 생성되었는가
-- [ ] DTO에 `from_entity()` 클래스 메서드가 있는가
-- [ ] Entity import가 `TYPE_CHECKING` 블록 안에 있는가
+- [ ] DTO에 `from_entity()` 또는 `from_model()` 클래스 메서드가 있는가 (Service 반환 타입에 따라 선택)
+- [ ] Entity / Service Model import가 `TYPE_CHECKING` 블록 안에 있는가
 - [ ] 삭제 엔드포인트에 `response_model=None`이 명시되었는가
 - [ ] `main.py`에 라우터가 등록되었는가
 - [ ] `pyright`와 `black` 검사를 통과하는가
