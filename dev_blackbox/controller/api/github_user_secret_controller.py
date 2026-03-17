@@ -19,7 +19,7 @@ router = APIRouter(prefix="/api/v1/github-secrets", tags=["GitHub Secret"])
     response_model=GitHubSecretResponseDto,
     status_code=status.HTTP_201_CREATED,
 )
-async def create_github_secret(
+def create_github_secret(
     request: CreateGitHubSecretRequestDto,
     token: AuthToken,
     current_user: CurrentUser,
@@ -40,7 +40,7 @@ async def create_github_secret(
     status_code=status.HTTP_204_NO_CONTENT,
     response_model=None,
 )
-async def delete_github_secret_by_user_id(
+def delete_github_secret_by_user_id(
     token: AuthToken,
     current_user: CurrentUser,
     db: Session = Depends(get_db),

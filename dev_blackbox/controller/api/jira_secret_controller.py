@@ -13,7 +13,7 @@ router = APIRouter(prefix="/api/v1/jira-secrets", tags=["JiraSecret"])
     "",
     response_model=list[JiraSecretSimpleResponseDto],
 )
-async def get_jira_secrets(
+def get_jira_secrets(
     token: AuthToken,
     current_user: CurrentUser,
     db: Session = Depends(get_db),

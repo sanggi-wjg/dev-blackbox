@@ -28,7 +28,7 @@ router = APIRouter(prefix="/api/v1/platform-work-logs", tags=["WorkLog"])
     status_code=status.HTTP_200_OK,
     response_model=list[PlatformWorkLogDetailResponseDto],
 )
-async def get_platform_work_logs(
+def get_platform_work_logs(
     token: AuthToken,
     current_user: CurrentUser,
     param: Annotated[WorkLogParam, Query()],

@@ -19,7 +19,7 @@ router = APIRouter(prefix="/admin-api/v1/users", tags=["Admin User Management"])
     status_code=status.HTTP_200_OK,
     response_model=list[UserResponseDto],
 )
-async def get_users(
+def get_users(
     current_admin_user: CurrentAdminUser,
     db: Session = Depends(get_db),
 ):
@@ -33,7 +33,7 @@ async def get_users(
     status_code=status.HTTP_201_CREATED,
     response_model=UserResponseDto,
 )
-async def create_user(
+def create_user(
     request: CreateUserRequestDto,
     current_admin_user: CurrentAdminUser,
     db: Session = Depends(get_db),
@@ -54,7 +54,7 @@ async def create_user(
     status_code=status.HTTP_204_NO_CONTENT,
     response_model=None,
 )
-async def delete_user(
+def delete_user(
     user_id: int,
     current_admin_user: CurrentAdminUser,
     db: Session = Depends(get_db),

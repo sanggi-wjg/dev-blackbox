@@ -18,7 +18,7 @@ router = APIRouter(prefix="/api/v1/event-activity", tags=["Event Activity"])
     status_code=status.HTTP_200_OK,
     response_model=EventContributionResponseDto,
 )
-async def get_event_activity_heatmap(
+def get_event_activity_heatmap(
     token: AuthToken,
     current_user: CurrentUser,
     param: Annotated[EventActivityHeatmapParam, Query()],

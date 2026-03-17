@@ -18,7 +18,7 @@ router = APIRouter(prefix="/api/v1/daily-work-logs", tags=["WorkLog"])
     status_code=status.HTTP_200_OK,
     response_model=DailyWorkLogResponseDto | None,
 )
-async def get_daily_work_log(
+def get_daily_work_log(
     token: AuthToken,
     current_user: CurrentUser,
     param: Annotated[WorkLogParam, Query()],

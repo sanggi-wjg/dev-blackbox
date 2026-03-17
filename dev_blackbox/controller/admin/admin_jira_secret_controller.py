@@ -21,7 +21,7 @@ router = APIRouter(prefix="/admin-api/v1/jira-secrets", tags=["Admin Jira Secret
     status_code=status.HTTP_201_CREATED,
     response_model=JiraSecretResponseDto,
 )
-async def create_jira_secret(
+def create_jira_secret(
     request: CreateJiraSecretRequestDto,
     current_admin_user: CurrentAdminUser,
     db: Session = Depends(get_db),
@@ -42,7 +42,7 @@ async def create_jira_secret(
     status_code=status.HTTP_200_OK,
     response_model=list[JiraSecretResponseDto],
 )
-async def get_jira_secrets(
+def get_jira_secrets(
     current_admin_user: CurrentAdminUser,
     db: Session = Depends(get_db),
 ):
@@ -56,7 +56,7 @@ async def get_jira_secrets(
     status_code=status.HTTP_204_NO_CONTENT,
     response_model=None,
 )
-async def delete_jira_secret(
+def delete_jira_secret(
     jira_secret_id: int,
     current_admin_user: CurrentAdminUser,
     db: Session = Depends(get_db),
@@ -70,7 +70,7 @@ async def delete_jira_secret(
     status_code=status.HTTP_200_OK,
     response_model=None,
 )
-async def sync_jira_users(
+def sync_jira_users(
     jira_secret_id: int,
     request: SyncJiraUsersRequestDto,
     current_admin_user: CurrentAdminUser,

@@ -15,7 +15,7 @@ router = APIRouter(prefix="/api/v1/auth", tags=["Auth"])
     response_model=TokenResponseDto,
     summary="토큰 로그인",
 )
-async def token_login(
+def token_login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db),
 ):

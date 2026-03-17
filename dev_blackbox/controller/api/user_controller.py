@@ -15,7 +15,7 @@ router = APIRouter(prefix="/api/v1/users", tags=["User"])
     status_code=status.HTTP_200_OK,
     response_model=UserDetailResponseDto,
 )
-async def get_user_me(
+def get_user_me(
     current_user: CurrentUser,
     db: Session = Depends(get_db),
 ):

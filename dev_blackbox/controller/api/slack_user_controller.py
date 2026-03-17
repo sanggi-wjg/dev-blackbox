@@ -26,7 +26,7 @@ router = APIRouter(prefix="/api/v1/slack-users", tags=["SlackUser"])
     "",
     response_model=list[SlackUserResponseDto],
 )
-async def get_slack_users(
+def get_slack_users(
     token: AuthToken,
     current_user: CurrentUser,
     param: Annotated[SlackUserParam, Query()],
@@ -47,7 +47,7 @@ async def get_slack_users(
     status_code=status.HTTP_204_NO_CONTENT,
     response_model=None,
 )
-async def assign_slack_user_to_user(
+def assign_slack_user_to_user(
     request: AssignSlackUserRequestDto,
     token: AuthToken,
     current_user: CurrentUser,
@@ -67,7 +67,7 @@ async def assign_slack_user_to_user(
     status_code=status.HTTP_204_NO_CONTENT,
     response_model=None,
 )
-async def unassign_slack_user_from_user(
+def unassign_slack_user_from_user(
     slack_user_id: int,
     token: AuthToken,
     current_user: CurrentUser,

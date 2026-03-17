@@ -20,7 +20,7 @@ router = APIRouter(prefix="/api/v1/jira-users", tags=["JiraUser"])
     "",
     response_model=list[JiraUserResponseDto],
 )
-async def get_jira_users(
+def get_jira_users(
     token: AuthToken,
     current_user: CurrentUser,
     param: Annotated[JiraUserParam, Query()],
@@ -38,7 +38,7 @@ async def get_jira_users(
     status_code=status.HTTP_204_NO_CONTENT,
     response_model=None,
 )
-async def assign_jira_user(
+def assign_jira_user(
     token: AuthToken,
     current_user: CurrentUser,
     request: AssignJiraUserRequestDto,
@@ -58,7 +58,7 @@ async def assign_jira_user(
     status_code=status.HTTP_204_NO_CONTENT,
     response_model=None,
 )
-async def unassign_jira_user(
+def unassign_jira_user(
     jira_user_id: int,
     token: AuthToken,
     current_user: CurrentUser,

@@ -295,3 +295,101 @@ class JiraUserServiceTest:
         # when & then
         with pytest.raises(JiraUserNotFoundException):
             service.unassign_user(user.id, 9999)
+
+    # ── sync_all_jira_users ──
+
+    def test_sync_all_jira_users(
+        self,
+        mocker,
+        db_session: Session,
+        jira_secret_fixture: Callable[..., JiraSecret],
+        jira_user_fixture: Callable[..., JiraUser],
+    ):
+        # given
+        secret = jira_secret_fixture()
+        jira_user_fixture(
+            jira_secret_id=secret.id,
+            account_id="sync-all-1",
+            project="PROJ-A",
+        )
+        service = JiraUserService(db_session)
+
+        # mock
+        mock_sync = mocker.patch.object(service, "sync_jira_users", return_value=[])
+
+        # when
+        service.sync_all_jira_users()
+
+        # then
+        mock_sync.assert_called_once_with(secret.id, "PROJ-A")
+
+    def test_sync_all_jira_users_여러_프로젝트(
+        self,
+        mocker,
+        db_session: Session,
+        jira_secret_fixture: Callable[..., JiraSecret],
+        jira_user_fixture: Callable[..., JiraUser],
+    ):
+        # given
+        secret = jira_secret_fixture()
+        jira_user_fixture(jira_secret_id=secret.id, account_id="sync-all-2a", project="PROJ-A")
+        jira_user_fixture(jira_secret_id=secret.id, account_id="sync-all-2b", project="PROJ-B")
+        service = JiraUserService(db_session)
+
+        # mock
+        mock_sync = mocker.patch.object(service, "sync_jira_users", return_value=[])
+
+        # when
+        service.sync_all_jira_users()
+
+        # then
+        assert mock_sync.call_count == 2
+        called_projects = {call.args[1] for call in mock_sync.call_args_list}
+        assert called_projects == {"PROJ-A", "PROJ-B"}
+
+    def test_sync_all_jira_users_프로젝트_없으면_건너뜀(
+        self,
+        mocker,
+        db_session: Session,
+        jira_secret_fixture: Callable[..., JiraSecret],
+        jira_user_fixture: Callable[..., JiraUser],
+    ):
+        # given
+        secret = jira_secret_fixture()
+        jira_user_fixture(jira_secret_id=secret.id, account_id="sync-all-3", project=None)
+        service = JiraUserService(db_session)
+
+        # mock
+        mock_sync = mocker.patch.object(service, "sync_jira_users", return_value=[])
+
+        # when
+        service.sync_all_jira_users()
+
+        # then
+        mock_sync.assert_not_called()
+
+    def test_sync_all_jira_users_개별_동기화_실패해도_계속_진행(
+        self,
+        mocker,
+        db_session: Session,
+        jira_secret_fixture: Callable[..., JiraSecret],
+        jira_user_fixture: Callable[..., JiraUser],
+    ):
+        # given
+        secret = jira_secret_fixture()
+        jira_user_fixture(jira_secret_id=secret.id, account_id="sync-all-4a", project="PROJ-FAIL")
+        jira_user_fixture(jira_secret_id=secret.id, account_id="sync-all-4b", project="PROJ-OK")
+        service = JiraUserService(db_session)
+
+        # mock — 첫 번째 호출 실패, 두 번째 성공
+        mock_sync = mocker.patch.object(
+            service,
+            "sync_jira_users",
+            side_effect=[Exception("API 에러"), []],
+        )
+
+        # when
+        service.sync_all_jira_users()
+
+        # then
+        assert mock_sync.call_count == 2
