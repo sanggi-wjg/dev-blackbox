@@ -33,7 +33,7 @@ router = APIRouter(prefix="/api/v1/tasks", tags=["Task"])
     status_code=status.HTTP_200_OK,
     response_model=list[TaskResponseDto],
 )
-def get_tasks(
+async def get_tasks(
     token: AuthToken,
     current_user: CurrentUser,
     param: Annotated[TaskParam, Query()],
@@ -55,7 +55,7 @@ def get_tasks(
     status_code=status.HTTP_201_CREATED,
     response_model=TaskResponseDto,
 )
-def create_task(
+async def create_task(
     request_dto: TaskCreateRequestDto,
     token: AuthToken,
     current_user: CurrentUser,
@@ -79,7 +79,7 @@ def create_task(
     status_code=status.HTTP_200_OK,
     response_model=TaskResponseDto,
 )
-def sync_jira_tasks(
+async def sync_jira_tasks(
     task_id: int,
     token: AuthToken,
     current_user: CurrentUser,
@@ -99,7 +99,7 @@ def sync_jira_tasks(
     status_code=status.HTTP_200_OK,
     response_model=TaskResponseDto,
 )
-def update_task(
+async def update_task(
     task_id: int,
     request_dto: TaskUpdateRequestDto,
     token: AuthToken,
@@ -124,7 +124,7 @@ def update_task(
     "/{task_id}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-def delete_task(
+async def delete_task(
     task_id: int,
     token: AuthToken,
     current_user: CurrentUser,
@@ -140,7 +140,7 @@ def delete_task(
     status_code=status.HTTP_200_OK,
     response_model=TaskResponseDto,
 )
-def archive_task(
+async def archive_task(
     task_id: int,
     token: AuthToken,
     current_user: CurrentUser,
@@ -157,7 +157,7 @@ def archive_task(
     status_code=status.HTTP_200_OK,
     response_model=TaskResponseDto,
 )
-def unarchive_task(
+async def unarchive_task(
     task_id: int,
     token: AuthToken,
     current_user: CurrentUser,
@@ -174,7 +174,7 @@ def unarchive_task(
     status_code=status.HTTP_200_OK,
     response_model=list[TaskResponseDto],
 )
-def reorder_tasks(
+async def reorder_tasks(
     request_dto: TaskReorderRequestDto,
     token: AuthToken,
     current_user: CurrentUser,

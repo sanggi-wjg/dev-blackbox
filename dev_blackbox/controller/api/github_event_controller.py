@@ -18,7 +18,7 @@ router = APIRouter(prefix="/api/v1/github-events", tags=["GitHub Event"])
     status_code=status.HTTP_200_OK,
     response_model=list[GitHubEventResponseDto],
 )
-def get_events_by_user_id(
+async def get_events_by_user_id(
     token: AuthToken,
     current_user: CurrentUser,
     db: Session = Depends(get_db),

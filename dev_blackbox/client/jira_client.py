@@ -1,6 +1,7 @@
 import logging
 from functools import lru_cache
 
+import requests
 from jira import JIRA, Issue, User
 from jira.client import ResultList
 from jira.exceptions import JIRAError
@@ -29,7 +30,7 @@ class JiraClient:
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=10, max=60),
-        retry=retry_if_exception_type((JIRAError,)),
+        retry=retry_if_exception_type((JIRAError, requests.exceptions.ReadTimeout)),
     )
     def fetch_assignable_users(self, project: str) -> ResultList[User]:
         logger.info(f"할당 가능 사용자 조회: project={project}")
@@ -38,7 +39,7 @@ class JiraClient:
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=10, max=60),
-        retry=retry_if_exception_type((JIRAError,)),
+        retry=retry_if_exception_type((JIRAError, requests.exceptions.ReadTimeout)),
     )
     def fetch_search_issues(
         self,
@@ -58,7 +59,7 @@ class JiraClient:
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=10, max=60),
-        retry=retry_if_exception_type((JIRAError,)),
+        retry=retry_if_exception_type((JIRAError, requests.exceptions.ReadTimeout)),
     )
     def fetch_issue(self, issue_key: str) -> Issue:
         logger.info(f"이슈 단건 조회: issue_key={issue_key}")
@@ -67,7 +68,7 @@ class JiraClient:
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=10, max=60),
-        retry=retry_if_exception_type((JIRAError,)),
+        retry=retry_if_exception_type((JIRAError, requests.exceptions.ReadTimeout)),
     )
     def update_issue_description(self, issue_key: str, description: str) -> None:
         logger.info(f"이슈 설명 업데이트: issue_key={issue_key}")
