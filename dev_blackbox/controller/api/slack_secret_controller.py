@@ -13,7 +13,7 @@ router = APIRouter(prefix="/api/v1/slack-secrets", tags=["SlackSecret"])
     "",
     response_model=list[SlackSecretSimpleResponseDto],
 )
-async def get_slack_secrets(
+def get_slack_secrets(
     token: AuthToken,
     current_user: CurrentUser,
     db: Session = Depends(get_db),

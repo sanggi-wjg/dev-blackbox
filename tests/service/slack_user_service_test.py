@@ -320,3 +320,70 @@ class SlackUserServiceTest:
         command = UnassignSlackUserCommand(user_id=user.id, slack_user_id=9999)
         with pytest.raises(SlackUserNotFoundException):
             service.unassign_user(command)
+
+    # ── sync_all_slack_users ──
+
+    def test_sync_all_slack_users(
+        self,
+        mocker,
+        db_session: Session,
+        slack_secret_fixture: Callable[..., SlackSecret],
+    ):
+        # given
+        secret = slack_secret_fixture()
+        service = SlackUserService(db_session)
+
+        # mock
+        mock_sync = mocker.patch.object(service, "sync_slack_users", return_value=[])
+
+        # when
+        service.sync_all_slack_users()
+
+        # then
+        mock_sync.assert_called_once_with(secret.id)
+
+    def test_sync_all_slack_users_여러_시크릿(
+        self,
+        mocker,
+        db_session: Session,
+        slack_secret_fixture: Callable[..., SlackSecret],
+    ):
+        # given
+        secret1 = slack_secret_fixture(name="Slack A")
+        secret2 = slack_secret_fixture(name="Slack B")
+        service = SlackUserService(db_session)
+
+        # mock
+        mock_sync = mocker.patch.object(service, "sync_slack_users", return_value=[])
+
+        # when
+        service.sync_all_slack_users()
+
+        # then
+        assert mock_sync.call_count == 2
+        called_ids = {call.args[0] for call in mock_sync.call_args_list}
+        assert called_ids == {secret1.id, secret2.id}
+
+    def test_sync_all_slack_users_개별_동기화_실패해도_계속_진행(
+        self,
+        mocker,
+        db_session: Session,
+        slack_secret_fixture: Callable[..., SlackSecret],
+    ):
+        # given
+        slack_secret_fixture(name="Slack Fail")
+        slack_secret_fixture(name="Slack OK")
+        service = SlackUserService(db_session)
+
+        # mock — 첫 번째 호출 실패, 두 번째 성공
+        mock_sync = mocker.patch.object(
+            service,
+            "sync_slack_users",
+            side_effect=[Exception("API 에러"), []],
+        )
+
+        # when
+        service.sync_all_slack_users()
+
+        # then
+        assert mock_sync.call_count == 2

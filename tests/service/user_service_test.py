@@ -178,3 +178,55 @@ class UserServiceTest:
         # when & then
         with pytest.raises(UserNotFoundException):
             service.delete_user(9999)
+
+    # ── get_user_with_relations_or_throw ──
+
+    def test_get_user_with_relations_or_throw(
+        self,
+        db_session,
+        user_fixture,
+        github_user_secret_fixture,
+        jira_secret_fixture,
+        jira_user_fixture,
+        slack_secret_fixture,
+        slack_user_fixture,
+    ):
+        # given
+        service = UserService(db_session)
+        user = user_fixture("relations@dev.com")
+        github_user_secret_fixture(user_id=user.id)
+        jira_secret = jira_secret_fixture()
+        jira_user_fixture(jira_secret_id=jira_secret.id, user_id=user.id)
+        slack_secret = slack_secret_fixture()
+        slack_user_fixture(slack_secret_id=slack_secret.id, user_id=user.id)
+
+        # when
+        result = service.get_user_with_relations_or_throw(user.id)
+
+        # then
+        assert result.id == user.id
+        assert result.github_user_secret is not None
+        assert result.jira_user is not None
+        assert result.slack_user is not None
+
+    def test_get_user_with_relations_or_throw_관계_없는_사용자(self, db_session, user_fixture):
+        # given
+        service = UserService(db_session)
+        user = user_fixture("no-relations@dev.com")
+
+        # when
+        result = service.get_user_with_relations_or_throw(user.id)
+
+        # then
+        assert result.id == user.id
+        assert result.github_user_secret is None
+        assert result.jira_user is None
+        assert result.slack_user is None
+
+    def test_get_user_with_relations_or_throw_존재하지_않으면_예외(self, db_session):
+        # given
+        service = UserService(db_session)
+
+        # when & then
+        with pytest.raises(UserNotFoundException):
+            service.get_user_with_relations_or_throw(9999)

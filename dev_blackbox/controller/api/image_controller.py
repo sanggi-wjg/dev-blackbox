@@ -48,7 +48,7 @@ async def upload_image(
     response_model=list[ImageResponseDto],
     status_code=status.HTTP_200_OK,
 )
-async def get_images(
+def get_images(
     token: AuthToken,
     current_user: CurrentUser,
     db: Session = Depends(get_db),
@@ -62,7 +62,7 @@ async def get_images(
     "/{image_id}",
     status_code=status.HTTP_200_OK,
 )
-async def get_image(
+def get_image(
     image_id: int,
     token: AuthToken,
     current_user: CurrentUser,
@@ -81,7 +81,7 @@ async def get_image(
     status_code=status.HTTP_204_NO_CONTENT,
     response_model=None,
 )
-async def delete_image(
+def delete_image(
     image_id: int,
     token: AuthToken,
     current_user: CurrentUser,

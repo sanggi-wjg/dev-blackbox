@@ -21,7 +21,7 @@ router = APIRouter(prefix="/api/v1", tags=["Search"])
     status_code=status.HTTP_200_OK,
     response_model=PlatformWorkLogSearchResponseDto,
 )
-async def search_platform_work_logs(
+def search_platform_work_logs(
     token: AuthToken,
     current_user: CurrentUser,
     param: Annotated[SearchParam, Query()],

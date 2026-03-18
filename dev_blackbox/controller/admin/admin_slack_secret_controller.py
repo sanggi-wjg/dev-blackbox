@@ -20,7 +20,7 @@ router = APIRouter(prefix="/admin-api/v1/slack-secrets", tags=["Admin Slack Secr
     status_code=status.HTTP_201_CREATED,
     response_model=SlackSecretResponseDto,
 )
-async def create_slack_secret(
+def create_slack_secret(
     request: CreateSlackSecretRequestDto,
     current_admin_user: CurrentAdminUser,
     db: Session = Depends(get_db),
@@ -39,7 +39,7 @@ async def create_slack_secret(
     status_code=status.HTTP_200_OK,
     response_model=list[SlackSecretResponseDto],
 )
-async def get_slack_secrets(
+def get_slack_secrets(
     current_admin_user: CurrentAdminUser,
     db: Session = Depends(get_db),
 ):
@@ -53,7 +53,7 @@ async def get_slack_secrets(
     status_code=status.HTTP_204_NO_CONTENT,
     response_model=None,
 )
-async def delete_slack_secret(
+def delete_slack_secret(
     slack_secret_id: int,
     current_admin_user: CurrentAdminUser,
     db: Session = Depends(get_db),
@@ -67,7 +67,7 @@ async def delete_slack_secret(
     status_code=status.HTTP_200_OK,
     response_model=None,
 )
-async def sync_slack_users(
+def sync_slack_users(
     slack_secret_id: int,
     current_admin_user: CurrentAdminUser,
     db: Session = Depends(get_db),
