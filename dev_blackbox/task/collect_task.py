@@ -14,7 +14,7 @@ from dev_blackbox.client.model.github_api_model import (
     GithubPullRequestEventPayload,
     GithubPushEventPayloadModel,
 )
-from dev_blackbox.core.const import EMPTY_ACTIVITY_MESSAGE, LockKey
+from dev_blackbox.core.const import EMPTY_ACTIVITY_MESSAGE, GITHUB_EXCLUDED_BRANCHES, LockKey
 from dev_blackbox.core.database import get_db_session
 from dev_blackbox.core.enum import PlatformEnum
 from dev_blackbox.service.command.daily_work_log_command import SaveDailyWorkLogCommand
@@ -188,6 +188,8 @@ def _collect_github_events(user_id: int, target_date: date) -> str:
         github_events.sort(key=_github_event_sort_key)
         texts = []
         for event in github_events:
+            if event.base_branch in GITHUB_EXCLUDED_BRANCHES:
+                continue
             if event.commit_model is not None:
                 texts.append(event.commit_model.commit_detail_text)
             elif event.event_type == "PullRequestEvent":

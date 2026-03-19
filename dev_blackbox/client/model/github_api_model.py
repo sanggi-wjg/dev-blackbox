@@ -77,6 +77,27 @@ class GithubEventModel(BaseModel):
             lines.append(pr.body)
         return "\n".join(lines)
 
+    @cached_property
+    def branch(self) -> str | None:
+        """대상 브랜치 전체 경로 (e.g., "chore/who/task", "dev")"""
+        payload = self.typed_payload
+
+        if isinstance(payload, GithubPushEventPayloadModel):
+            return payload.ref.split("/", 2)[-1]
+
+        if isinstance(payload, GithubPullRequestEventPayload):
+            return payload.pull_request.base.ref
+
+        return None
+
+    @cached_property
+    def base_branch(self) -> str | None:
+        """대상 브랜치의 최상위 이름 (e.g., "chore/who/task" → "chore", "dev" → "dev")"""
+        branch = self.branch
+        if branch is None:
+            return None
+        return branch.split("/", 1)[0]
+
 
 class GithubEventModelList(BaseModel):
     events: list[GithubEventModel]
