@@ -5,7 +5,10 @@ from sqlalchemy import BigInteger, Date, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
-from dev_blackbox.client.model.github_api_model import GithubCommitModel, GithubEventModel
+from dev_blackbox.client.model.github_api_model import (
+    GithubCommitModel,
+    GithubEventModel,
+)
 from dev_blackbox.storage.rds.entity.base import Base
 
 
@@ -55,6 +58,14 @@ class GitHubEvent(Base):
     @cached_property
     def event_model(self) -> GithubEventModel:
         return GithubEventModel.model_validate(self.event)
+
+    @cached_property
+    def branch(self) -> str | None:
+        return self.event_model.branch
+
+    @cached_property
+    def base_branch(self) -> str | None:
+        return self.event_model.base_branch
 
     @cached_property
     def commit_model(self) -> GithubCommitModel | None:
